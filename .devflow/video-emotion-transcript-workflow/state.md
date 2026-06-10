@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-06-10 11:43:30 +08:00
-- 更新时间（Updated At）：2026-06-10 11:47:50 +08:00
+- 更新时间（Updated At）：2026-06-10 15:45:35 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：保存当前 mission 的恢复热路径（resume hot path）状态。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -26,7 +26,10 @@
 ## 当前产物
 
 - 计划文档：`plans/2026-06-10-video-emotion-transcript-workflow-plan.md`
+- v2 完善计划：`plans/2026-06-10-video-emotion-transcript-v2-doc-plan.md`
 - 最终候选路线文档：`zzz-docs/设想/视频情感化转写可行性路线.md`
+- 最新 handoff：`handoffs/2026-06-10-001-resume-ready.md`
+- 下一会话入口：`NEXT-SESSION-PROMPT.md`
 
 ## 验证结果
 
@@ -36,4 +39,15 @@
 
 ## 当前结论
 
-本轮文档任务已收束。后续如果继续推进，应先确认 MVP（Minimum Viable Product，最小可行产品）范围，再进入 PRD（Product Requirements Document，产品需求文档）或 OpenSpec（开放规格）阶段。
+候选路线文档已完成 v2 完善：补入 SenseVoice-Small（FunASR）、audio-separator、emotion2vec+、LangGraph、音频预处理细化方案、工程实施路线和资源估算口径。后续如果继续推进，应先确认 MVP（Minimum Viable Product，最小可行产品）范围，再进入 PRD（Product Requirements Document，产品需求文档）或 OpenSpec（开放规格）阶段。
+
+## 第一版范围与延期项
+
+- 第一版建议聚焦：本地文件输入、音频质量报告（audio quality report）、SenseVoice-Small baseline、WhisperX + pyannote.audio baseline、基础抽帧、多模态 LLM 画面描述、低置信度人工审核列表、Markdown / JSON 输出。
+- 第一版可选：人声分离（vocal separation）、表情识别（facial expression recognition）。
+- 明确延期：平台自动下载、自动评论抓取、反向搜图、n8n workflow、复杂前端 UI、自训练情绪模型、全自动梗理解。
+- 延期原因：这些能力依赖合规边界、成本预算、样本验证和核心 worker 稳定性；当前不是永久放弃，只是不进入第一版 MVP。
+
+## 下次建议
+
+新对话先读取 `NEXT-SESSION-PROMPT.md`、`state.md`、`checkpoints.md` 和最新 handoff。下一步建议围绕 MVP 范围写 PRD（Product Requirements Document，产品需求文档）或 OpenSpec（开放规格），不要直接实现。

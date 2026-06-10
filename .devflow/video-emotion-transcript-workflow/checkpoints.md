@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-06-10 11:47:50 +08:00
-- 更新时间（Updated At）：2026-06-10 11:47:50 +08:00
+- 更新时间（Updated At）：2026-06-10 15:45:35 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录当前 mission 最近 checkpoint，便于后续恢复。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -13,6 +13,21 @@
 - 文档边界（Scope / Boundary）：本文件是最近 checkpoint 真相源（source of truth），只保留近期状态，不替代完整计划或最终文档。
 
 ## 最近 checkpoint
+
+### 2026-06-10 15:45:35 +08:00 - 收尾 handoff 并明确 MVP 延期边界
+
+- 完成内容：补充候选文档中的“第一版范围与明确延期矩阵（MVP Scope and Deferred Scope Matrix）”，创建 mission handoff 和下一会话入口。
+- 第一版聚焦：本地文件输入、音频质量报告、SenseVoice-Small / WhisperX baseline、基础抽帧、多模态 LLM 画面描述、低置信度人工审核列表、Markdown / JSON 输出。
+- 明确延期：平台自动下载、自动评论抓取、反向搜图、n8n workflow、复杂前端 UI、自训练情绪模型、全自动梗理解。
+- 最新 handoff：`handoffs/2026-06-10-001-resume-ready.md`
+- 下一会话入口：`NEXT-SESSION-PROMPT.md`
+
+### 2026-06-10 15:34:26 +08:00 - 完成候选路线文档 v2 完善
+
+- 完成内容：更新 `zzz-docs/设想/视频情感化转写可行性路线.md`，吸收 `STT-情感视频理解-可行性分析.md` 与 `数据集处理.md` 的可借鉴点。
+- 新增重点：SenseVoice-Small（FunASR）、audio-separator、emotion2vec+、LangGraph、音频预处理细化方案（Audio Preprocessing Recipe）、工程实施路线（Engineering Roadmap）和资源估算口径（Resource Estimate）。
+- 关键口径：保留候选项（Candidate）状态；不把“唯一”“最强”“价格”等易变信息写成最终事实；实施阶段必须以样本集 benchmark（基准测试）确认。
+- 后续入口：如果继续推进，应先确认 MVP 范围和样本集，再写 PRD（Product Requirements Document，产品需求文档）或 OpenSpec（开放规格）。
 
 ### 2026-06-10 11:47:50 +08:00 - 完成视频情感化转写可行性调研文档
 
