@@ -1,0 +1,15 @@
+{
+  "enabledMcpjsonServers": [
+    "fetch"
+  ],
+  "permissions": {
+    "allow": [
+      "mcp__fetch__fetch",
+      "Skill(agent-browser)",
+      "Skill(web-fetch-mcp-preferred)"
+    ],
+    "deny": [
+      "WebFetch"
+    ]
+  }
+}

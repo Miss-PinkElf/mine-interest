@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm create:*)",
+      "Bash(npx create-electron-app@latest:*)",
+      "Bash(npm create electron-vite@latest agent-desktop-pet:*)",
+      "Bash(python:*)",
+      "Bash(backend/.venv/Scripts/python.exe:*)",
+      "Bash(ls:*)",
+      "Bash(npm start)",
+      "Skill(agent-browser)",
+      "Bash(curl:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)",
+      "Bash(git -C \"/d/Users/Mobius/Desktop/mine/AAA-code/agent-desktop-pet\" log --oneline -n 30)",
+      "Bash(gh api:*)",
+      "WebSearch",
+      "mcp__fetch__fetch",
+      "Skill(react-tsx-readability-guard)",
+      "Bash(npm:*)",
+      "Skill(context-budget-explore)",
+      "Skill(devflow)",
+      "Bash(python3:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(bash:*)",
+      "Bash(claude:*)",
+      "Bash(./.venv/Scripts/python.exe -B -c \"from app.main import app; print\\(app.title\\)\")",
+      "Bash(./.venv/Scripts/python.exe -B -m pytest tests/test_chat_agent_service.py tests/test_chat_orchestrator.py tests/test_chat_memory_write_service.py tests/test_agentic_recall_service.py tests/test_agentic_recall_retrievers.py -v)",
+      "Bash(./.venv/Scripts/python.exe -B -m pytest tests/test_llm_service.py -v)",
+      "Bash(./.venv/Scripts/python.exe -B -m pytest tests/test_llm_service.py tests/test_chat_agent_service.py tests/test_chat_orchestrator.py tests/test_chat_memory_write_service.py tests/test_agentic_recall_service.py tests/test_agentic_recall_retrievers.py -v)"
+    ]
+  }
+}

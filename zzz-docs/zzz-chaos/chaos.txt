@@ -1,0 +1,2 @@
+就是现在需要把mac的键盘映射改一下，就是我现在使用的是win键盘，键盘，把ctrl变成controler，win键换成 opention，alt换成cmd，来映射一下，应该怎么做
+
