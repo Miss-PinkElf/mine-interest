@@ -5,8 +5,8 @@ description: |
   额外触发条件：当工作区内已存在 `.devflow/<mission>/` 且当前对话已读取该 mission 的 `state.md`、`checkpoints.md`、`handoff`、`NEXT-SESSION-PROMPT` 或其他工作区文件时，后续与该 mission 相关的改动默认继续纳入 devflow，而不是按普通即时任务处理；当当前请求明显属于某个活跃 mission 的续作、小改动、恢复或收口时，即使用户没有显式提到 `devflow`，也应继续使用它。
   不要把 devflow 当成收尾记录器；它必须在第一次真正推进前介入，并强制执行 Align -> Plan -> Spec/Tasks -> Apply -> Verify/Close。
 author: Codex
-version: 0.2.0
-date: 2026-04-15
+version: 0.4.0
+date: 2026-07-04
 ---
 
 # DevFlow
@@ -23,6 +23,7 @@ date: 2026-04-15
 4. 把质量门禁委托给 Superpowers 子技能
 5. 在暂停、续接、上下文压缩时协调 handoff
 6. 控制恢复时的上下文预算（Context Budget），避免长期 mission 越做越难恢复
+7. 管理原始输入（Raw Input）、当前状态（Current State）、历史状态（State History）和延期项（Deferred Work）的记录生命周期
 
 一句话：
 
@@ -54,8 +55,11 @@ date: 2026-04-15
    - 不得因为“可能有用”而默认全量读取整个 mission 工作区
 6. 没有新鲜验证证据，不得宣称完成
 7. 首次进入 mission 时，必须先完成 `Mission Init`
-   - 至少创建并初始化 `workflow.md`、`state.md`、`decision-log.md`
+   - 至少创建并初始化 `workflow.md`、`state.md`、`origin.md`、`decision-log.md`
    - 没有初始化工作区，不进入 `Align`
+8. `Apply` 阶段默认专注实现，不被过程文档更新打断
+   - 阶段切换、回退、暂停、上下文压缩或 Close 前仍要写必要记录
+   - 如果用户明确要求边做边记录，按用户要求执行，但仍保持恢复热路径短
 
 如果当前工作违反了这些规则，优先回退阶段，而不是继续往前冲。
 
@@ -85,6 +89,8 @@ date: 2026-04-15
 优先信任：
 
 - `state.md`
+- `origin.md`
+- `state-history.md`
 - `checkpoints.md`
 - `workflow.md`
 - `decision-log.md`
@@ -92,20 +98,25 @@ date: 2026-04-15
 - `plans/`
 - `spec/`
 - `bug-log.md`
+- `backlog.md`
+- `deferred/`
 - 最新 `handoff`
 
 恢复时的默认读取顺序不同于“可信度列表”：
 
 ```text
-state.md -> checkpoints.md -> 按指针读取 workflow / handoff / development-overview / plans / spec
+state.md -> checkpoints.md -> 按指针读取 workflow / handoff / development-overview / plans / spec / origin
 ```
 
-`state.md` 与 `workflow.md` 应是当前快照（Current Snapshot），不要承担完整历史；完整脉络写入 `development-overview.md`、`decision-log.md`、`checkpoints-archive.md` 或 handoff。
+`state.md` 与 `workflow.md` 应是当前快照（Current Snapshot），不要承担完整历史；旧 `state.md` 快照归档到 `state-history.md`；完整脉络写入 `development-overview.md`、`decision-log.md`、`checkpoints-archive.md` 或 handoff。
+
+`origin.md` 是原始输入索引（Raw Input Source Index），用于记录用户多次追加的原始提示词、需求草稿或参考文件路径。它允许持续追加，不是创建后不可修改的冻结文件。
 
 默认创建：
 
 - `workflow.md`
 - `state.md`
+- `origin.md`
 - `decision-log.md`
 
 按阶段懒创建：
@@ -114,10 +125,13 @@ state.md -> checkpoints.md -> 按指针读取 workflow / handoff / development-o
 - `spec/`
 - `bug-log.md`
 - `learnings.md`
+- `state-history.md`
 - `checkpoints.md`
 - `checkpoints-archive.md`
 - `session-tasks.md`
 - `development-overview.md`
+- `backlog.md`
+- `deferred/`
 - `handoffs/`
 
 只要 `devflow` 已经介入，**工作区文件比对话更可信**。  
@@ -246,7 +260,7 @@ Classify -> Mission Init -> Align -> Plan -> Propose/Tasks -> Apply -> Review/Ve
 - `plan != spec`
 - 阶段切换前应执行显式检查，而不是只看原则声明
 - 没有任务定义不进入 `Apply`
-- 每轮推进后至少更新 `state.md`
+- `Apply` 阶段默认专注实现；阶段切换、回退、暂停、上下文压缩或 Close 前再更新必要记录
 - 每次重要阶段切换都应决定是否写 `checkpoint`
 - `Close` 不等于 mission 结束，它只表示当前轮次收束
 
@@ -334,18 +348,22 @@ Classify -> Mission Init -> Align -> Plan -> Propose/Tasks -> Apply -> Review/Ve
 
 始终遵循：
 
-- mission 建立或恢复后，先校验 `workflow.md`、`state.md`、`decision-log.md`
-- 每轮推进后至少更新 `state.md`
+- mission 建立或恢复后，先校验 `workflow.md`、`state.md`、`origin.md`、`decision-log.md`
+- `Align` / `Plan` 阶段：文档是阶段交付物，应正常产出与更新
+- `Apply` 阶段：默认专注实现，不主动更新过程文档；发生回退、阻塞、暂停或上下文压缩时，写最小 `state.md` 快照与 checkpoint
+- `Verify` / `Close` 阶段：补齐 `state.md`、checkpoint、必要的 `decision-log.md` 与 `development-overview.md`
 - 路径变化、阶段变化、里程碑调整后更新 `workflow.md`
+- 新增原始提示词、需求草稿或参考文件时，追加到 `origin.md`
 - 重要历史脉络、阶段总览、需求演进写入 `development-overview.md`，不要塞进 `state.md`
 - 做出关键选择后更新 `decision-log.md`
 - 对齐确认后必须写 `plan`
 - 遇到 bug 时写 `bug-log.md`
+- 碎片化后续想法写入 `backlog.md`；明确延期的功能或逻辑写入 `deferred/`
 - 阶段切换、重要里程碑、暂停前、正式完成当前轮次时写 `checkpoint`
 - `checkpoints.md` 只保留最近 3 条，超出内容搬入 `checkpoints-archive.md`
 - `checkpoint` 回答“做到哪了”，`handoff` 回答“下次怎么接”
 - `development-overview.md` 回答“为什么这样演进、整体做过什么”，只在人类理解完整过程或深度恢复时读取
-- `state.md` 与 `workflow.md` 采用滚动摘要（Rolling Summary），更新时优先改写当前状态，不追加长历史
+- `state.md` 与 `workflow.md` 采用滚动摘要（Rolling Summary），更新时优先改写当前状态，不追加长历史；旧 `state.md` 如仍有价值，先追加到 `state-history.md`
 - 正常阶段收束优先写 `checkpoint`；只有跨会话、跨 agent、上下文过长时才强制写 `handoff`
 - 暂停、跨对话、上下文过长、阶段性交接时才生成 `handoff`
 
@@ -356,7 +374,7 @@ Classify -> Mission Init -> Align -> Plan -> Propose/Tasks -> Apply -> Review/Ve
 长期 mission 的记录要分成两类：
 
 - 恢复热路径（Resume Hot Path）：`state.md`、`checkpoints.md`
-- 深度追溯路径（Deep Trace Path）：`development-overview.md`、`decision-log.md`、`checkpoints-archive.md`、`plans/`、`spec/`、`handoffs/`
+- 深度追溯路径（Deep Trace Path）：`origin.md`、`state-history.md`、`development-overview.md`、`decision-log.md`、`checkpoints-archive.md`、`plans/`、`spec/`、`backlog.md`、`deferred/`、`handoffs/`
 
 默认恢复只读取热路径。只有以下情况才进入深度追溯路径：
 
@@ -367,10 +385,11 @@ Classify -> Mission Init -> Align -> Plan -> Propose/Tasks -> Apply -> Review/Ve
 
 建议保持：
 
-- `state.md`：短当前态，避免超过约 120 行
+- `state.md`：短当前态，建议 30 行内
 - `workflow.md`：短流程视图，避免超过约 100 行
 - `checkpoints.md`：最近 3 条
 - `development-overview.md`：可增长，但不默认读取
+- `state-history.md`：可追加旧快照，但不默认读取
 
 ## 读取地图
 
