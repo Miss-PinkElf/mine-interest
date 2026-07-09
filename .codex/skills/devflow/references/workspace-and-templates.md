@@ -6,6 +6,8 @@
 .devflow/<mission-slug>/
 ├── workflow.md
 ├── state.md
+├── state-history.md
+├── origin.md
 ├── decision-log.md
 ├── plans/
 ├── spec/
@@ -14,6 +16,8 @@
 ├── checkpoints.md
 ├── checkpoints-archive.md
 ├── development-overview.md
+├── backlog.md
+├── deferred/
 ├── session-tasks.md
 └── handoffs/
 ```
@@ -32,6 +36,7 @@ mission 初始化时立即创建：
 
 - `workflow.md`
 - `state.md`
+- `origin.md`
 - `decision-log.md`
 
 初始化时建议立即填入：
@@ -49,7 +54,7 @@ mission 初始化时立即创建：
 
 应遵循：
 
-- 已有 `workflow.md`、`state.md`、`decision-log.md` 时，不重复覆盖历史内容
+- 已有 `workflow.md`、`state.md`、`origin.md`、`decision-log.md` 时，不重复覆盖历史内容
 - 只补缺失项，不重建整个目录
 - 刷新时优先保留最近一次真实推进记录
 - 如果当前对话已明确激活某个 mission，后续相关小改动也继续沿用该 mission 的记录体系
@@ -62,10 +67,13 @@ mission 初始化时立即创建：
 - `spec/`
 - `bug-log.md`
 - `learnings.md`
+- `state-history.md`
 - `checkpoints.md`
 - `checkpoints-archive.md`
 - `session-tasks.md`
 - `development-overview.md`
+- `backlog.md`
+- `deferred/`
 - `handoffs/`
 
 这样既保留长期任务骨架，也避免小任务一开始铺满空文件。
@@ -75,7 +83,9 @@ mission 初始化时立即创建：
 - `workflow-template.md`
   - mission 初始化；路径、阶段或里程碑变化时同步更新
 - `state-template.md`
-  - mission 初始化，后续持续更新
+  - mission 初始化，后续作为短当前快照覆盖式更新
+- `origin-template.md`
+  - mission 初始化；用户追加原始提示词、需求草稿或参考文件时追加来源索引
 - `decision-log-template.md`
   - 出现关键取舍后
 - `plan-template.md`
@@ -90,6 +100,10 @@ mission 初始化时立即创建：
   - 暂停、跨对话、上下文过长、阶段性交接
 - `development-overview-template.md`
   - 长期 mission、需求演进、阶段复盘、需要给人理解完整开发过程时
+- `backlog-template.md`
+  - 出现碎片化后续想法、可做可不做事项时
+- `deferred-template.md`
+  - 明确某个功能或逻辑后续要做，但本轮暂不做时
 
 ## 上下文预算与读取分层
 
@@ -101,10 +115,14 @@ mission 初始化时立即创建：
 按需再读取深度追溯路径（Deep Trace Path）：
 
 - `workflow.md`
+- `origin.md`
+- `state-history.md`
 - `development-overview.md`
 - `decision-log.md`
 - `plans/`
 - `spec/`
+- `backlog.md`
+- `deferred/`
 - `handoffs/`
 - `checkpoints-archive.md`
 
@@ -112,19 +130,24 @@ mission 初始化时立即创建：
 
 - 需要恢复当前工作：读热路径
 - 需要理解完整过程：读 `development-overview.md`
+- 需要查看原始需求：读 `origin.md`
+- 需要追溯旧状态：读 `state-history.md`
 - 需要解释为什么这么做：读 `decision-log.md`
 - 需要执行计划或核对规格：读 `plans/` 或 `spec/`
+- 需要规划延期项：读 `backlog.md` 或 `deferred/`
 - 需要跨会话交接：读最新 handoff
 
 ## 文件预算建议
 
-- `state.md`：建议 80-120 行内，写当前状态、风险、下一步、关键指针
+- `state.md`：建议 30 行内，写当前状态、风险、下一步、关键指针
 - `workflow.md`：建议 60-100 行内，写当前目标、范围、阶段、里程碑
 - `checkpoints.md`：只保留最近 3 条
 - `development-overview.md`：允许长期增长，但不默认读取
+- `state-history.md`：允许追加旧快照，但不默认读取
 
 如果 `state.md` 或 `workflow.md` 超过预算，优先把历史内容移动到：
 
+- `state-history.md`
 - `development-overview.md`
 - `decision-log.md`
 - `checkpoints-archive.md`
@@ -156,6 +179,7 @@ mission 初始化时立即创建：
 4. 最新 `handoff`（仅在跨会话交接或 state/checkpoint 指向时）
 5. `development-overview.md`（仅在需要理解完整开发过程时）
 6. `spec/` 或 `plans/`（仅在准备实施或核对正式方案时）
+7. `origin.md`、`state-history.md`、`backlog.md`、`deferred/`（仅在需要追溯输入、旧状态或延期项时）
 
 ## 轻量 Plan 最小模板
 
@@ -204,6 +228,57 @@ mission 初始化时立即创建：
 ## 推荐读取策略
 
 说明日常恢复读什么，深度追溯读什么。
+```
+
+## 原始输入索引模板
+
+`origin.md` 推荐模板：
+
+```markdown
+# 原始输入索引（Origin）
+
+## 定位
+
+本文件记录当前 mission 的原始提示词、需求草稿和参考文件来源。它允许追加，不是冻结文件。
+
+## 来源列表
+
+| 序号 | 来源路径 | 时间 | 用途 | 吸收状态 |
+| --- | --- | --- | --- | --- |
+| 1 | `zzz-prompt-debug/example/prompt-1.md` | 2026-07-04 | 初始需求 | 已吸收到 plan |
+
+## 备注
+
+- 优先记录相对路径。
+- 原始 prompt 已在仓库文件中时，不强制复制全文。
+```
+
+## 延期项模板
+
+`backlog.md` 适合一句话轻量想法：
+
+```markdown
+# Backlog
+
+| 项 | 来源 | 状态 |
+| --- | --- | --- |
+| 后续可能补评测资产 | `origin.md` | 未开始 |
+```
+
+`deferred/<slug>.md` 适合明确延期项：
+
+```markdown
+# [延期项名称]
+
+## 暂不做的对象
+
+## 本轮不做的原因
+
+## 当前已有思路
+
+## 后续触发条件
+
+## 推荐进入阶段
 ```
 
 ## 进入 Apply 的最小检查示例
