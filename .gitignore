@@ -18,6 +18,7 @@ pnpm-lock.yaml
 
 # ===== Lock files =====
 package-lock.json
+!frontend/package-lock.json
 yarn.lock
 
 # ===== Electron =====

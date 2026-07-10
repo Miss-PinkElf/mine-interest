@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "roots": [
+    {
+      "type": "file",
+      "path": ".devflow/video-emotion-transcript-workflow/NEXT-SESSION-PROMPT-video-emotion-transcript-workflow.md"
+    },
+    {
+      "type": "file",
+      "path": "zzz-cmd.md"
+    }
+  ]
+}
