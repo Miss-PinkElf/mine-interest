@@ -3,16 +3,34 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-06-10 11:43:30 +08:00
-- 更新时间（Updated At）：2026-06-10 15:45:35 +08:00
+- 更新时间（Updated At）：2026-07-10 15:23:33 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录本 mission 的关键决策与延期项，便于后续追溯。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
-- 关联原始需求（Related Source）：`zzz-docs/设想/prompt.md`
-- 当前状态（Status）：已完成（Completed）
+- 关联原始需求（Related Source）：`zzz-prompt-debug/origin/设想/prompt.md`
+- 当前状态（Status）：规格已就绪（Spec Ready）
 - 文档边界（Scope / Boundary）：本文件是关键决策真相源（source of truth），不代表需求已进入代码实现。
 
 ## 决策记录
+
+### 2026-07-10 15:23:33 +08:00 - 完成 OpenSpec，但不进入 Apply
+
+- 决策（Decision）：将已确认的 MVP 对齐与 Plan 落为 `spec/proposal.md`、`spec/design.md` 和 `spec/tasks.md`，本轮停在规格就绪状态。
+- 原因（Rationale）：用户明确要求先完成规格和收尾，在新对话再开始后续步骤，避免长上下文中直接实施。
+- 影响（Impact）：下次需要用户明确授权 Apply，才能从 Task 1 开始安装依赖或创建应用代码。
+
+### 2026-07-10 15:05:09 +08:00 - 采用专用模型优先的混合工作台架构
+
+- 决策（Decision）：第一版采用 React + Vite 浏览器工作台、FastAPI 本地服务、SQLite 与本地产物目录；本地专用模型提供事实证据，云端 LLM 负责解释与融合。
+- 原因（Rationale）：STT、预处理、人脸/姿态和音频特征具有确定性与隐私要求；反讽、语境和多证据解释更适合云端多模态 LLM。纯 n8n 或纯 LLM Agent 都无法可靠承担媒体处理和审核追溯。
+- 影响（Impact）：工具注册表与 Provider Adapter 是核心边界；n8n 延期为后续工作流壳层。
+
+### 2026-07-10 15:05:09 +08:00 - 采用按需预处理与双音轨保留
+
+- 决策（Decision）：保留 `audio_raw` / `audio_light` 与 `audio_stt_ready`，仅在质量报告显示必要时启用人声分离、去混响或降噪。
+- 原因（Rationale）：训练数据清洗经验不能直接用于情绪理解；过度处理会破坏气声、停顿、能量与尾音等语气证据。
+- 影响（Impact）：审核界面可回放不同轨道，STT 与情绪分析不会被迫使用同一处理结果。
 
 ### 2026-06-10 15:45:35 +08:00 - 明确第一版范围与延期项
 
@@ -41,7 +59,4 @@
 
 ## 本轮不做 / 后续阶段（Deferred Scope）
 
-- 暂不做对象或能力：不搭建可运行原型，不接入真实模型 API，不写 n8n workflow JSON，不做 UI。
-- 本轮暂不做原因：当前任务目标是可行性和路线判断；直接实现会把技术选型、成本、隐私和模型准确率风险提前固化。
-- 后续触发条件或推荐阶段：当用户确认候选路线后，进入 PRD（Product Requirements Document，产品需求文档）或 OpenSpec（开放规格）阶段，再拆分 MVP（Minimum Viable Product，最小可行产品）任务。
-- 说明：暂不做不等于永久放弃；这些能力应在后续 MVP 或原型阶段继续推进。
+当前明确延期项、原因和触发条件统一记录在 `deferred/2026-07-10-mvp-deferred-scope.md`。这些能力不是永久放弃；仅在本 MVP 的单视频审核闭环完成真实样本验证前不进入 Apply。
