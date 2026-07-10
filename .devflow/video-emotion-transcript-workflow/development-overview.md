@@ -3,12 +3,12 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-07-10 15:15:33 +08:00
+- 更新时间（Updated At）：2026-07-10 16:40:38 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录 mission 从可行性调研到 MVP 规格就绪的完整阶段脉络。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
-- 当前状态（Status）：规格就绪（Spec Ready）
+- 当前状态（Status）：实施中（In Progress）
 - 文档边界（Scope / Boundary）：本文件是长期过程概览，不替代 `state.md`、`checkpoints.md`、Plan 或 OpenSpec 真相源。
 
 ## 阶段脉络
@@ -16,7 +16,8 @@
 1. 2026-06-10：完成技术可行性调研，形成候选路线；当时不进入代码实现。
 2. 2026-07-10：重新读取原始设想并完成重型 Align（对齐）。目标从“情绪标签 STT”明确为“证据驱动视频理解工作台”。
 3. 2026-07-10：确认个人本地浏览器产品形态、Windows + RTX 3080 / 20GB 运行目标、本地专用模型与云端 LLM 的分工、可编辑分段审核和延期范围。
-4. 2026-07-10：完成实施计划及 OpenSpec proposal/design/tasks；当前未开始安装依赖、创建应用代码或执行模型 benchmark。
+4. 2026-07-10：完成实施计划及 OpenSpec proposal/design/tasks。
+5. 2026-07-10：用户授权进入 Apply。完成 FastAPI / React + Vite 工程骨架、健康检查、CORS、领域模型与前端构建；清华 npm 镜像不可用后经授权切换为默认 Registry。Task 3 已停在仓储与产物存储的红灯测试。
 
 ## 稳定结论
 

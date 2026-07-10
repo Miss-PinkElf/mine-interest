@@ -10,17 +10,20 @@
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
 - 关联提案与设计（Related Spec）：`.devflow/video-emotion-transcript-workflow/spec/proposal.md`、`.devflow/video-emotion-transcript-workflow/spec/design.md`
 - 关联计划（Related Plan）：`.devflow/video-emotion-transcript-workflow/plans/2026-07-10-video-emotion-transcript-mvp-implementation-plan.md`
-- 当前状态（Status）：未开始（Not Started）
+- 当前状态（Status）：实施中（In Progress）
 - 文档边界（Scope / Boundary）：本文件是实施任务追踪真相源；勾选任务前必须获得 Apply（实施）授权。
 
 ## 阶段 1：可运行的本地审核纵向链路
 
-- [ ] 初始化 `backend/` 与 `frontend/`，验证 FastAPI 健康检查、React 构建和本地开发代理。
+- [x] 初始化 `backend/` 与 `frontend/`，验证 FastAPI 健康检查、React 构建和本地开发代理。
   - 验证：`backend/.venv/bin/python -m pytest tests/test_health.py -v` 与 `frontend` 生产构建通过。
-- [ ] 定义 Job、Segment、Evidence、ReviewOperation 和 ExportArtifact 的领域模型与状态枚举。
+  - 验证结果：`backend/.venv/bin/python -m pytest -q` 通过 2 项测试，`backend/.venv/bin/python -m pip check` 通过，`frontend/npm run build` 通过；镜像问题处理详情见 `../bug-log.md`。
+- [x] 定义 Job、Segment、Evidence、ReviewOperation 和 ExportArtifact 的领域模型与状态枚举。
   - 验证：原始转写不可被人工修订覆盖。
+  - 验证结果：原始转写不可被人工修订覆盖的测试通过；领域 schema 可从 `Segment` 实体生成包含最终文本的响应。
 - [ ] 落地 SQLite repository、本地产物目录和可恢复任务状态。
   - 验证：任务失败后既有质量报告等产物仍存在，重启后任务可恢复。
+  - 当前执行状态：已写入失败任务保留质量报告的红灯测试；尚未实现 `app.services`、repository 或 Artifact Store（产物存储）。
 - [ ] 实现媒体文件上传、任务查询、片段查询和导出的本地 API。
   - 验证：API 测试覆盖上传、确认片段和导出。
 - [ ] 实现 React 任务页、设置页、状态进度与基础导出入口。
@@ -68,6 +71,6 @@
 
 ## Apply 门禁
 
-- [ ] 用户明确授权开始 Apply（实施）。
+- [x] 用户明确授权开始 Apply（实施）。
 - [ ] 执行前重新读取本文件、`spec/design.md` 和正式实施计划。
 - [ ] 每个阶段完成后执行聚焦审查与新鲜验证；未经用户明确同意不得执行 `git commit`。

@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-06-10 11:43:30 +08:00
-- 更新时间（Updated At）：2026-07-10 15:23:33 +08:00
+- 更新时间（Updated At）：2026-07-10 16:40:38 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录本 mission 的关键决策与延期项，便于后续追溯。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -13,6 +13,24 @@
 - 文档边界（Scope / Boundary）：本文件是关键决策真相源（source of truth），不代表需求已进入代码实现。
 
 ## 决策记录
+
+### 2026-07-10 16:40:38 +08:00 - 保持第一版范围并从 Task 3 红灯恢复
+
+- 决策（Decision）：本轮只完成 Task 1-2，并保留 Task 3 的失败测试作为下次实现入口；不提前实现媒体处理、模型接入、审核工作台或任何已延期能力。
+- 原因（Rationale）：用户要求在上下文变长时收尾并于新会话继续，避免未完成的仓储设计与后续范围混合。
+- 影响（Impact）：下一会话从 `backend/tests/services/test_job_lifecycle.py` 开始，先完成 SQLite repository（仓储）、Artifact Store（产物存储）和任务恢复，再按 `spec/tasks.md` 顺序推进。
+
+### 2026-07-10 16:08:59 +08:00 - 依赖安装切换为默认源并采用子代理 Apply
+
+- 决策（Decision）：因清华 npm 镜像不可用，后续依赖安装使用各包管理器默认源（default registry）；允许按子代理驱动开发（Subagent-Driven Development）推进 Apply（实施），本轮不执行 `git commit`。
+- 原因（Rationale）：用户明确授权切换至默认源并要求使用子代理；前端安装受清华 npm Registry（npm 注册表）HTTP 404 阻塞。
+- 影响（Impact）：`frontend/.npmrc` 使用 `https://registry.npmjs.org/`；后续 Python 安装不再强制指定清华 PyPI 镜像。每个计划任务仍需经过实现、规格审查和代码质量审查门禁。
+
+### 2026-07-10 15:54:20 +08:00 - 依赖安装默认使用清华镜像源
+
+- 决策（Decision）：在 Apply（实施）阶段，Python 依赖默认通过 `https://pypi.tuna.tsinghua.edu.cn/simple` 安装；前端 npm 依赖默认使用清华 npm 镜像，并在首次安装前核验镜像可用性。
+- 原因（Rationale）：用户明确指定使用清华镜像源（Tsinghua Mirror）作为默认依赖来源。
+- 影响（Impact）：该决策已被 2026-07-10 16:08:59 +08:00 的“默认源”授权替代。
 
 ### 2026-07-10 15:23:33 +08:00 - 完成 OpenSpec，但不进入 Apply
 

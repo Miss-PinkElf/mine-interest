@@ -3,34 +3,33 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-06-10 11:47:50 +08:00
-- 更新时间（Updated At）：2026-07-10 15:23:33 +08:00
+- 更新时间（Updated At）：2026-07-10 16:40:38 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录当前 mission 最近 checkpoint，便于后续恢复。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
 - 关联原始需求（Related Source）：`zzz-prompt-debug/origin/设想/prompt.md`
-- 当前状态（Status）：规格已就绪（Spec Ready）
+- 当前状态（Status）：实施中（In Progress）
 - 文档边界（Scope / Boundary）：本文件是最近 checkpoint 真相源（source of truth），只保留近期状态，不替代完整计划或最终文档。
 
 ## 最近 checkpoint
+
+### 2026-07-10 16:40:38 +08:00 - Task 1-2 完成，Task 3 红灯交接
+
+- 完成内容：完成并验证工程骨架、健康检查、CORS、前端构建和领域模型；Task 3 已写入失败任务保留质量报告的红灯测试。
+- 当前状态：SQLite repository（仓储）、Artifact Store（产物存储）与任务恢复尚未实现，测试因缺少 `app.services` 正确失败。
+- 范围：第一版范围和明确延期项均未改变；用户授权本次相关文件提交，并将在新会话继续。
+- 下一步：从 `backend/tests/services/test_job_lifecycle.py` 继续 Task 3，先实现最小持久化闭环。
+
+### 2026-07-10 16:24:25 +08:00 - Task 1 工程骨架与验证完成
+
+- 完成内容：建立 `backend/.venv`（Python 3.11）、FastAPI 健康检查和本地 CORS；建立 React + Vite + Ant Design 前端骨架、`/api` 本地代理和前端依赖锁文件。
+- 验证证据：后端 `pytest -q` 通过 2 项、`pip check` 通过；前端 `npm run build` 通过。CORS 预检覆盖 `localhost:5173` 与 `127.0.0.1:5173`。
+- 环境决策：清华 npm 镜像不提供可用 Registry，用户已授权改用默认 npm / PyPI 源；不执行提交。
+- 下一步：Task 2，先为 `Segment.raw_text` 不可被人工修订覆盖编写失败测试，再实现领域模型。
 
 ### 2026-07-10 15:23:33 +08:00 - OpenSpec 就绪，等待 Apply 授权
 
 - 完成内容：创建 `spec/proposal.md`、`spec/design.md` 和 `spec/tasks.md`，并补齐 origin、state history、development overview 与明确延期范围。
 - 当前状态：用户明确要求本轮不进入 Apply；没有应用代码、依赖安装或模型 benchmark。
 - 下一步：新会话先读 `state.md`、`checkpoints.md`、`spec/tasks.md`；只有用户明确授权后才从正式 Plan 的 Task 1 开始实施。
-
-### 2026-07-10 15:15:33 +08:00 - 正式实施计划完成，等待 OpenSpec
-
-- 完成内容：创建 `plans/2026-07-10-video-emotion-transcript-mvp-implementation-plan.md`，按工程初始化、领域模型、双音轨预处理、工具编排、转写、专用证据、云端融合、审核、API、React、端到端与基准测试拆分为 14 个可验证任务。
-- 计划口径：先形成可审核的本地纵向闭环，再接入真实模型与云端融合；每项行为先写失败测试；不在任务中实现已确认延期项。
-- 自查：无占位符；补齐了基准 runner 和 benchmark manifest 的创建路径；验证了文档格式检查。
-- 下一步：调用 openspec-propose，将已确认 Plan 落为 OpenSpec 的 proposal、design 和 tasks；完成前不得进入 Apply。
-
-### 2026-07-10 15:05:09 +08:00 - MVP 对齐获确认并升级为重型路径
-
-- 完成内容：基于 `zzz-prompt-debug/origin/设想/` 的原始设想重新完成对齐，写入已确认 MVP 对齐文档。
-- 已确认架构：React + Vite 浏览器工作台、FastAPI 本地服务、确定性工具管线、状态化 Agent、云端多模态 LLM 和后续可选 n8n。
-- 已确认核心原则：按需预处理并保留原始/轻处理与 STT 就绪双音轨；专用模型优先提供事实证据，LLM 负责有依据的语义解释；低置信度或证据冲突进入人工审核。
-- 已确认审核能力：分段回放、视频/关键帧对照、文本/结论编辑、切分/合并/删除、局部重分析和 JSON / Markdown 导出。
-- 阶段变化：从已关闭的轻量调研路径升级为重型 MVP 构建路径。下一步必须由用户审阅对齐文档后写 Plan（计划），不得直接实施。
