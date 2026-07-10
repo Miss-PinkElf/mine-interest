@@ -1,3 +1,5 @@
+"""领域状态的类型安全枚举。"""
+
 from enum import Enum
 
 from app.core import constants
