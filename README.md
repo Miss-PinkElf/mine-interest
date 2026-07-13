@@ -11,6 +11,29 @@
 
 ## 本地运行
 
+## 一键启动（推荐）
+
+```bash
+# 在仓库根目录
+./scripts/start-local-dev.sh
+```
+
+行为说明：
+
+- 默认后端 `8000`、前端 `5173`
+- 端口被占用时先尝试结束占用进程；无法结束则自动切换到后续空闲端口
+- 前端通过环境变量 `BACKEND_TARGET` 代理 `/api`
+- 日志写在 `.dev-logs/backend.log` 与 `.dev-logs/frontend.log`
+- `Ctrl+C` 会停止本脚本拉起的前后端
+
+也可手动指定端口：
+
+```bash
+BACKEND_PORT=8010 FRONTEND_PORT=5180 ./scripts/start-local-dev.sh
+```
+
+
+
 ### 后端
 
 ```bash
