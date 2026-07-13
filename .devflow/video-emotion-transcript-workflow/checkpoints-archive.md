@@ -69,3 +69,8 @@
 
 - 完成内容：SQLite repository、Artifact Store、JobService；失败与中断恢复不删产物。
 - 下一步：Task 4 API。
+
+### 2026-07-13 14:17:58 +08:00 - Task 4 转绿：上传/查询/确认/导出 API
+
+- 完成内容：本地 API 纵向切片。
+- 下一步：前端与后续阶段。

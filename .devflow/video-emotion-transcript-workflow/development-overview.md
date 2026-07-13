@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-07-13 14:28:23 +08:00
+- 更新时间（Updated At）：2026-07-13 15:05:44 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录 mission 从可行性调研到 MVP 规格就绪的完整阶段脉络。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -32,4 +32,10 @@
 - `spec/tasks.md` 全部勾选；验证后端 21 / 前端 2 + build。
 - 明确：V1 是可替换适配层闭环；真实模型与 CUDA 实测、以及 Electron/n8n 等仍按 deferred 管理。
 - 新会话入口：`NEXT-SESSION-PROMPT-video-emotion-transcript-workflow.md` 与 handoff 007。
+
+## 2026-07-13 15:05:44 +08:00 - 预期校准与启动脚本
+
+- 用户理解：tasks 是零件与插座；缺总装（JobRunner）与真引擎。
+- 交付一键启动脚本与动态端口代理。
+- 下一产品优先：上传后自动 Fake STT 闭环，而非重开延期项。
 

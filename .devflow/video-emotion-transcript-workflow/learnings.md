@@ -35,3 +35,10 @@
 
 - 现象：组件测试 `window.matchMedia is not a function`。
 - 方案：在 `frontend/src/test/setup.ts` 注入 matchMedia / ResizeObserver 桩。
+
+### 2026-07-13 15:05:44 +08:00 - task 完成不等于产品完成
+
+- 现象：用户疑惑「做了那么多 task 却不能一键转写」。
+- 原因：tasks 验收的是模块/接口/测试，不是 JobRunner 总装 + 真模型。
+- 方案：文档明确 V1 适配层 vs 产品主路径；下一优先串自动管线。
+

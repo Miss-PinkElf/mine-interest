@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-07-13 14:28:23 +08:00
+- 更新时间（Updated At）：2026-07-13 15:05:44 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：维护当前 mission 的原始输入索引（Raw Input Source Index）和吸收状态。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -30,4 +30,14 @@
 | 用户消息：选 A 继续 Task 3 | 授权实现持久化 | 已完成并提交 |
 | 用户消息：先提交再 Task 4；每 task 提交；做完全部 tasks | 授权批量 Apply + 自动 commit | 已完成 |
 | 用户消息：上下文太长，新开对话；区分第一版与延期；读 `devflow-handoff.md` 收尾 | 会话收尾与交接 | 本 handoff 007 吸收中 |
+
+## 2026-07-13 15:05:44 +08:00 - 会话后半段用户输入索引
+
+| 来源 | 用途 | 吸收状态 |
+| --- | --- | --- |
+| 如何在 Mac 启动、能测什么 | 使用说明与能力边界 | 已吸收到 state/README/脚本 |
+| 预处理/STT 原理与技术栈讲解 | 认知对齐 | 已对齐；无新 spec |
+| 完成度与「task 是干啥的」 | 预期校准 | 已写入 learnings/decision |
+| 下一步该做什么 | 优先 JobRunner | 已写入 state/backlog/handoff |
+| 二次 devflow-handoff 收尾 + 提交 | 本 handoff 008 | 进行中 |
 
