@@ -21,6 +21,11 @@ class JobSchema(BaseModel):
     source_media_path: str
     status: JobStatus
     created_at: datetime
+    failed_stage: str | None = None
+    error_code: str | None = None
+    retryable: bool = False
+    failed_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class SegmentSchema(BaseModel):

@@ -51,3 +51,10 @@
 - 推荐路线：Python pipeline 承载 FFmpeg、Demucs、WhisperX、pyannote.audio、MediaPipe 等重计算；Agent tool layer 负责搜索、反向搜图、评论区和多模态融合；n8n workflow 负责编排、人审和结果分发。
 - 验证证据：已执行文件存在性检查，5 个目标文件均返回 `True`；已执行关键小节检索，命中 Metadata（元数据）、候选项（Candidate）、结论、候选技术栈、推荐工作流、Agent / n8n、MVP 和 Deferred Scope。
 - 后续入口：确认 MVP（Minimum Viable Product，最小可行产品）范围后，进入 PRD（Product Requirements Document，产品需求文档）或 OpenSpec（开放规格）。
+
+### 2026-07-10 15:23:33 +08:00 - OpenSpec 就绪，等待 Apply 授权
+
+- 完成内容：创建 `spec/proposal.md`、`spec/design.md` 和 `spec/tasks.md`，并补齐 origin、state history、development overview 与明确延期范围。
+- 当前状态：用户明确要求本轮不进入 Apply；没有应用代码、依赖安装或模型 benchmark。
+- 下一步：新会话先读 `state.md`、`checkpoints.md`、`spec/tasks.md`；只有用户明确授权后才从正式 Plan 的 Task 1 开始实施。
+

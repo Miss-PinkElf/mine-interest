@@ -78,3 +78,10 @@
 ## 本轮不做 / 后续阶段（Deferred Scope）
 
 当前明确延期项、原因和触发条件统一记录在 `deferred/2026-07-10-mvp-deferred-scope.md`。这些能力不是永久放弃；仅在本 MVP 的单视频审核闭环完成真实样本验证前不进入 Apply。
+
+## 2026-07-13 14:12:10 +08:00 - 中断任务恢复策略
+
+- 决策：应用重启时，将状态为 `processing` 的任务标记为 `failed`，错误码 `JOB_INTERRUPTED`，`retryable=true`，且不删除任何产物。
+- 备选：直接回退为 `pending`；或新增独立 `interrupted` 状态。
+- 原因：现有枚举无 interrupted；失败 + 可重试既能暴露中断事实，又支持后续人工/管线重入，并与“失败不清理上游产物”一致。
+

@@ -69,3 +69,21 @@ REVIEW_OPERATION_CONFIRM = "confirm"
 EXPORT_FORMAT_JSON = "json"
 # 面向人工阅读的时间轴报告导出格式键。
 EXPORT_FORMAT_MARKDOWN = "markdown"
+
+# SQLite 任务库文件名，默认放在产物根目录下便于本地恢复。
+JOB_SQLITE_FILENAME = "jobs.sqlite"
+# SQLite 连接 URL 前缀，使用本地文件路径。
+SQLITE_URL_PREFIX = "sqlite:///"
+# 任务产物根目录下用于隔离每个 Job 的子目录名前缀。
+JOB_ARTIFACT_DIR_PREFIX = "jobs"
+# 质量报告等相对产物路径示例中的目录名（仅作路径片段语义说明，不硬编码业务内容）。
+QUALITY_REPORT_RELATIVE_DIR = "quality"
+# 应用重启时将中断任务标记为失败的错误码。
+JOB_ERROR_CODE_INTERRUPTED = "JOB_INTERRUPTED"
+# 应用重启恢复时标记的失败阶段名。
+JOB_FAILED_STAGE_INTERRUPTED = "runtime"
+# 默认失败可重试标记：业务失败默认不可自动重试，中断恢复可重试。
+DEFAULT_FAILURE_RETRYABLE = False
+# 中断恢复后的任务可重试，便于重新进入处理管线。
+INTERRUPTED_FAILURE_RETRYABLE = True
+

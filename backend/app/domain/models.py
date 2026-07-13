@@ -34,11 +34,44 @@ class Job:
     source_media_path: str
     status: JobStatus = JobStatus.PENDING
     created_at: datetime = field(default_factory=_current_time)
+    # 最近一次失败所处的管线阶段；成功任务保持为空。
+    failed_stage: str | None = None
+    # 最近一次失败的稳定错误码，供前端展示与恢复策略使用。
+    error_code: str | None = None
+    # 是否允许用户或启动恢复逻辑重新进入处理。
+    retryable: bool = False
+    # 最近一次失败的 UTC 时间；未失败时为空。
+    failed_at: datetime | None = None
+    # 任务状态或失败信息最后更新时间。
+    updated_at: datetime = field(default_factory=_current_time)
 
     @classmethod
     def create(cls, source_media_path: str) -> "Job":
         """创建处于等待状态的新任务。"""
         return cls(id=_create_entity_id(), source_media_path=source_media_path)
+
+    def mark_failed(
+        self,
+        stage: str,
+        error_code: str,
+        *,
+        retryable: bool = constants.DEFAULT_FAILURE_RETRYABLE,
+        failed_at: datetime | None = None,
+    ) -> None:
+        """将任务标记为失败，保留阶段与错误码且不清理产物。"""
+        timestamp = failed_at or _current_time()
+        self.status = JobStatus.FAILED
+        self.failed_stage = stage
+        self.error_code = error_code
+        self.retryable = retryable
+        self.failed_at = timestamp
+        self.updated_at = timestamp
+
+    def mark_processing(self) -> None:
+        """将任务切入处理中，供管线或恢复后继续执行。"""
+        now = _current_time()
+        self.status = JobStatus.PROCESSING
+        self.updated_at = now
 
 
 @dataclass(slots=True)

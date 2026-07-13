@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-06-10 15:45:35 +08:00
-- 更新时间（Updated At）：2026-07-10 16:40:38 +08:00
+- 更新时间（Updated At）：2026-07-13 14:12:10 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：维护当前 mission 的 handoff 索引，便于新会话恢复。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -14,12 +14,13 @@
 
 ## 最新 handoff
 
-- `2026-07-10-003-apply-task3-red.md`
+- `2026-07-13-004-apply-task3-green.md`
 
 ## Handoff 列表
 
 | 编号 | 文件 | 状态 | 创建时间 | 用途 |
 | --- | --- | --- | --- | --- |
-| 003 | `2026-07-10-003-apply-task3-red.md` | active | 2026-07-10 16:40:38 +08:00 | Task 1-2 已完成，Task 3 红灯待实现的恢复入口 |
+| 004 | `2026-07-13-004-apply-task3-green.md` | active | 2026-07-13 14:12:10 +08:00 | Task 1-3 已完成，可进入 Task 4 API |
+| 003 | `2026-07-10-003-apply-task3-red.md` | superseded | 2026-07-10 16:40:38 +08:00 | Task 1-2 已完成，Task 3 红灯待实现的恢复入口 |
 | 002 | `2026-07-10-002-spec-ready.md` | superseded | 2026-07-10 15:23:33 +08:00 | OpenSpec 已就绪，等待 Apply 授权的恢复入口 |
 | 001 | `2026-06-10-001-resume-ready.md` | superseded | 2026-06-10 15:45:35 +08:00 | 旧调研/候选文档阶段收尾记录 |
