@@ -3,13 +3,13 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-06-10 11:43:30 +08:00
-- 更新时间（Updated At）：2026-07-13 14:17:58 +08:00
+- 更新时间（Updated At）：2026-07-13 14:24:19 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：保存当前 mission 的恢复热路径（resume hot path）状态。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
 - 关联原始需求（Related Source）：`zzz-prompt-debug/origin/设想/prompt.md`
-- 当前状态（Status）：实施中，Task 1-4 已完成，下一项为 Task 5 前端（In Progress, Tasks 1-4 Completed）
+- 当前状态（Status）：已完成（Completed）
 - 文档边界（Scope / Boundary）：本文件是当前 mission 的当前状态真相源（source of truth），不保存完整历史。
 
 ## 当前目标
@@ -57,7 +57,8 @@
 
 ## 当前结论
 
-Apply 已完成 Task 1-4：工程骨架、领域模型、持久化/产物、本地 API（上传、查询、确认片段、导出）均已验证。下一项为 Task 5 React 任务页/设置页；不得扩大既有第一版范围或提前实现延期项。本任务 API 尚不含完整审核编排与真实模型管线，后续阶段再接入。
+Apply 任务清单已全部勾选完成。后端 21 项测试与前端组件测试/构建通过。真实 FFmpeg/MediaPipe/云端模型与 Playwright 浏览器环境仍可按 benchmark 继续加深验证，但 MVP 代码骨架与可替换适配层已落地。延期项未误实现。
+
 
 ## 第一版范围与延期项
 
@@ -65,4 +66,4 @@ Apply 已完成 Task 1-4：工程骨架、领域模型、持久化/产物、本�
 
 ## 下次建议
 
-新会话默认先读取 `state.md`、`checkpoints.md`、`spec/tasks.md` 与最新 handoff。随后进入 Task 5：实现 React 任务页、设置页、状态进度与基础导出入口；API Key 不得写入 localStorage。已明确延期项继续以 `deferred/2026-07-10-mvp-deferred-scope.md` 为准。
+如需生产级模型效果，按 `benchmarks/2026-07-13-sample-matrix.md` 接入真实 FFmpeg/STT/MediaPipe 与云端 Key，并在本机启动前后端后运行 Playwright。
