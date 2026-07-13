@@ -124,3 +124,11 @@ UPLOAD_ERROR_EMPTY_FILE = "EMPTY_FILE"
 # 上传缺少文件名时的默认媒体文件名。
 DEFAULT_UPLOAD_FILENAME = "upload.bin"
 
+
+
+# Provider 设置 API 路径。
+API_SETTINGS_PROVIDER_PATH = "/api/settings/provider"
+# 默认 Provider Base URL 占位，避免空值。
+DEFAULT_PROVIDER_BASE_URL = ""
+# 默认模型名占位。
+DEFAULT_PROVIDER_MODEL_NAME = ""

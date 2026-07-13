@@ -1,14 +1,27 @@
-import { Layout, Typography } from 'antd'
+import { Layout, Tabs, Typography } from 'antd'
+import { useState } from 'react'
 
+import {
+  APPLICATION_TITLE,
+  NAV_JOBS_LABEL,
+  NAV_SETTINGS_LABEL,
+} from './constants/copy'
+import type { JobDto } from './api/jobs'
+import { createJob } from './api/jobs'
+import { UploadTaskForm } from './features/jobs/UploadTaskForm'
+import { TaskProgress } from './features/jobs/TaskProgress'
+import { ExportPanel } from './features/exports/ExportPanel'
+import { ProviderSettingsForm } from './features/settings/ProviderSettingsForm'
 import styles from './App.module.scss'
 
-// 工作台标题，后续各功能页共享同一产品名称。
-const APPLICATION_TITLE = '视频情感化转写'
-// 骨架阶段向用户展示的当前初始化状态。
-const APPLICATION_DESCRIPTION = '本地审核工作台正在初始化。'
+// 任务页 Tab 键。
+const TAB_KEY_JOBS = 'jobs'
+// 设置页 Tab 键。
+const TAB_KEY_SETTINGS = 'settings'
 
-// 仅提供当前阶段的工作台骨架，后续功能按 feature 目录逐步接入。
 function App() {
+  const [activeJob, setActiveJob] = useState<JobDto | null>(null)
+
   return (
     <Layout className={styles.applicationLayout}>
       <Layout.Header className={styles.header}>
@@ -17,9 +30,29 @@ function App() {
         </Typography.Title>
       </Layout.Header>
       <Layout.Content className={styles.content}>
-        <Typography.Paragraph className={styles.description}>
-          {APPLICATION_DESCRIPTION}
-        </Typography.Paragraph>
+        <Tabs
+          items={[
+            {
+              key: TAB_KEY_JOBS,
+              label: NAV_JOBS_LABEL,
+              children: (
+                <div className={styles.tabBody}>
+                  <UploadTaskForm
+                    createJob={createJob}
+                    onCreated={(job) => setActiveJob(job)}
+                  />
+                  <TaskProgress job={activeJob} />
+                  <ExportPanel jobId={activeJob?.id ?? null} />
+                </div>
+              ),
+            },
+            {
+              key: TAB_KEY_SETTINGS,
+              label: NAV_SETTINGS_LABEL,
+              children: <ProviderSettingsForm />,
+            },
+          ]}
+        />
       </Layout.Content>
     </Layout>
   )

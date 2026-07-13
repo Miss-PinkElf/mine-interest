@@ -24,6 +24,7 @@ def runtime(tmp_path: Path) -> Iterator[AppRuntime]:
     app.dependency_overrides[deps.provide_job_service] = lambda: current.job_service
     app.dependency_overrides[deps.provide_review_service] = lambda: current.review_service
     app.dependency_overrides[deps.provide_export_service] = lambda: current.export_service
+    app.dependency_overrides[deps.provide_settings_service] = lambda: current.settings_service
     try:
         yield current
     finally:

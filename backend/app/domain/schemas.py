@@ -79,3 +79,20 @@ class ExportRequestSchema(BaseModel):
 
     format: ExportFormat
 
+
+
+
+class ProviderSettingsSchema(BaseModel):
+    """返回给前端的 Provider 设置；不回显完整密钥。"""
+
+    base_url: str
+    model_name: str
+    api_key_configured: bool
+
+
+class ProviderSettingsUpdateSchema(BaseModel):
+    """更新 Provider 设置的请求体。"""
+
+    base_url: str
+    model_name: str
+    api_key: str | None = None

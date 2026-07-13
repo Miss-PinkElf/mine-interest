@@ -12,6 +12,7 @@ from app.services.artifacts import ArtifactStore
 from app.services.exports import ExportService
 from app.services.jobs import JobService
 from app.services.review import ReviewService
+from app.services.settings import SettingsService
 
 
 @dataclass
@@ -24,6 +25,7 @@ class AppRuntime:
     job_service: JobService
     review_service: ReviewService
     export_service: ExportService
+    settings_service: SettingsService
 
 
 def build_runtime(data_root: Path | str | None = None) -> AppRuntime:
@@ -44,6 +46,7 @@ def build_runtime(data_root: Path | str | None = None) -> AppRuntime:
         job_service=job_service,
         review_service=review_service,
     )
+    settings_service = SettingsService(session_factory=session_factory)
     return AppRuntime(
         data_root=root,
         artifact_store=artifact_store,
@@ -51,6 +54,7 @@ def build_runtime(data_root: Path | str | None = None) -> AppRuntime:
         job_service=job_service,
         review_service=review_service,
         export_service=export_service,
+        settings_service=settings_service,
     )
 
 

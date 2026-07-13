@@ -38,3 +38,15 @@ class SegmentRow(Base):
     speaker_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     review_status: Mapped[str] = mapped_column(String(32), nullable=False)
     analysis_status: Mapped[str] = mapped_column(String(32), nullable=False)
+
+
+
+class ProviderSettingsRow(Base):
+    """本地云端 Provider 配置表；密钥只存本机。"""
+
+    __tablename__ = "provider_settings"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    base_url: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    model_name: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    api_key: Mapped[str] = mapped_column(Text, nullable=False, default="")
