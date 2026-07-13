@@ -1,0 +1,39 @@
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  gap: 12px;
+  min-height: 360px;
+}
+
+.column {
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 8px;
+  overflow: auto;
+}
+
+.segmentList {
+  cursor: pointer;
+}
+
+.activeItem {
+  background: #e6f4ff;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editorEmpty {
+  color: #8c8c8c;
+  padding: 24px;
+}

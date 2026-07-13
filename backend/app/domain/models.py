@@ -122,6 +122,14 @@ class Segment:
         """将片段标记为人工已确认。"""
         self.review_status = SegmentReviewStatus.CONFIRMED
 
+    def apply_speaker_edit(self, speaker_id: str) -> None:
+        """更新说话人标注。"""
+        self.speaker_id = speaker_id
+
+    def mark_analysis_stale(self) -> None:
+        """文本或边界变化后标记分析失效。"""
+        self.analysis_status = AnalysisStatus.STALE
+
 
 @dataclass(slots=True)
 class Evidence:
