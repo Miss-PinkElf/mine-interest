@@ -132,3 +132,24 @@ API_SETTINGS_PROVIDER_PATH = "/api/settings/provider"
 DEFAULT_PROVIDER_BASE_URL = ""
 # 默认模型名占位。
 DEFAULT_PROVIDER_MODEL_NAME = ""
+
+
+# 原始抽取音轨文件名，永不覆盖。
+AUDIO_RAW_FILENAME = "audio_raw.wav"
+# 轻度处理后的音轨文件名。
+AUDIO_LIGHT_FILENAME = "audio_light.wav"
+# STT 就绪音轨文件名。
+AUDIO_STT_READY_FILENAME = "audio_stt_ready.wav"
+# 媒体产物子目录。
+MEDIA_ARTIFACT_DIR = "media"
+# 干净音频仅做响度标准化的处理原因。
+PREPROCESS_REASON_CLEAN_NORMALIZE = "CLEAN_AUDIO_NORMALIZE_ONLY"
+# BGM 重时启用分离的原因。
+PREPROCESS_REASON_STRONG_BGM = "STRONG_BGM_SEPARATE_VOCALS"
+# 无脸帧跳过人脸工具的原因。
+TOOL_SKIP_REASON_NO_FACE_FRAME = "NO_FACE_FRAME"
+# 默认云端融合失败可重试次数。
+DEFAULT_FUSION_MAX_RETRIES = 2
+# 局部重分析队列默认状态。
+REANALYSIS_STATUS_QUEUED = "queued"
+REANALYSIS_STATUS_DONE = "done"
