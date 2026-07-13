@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-07-10 16:08:59 +08:00
+- 更新时间（Updated At）：2026-07-13 14:28:23 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：维护当前 mission 的原始输入索引（Raw Input Source Index）和吸收状态。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -21,3 +21,13 @@
 | 2026-07-10 | 本次对话中的用户确认 | 确认浏览器本地工作台、Windows + RTX 3080 / 20GB、云端 LLM、多模型证据融合、片段审核和延期边界。 | 已吸收至 `.devflow/video-emotion-transcript-workflow/spec/`。 |
 | 2026-07-10 | 本次恢复会话中的用户约束 | 依赖安装默认使用清华镜像源（Tsinghua Mirror）；Python 使用清华 PyPI 镜像，npm 在首次安装前核验清华 npm 镜像的可用性。 | 已吸收至决策记录，待 Apply（实施）时执行。 |
 | 2026-07-10 | 本次 Apply 会话中的用户授权 | 清华 npm 镜像不可用后，允许依赖安装改用默认源（default registry）；同时授权使用子代理（subagent）推进 Apply，不执行提交。 | 已吸收至决策记录与任务执行方式。 |
+
+## 2026-07-13 14:28:23 +08:00 - 本会话用户原始指令索引
+
+| 相对路径/来源 | 用途 | 吸收状态 |
+| --- | --- | --- |
+| 用户消息：恢复 `NEXT-SESSION-PROMPT-video-emotion-transcript-workflow.md` | 恢复 Apply 上下文 | 已吸收，从 Task 3 继续 |
+| 用户消息：选 A 继续 Task 3 | 授权实现持久化 | 已完成并提交 |
+| 用户消息：先提交再 Task 4；每 task 提交；做完全部 tasks | 授权批量 Apply + 自动 commit | 已完成 |
+| 用户消息：上下文太长，新开对话；区分第一版与延期；读 `devflow-handoff.md` 收尾 | 会话收尾与交接 | 本 handoff 007 吸收中 |
+

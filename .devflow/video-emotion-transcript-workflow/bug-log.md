@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 16:05:12 +08:00
-- 更新时间（Updated At）：2026-07-10 16:40:38 +08:00
+- 更新时间（Updated At）：2026-07-13 14:28:23 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录 Apply（实施）阶段出现的可复现问题、根因与处理状态。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -19,3 +19,10 @@
 - 解决方案（Resolution）：用户已授权切换为 npm 默认源（default registry），`frontend/.npmrc` 已改为 `https://registry.npmjs.org/`；随后安装依赖并执行前端构建验证。
 - 复现命令（Reproduction）：`cd frontend && npm view react version --registry=https://mirrors.tuna.tsinghua.edu.cn/npm/`
 - 影响（Impact）：已改用默认 npm Registry（npm 注册表）完成前端 `npm install` 与生产构建；该问题不再阻塞后续实施。
+
+## 2026-07-13 14:28:23 +08:00 - Vitest 误收集 Playwright 规格
+
+- 问题现象：`npm run test` 报无法解析 `@playwright/test`。
+- 问题原因：e2e 规格被 vitest 默认收集。
+- 解决方案：`frontend/vitest.config.ts` 限制 `include` 为 `src/**/*.test.{ts,tsx}`，`exclude` `e2e/**`。
+

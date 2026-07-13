@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-07-10 16:40:38 +08:00
+- 更新时间（Updated At）：2026-07-13 14:28:23 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录 mission 从可行性调研到 MVP 规格就绪的完整阶段脉络。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -25,3 +25,11 @@
 - 音频预处理必须按质量条件路由并保留原始/轻处理轨，不能为 STT 过度清洗而破坏情绪线索。
 - 审核对象是有时间范围的 Segment（片段），人工可以改文本、结论和片段边界；局部变更只重跑受影响片段。
 - n8n、自动搜索、自动评论、复杂编辑、多用户与 Electron 均已明确延期，不是永久放弃。
+
+## 2026-07-13 14:28:23 +08:00 - Apply 全任务完成与边界澄清
+
+- 从 Task 3 红灯恢复，完成持久化、API、前端工作台、管线适配层、工具编排、融合与文档收口。
+- `spec/tasks.md` 全部勾选；验证后端 21 / 前端 2 + build。
+- 明确：V1 是可替换适配层闭环；真实模型与 CUDA 实测、以及 Electron/n8n 等仍按 deferred 管理。
+- 新会话入口：`NEXT-SESSION-PROMPT-video-emotion-transcript-workflow.md` 与 handoff 007。
+

@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-07-10 16:40:38 +08:00
+- 更新时间（Updated At）：2026-07-13 14:28:23 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：归档当前 mission 超出恢复热路径上限的旧 checkpoint，保留历史可追溯性。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -65,3 +65,7 @@
 - 环境决策：清华 npm 镜像不提供可用 Registry，用户已授权改用默认 npm / PyPI 源；不执行提交。
 - 下一步：Task 2，先为 `Segment.raw_text` 不可被人工修订覆盖编写失败测试，再实现领域模型。
 
+### 2026-07-13 14:12:10 +08:00 - Task 3 转绿：SQLite / 产物 / 失败与重启恢复
+
+- 完成内容：SQLite repository、Artifact Store、JobService；失败与中断恢复不删产物。
+- 下一步：Task 4 API。
