@@ -58,3 +58,10 @@
 - 当前状态：用户明确要求本轮不进入 Apply；没有应用代码、依赖安装或模型 benchmark。
 - 下一步：新会话先读 `state.md`、`checkpoints.md`、`spec/tasks.md`；只有用户明确授权后才从正式 Plan 的 Task 1 开始实施。
 
+### 2026-07-10 16:24:25 +08:00 - Task 1 工程骨架与验证完成
+
+- 完成内容：建立 `backend/.venv`（Python 3.11）、FastAPI 健康检查和本地 CORS；建立 React + Vite + Ant Design 前端骨架、`/api` 本地代理和前端依赖锁文件。
+- 验证证据：后端 `pytest -q` 通过 2 项、`pip check` 通过；前端 `npm run build` 通过。CORS 预检覆盖 `localhost:5173` 与 `127.0.0.1:5173`。
+- 环境决策：清华 npm 镜像不提供可用 Registry，用户已授权改用默认 npm / PyPI 源；不执行提交。
+- 下一步：Task 2，先为 `Segment.raw_text` 不可被人工修订覆盖编写失败测试，再实现领域模型。
+

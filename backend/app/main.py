@@ -3,6 +3,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes import exports as exports_routes
+from app.api.routes import jobs as jobs_routes
+from app.api.routes import segments as segments_routes
 from app.core.config import get_settings
 
 
@@ -19,7 +22,7 @@ CORS_ALLOW_ALL_HEADERS = ["*"]
 
 
 def create_app() -> FastAPI:
-    """创建带本地 CORS 白名单和健康检查路由的应用实例。"""
+    """创建带本地 CORS、健康检查与任务 API 的应用实例。"""
     settings = get_settings()
     application = FastAPI(title=APPLICATION_TITLE)
     application.add_middleware(
@@ -31,11 +34,15 @@ def create_app() -> FastAPI:
     )
 
     register_health_route(application)
+    application.include_router(jobs_routes.router)
+    application.include_router(segments_routes.router)
+    application.include_router(exports_routes.router)
     return application
 
 
 def register_health_route(application: FastAPI) -> None:
     """注册不依赖外部服务的存活检查端点。"""
+
     @application.get(HEALTH_ENDPOINT_PATH)
     def get_health() -> dict[str, str]:
         """返回稳定的服务可用状态。"""

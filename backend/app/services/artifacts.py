@@ -39,6 +39,13 @@ class ArtifactStore:
         target.write_text(content, encoding="utf-8")
         return target
 
+    def write_bytes(self, job_id: str, relative_path: str, content: bytes) -> Path:
+        """写入二进制产物，自动创建中间目录。"""
+        target = self.resolve_path(job_id, relative_path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)
+        return target
+
     def read_text(self, job_id: str, relative_path: str) -> str:
         """读取任务内的文本产物。"""
         target = self.resolve_path(job_id, relative_path)

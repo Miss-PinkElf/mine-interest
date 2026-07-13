@@ -87,3 +87,40 @@ DEFAULT_FAILURE_RETRYABLE = False
 # 中断恢复后的任务可重试，便于重新进入处理管线。
 INTERRUPTED_FAILURE_RETRYABLE = True
 
+# 本地数据根目录默认名，相对进程工作目录存放 SQLite 与产物。
+DEFAULT_DATA_ROOT_DIRNAME = "data"
+# 任务输入媒体在产物目录中的相对子目录名。
+SOURCE_MEDIA_RELATIVE_DIR = "input"
+# 导出文件在产物目录中的相对子目录名。
+EXPORT_RELATIVE_DIR = "exports"
+# Markdown 导出文件名。
+EXPORT_MARKDOWN_FILENAME = "transcript.md"
+# JSON 导出文件名。
+EXPORT_JSON_FILENAME = "transcript.json"
+# 上传接口使用的 multipart 表单字段名。
+UPLOAD_FILE_FORM_FIELD = "file"
+# 任务集合 API 路径前缀。
+API_JOBS_PATH = "/api/jobs"
+# 片段集合 API 路径前缀。
+API_SEGMENTS_PATH = "/api/segments"
+# 确认片段的路径后缀。
+API_SEGMENT_CONFIRM_SUFFIX = "confirm"
+# 导出集合相对任务的路径后缀。
+API_JOB_EXPORTS_SUFFIX = "exports"
+# 片段列表相对任务的路径后缀。
+API_JOB_SEGMENTS_SUFFIX = "segments"
+# HTTP 创建成功状态码（上传、导出）。
+HTTP_STATUS_CREATED = 201
+# HTTP 成功状态码（查询）。
+HTTP_STATUS_OK = 200
+# HTTP 资源不存在状态码。
+HTTP_STATUS_NOT_FOUND = 404
+# HTTP 请求不合法状态码。
+HTTP_STATUS_BAD_REQUEST = 400
+# 导出前任务尚无片段时的错误码。
+EXPORT_ERROR_NO_SEGMENTS = "NO_SEGMENTS"
+# 上传空文件时的错误码。
+UPLOAD_ERROR_EMPTY_FILE = "EMPTY_FILE"
+# 上传缺少文件名时的默认媒体文件名。
+DEFAULT_UPLOAD_FILENAME = "upload.bin"
+

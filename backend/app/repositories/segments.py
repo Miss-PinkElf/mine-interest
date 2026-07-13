@@ -44,6 +44,13 @@ class SegmentRepository:
             return None
         return self._to_domain(row)
 
+    def get_job_id(self, segment_id: str) -> str | None:
+        """返回片段所属任务标识；不存在时返回 None。"""
+        row = self._session.get(SegmentRow, segment_id)
+        if row is None:
+            return None
+        return row.job_id
+
     @staticmethod
     def _to_domain(row: SegmentRow) -> Segment:
         """将持久化行还原为领域片段对象。"""

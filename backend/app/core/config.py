@@ -1,6 +1,9 @@
 """本地服务的运行配置。"""
 
 from dataclasses import dataclass
+from pathlib import Path
+
+from app.core import constants
 
 
 # Vite 默认开发地址，用于浏览器直接请求本地 API 时的 CORS 放行。
@@ -16,6 +19,8 @@ class AppSettings:
         LOCAL_DEVELOPMENT_FRONTEND_ORIGIN,
         VITE_LOOPBACK_FRONTEND_ORIGIN,
     )
+    # 本地 SQLite 与产物文件的数据根目录。
+    data_root: Path = Path(constants.DEFAULT_DATA_ROOT_DIRNAME)
 
 
 def get_settings() -> AppSettings:

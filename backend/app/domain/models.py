@@ -73,6 +73,12 @@ class Job:
         self.status = JobStatus.PROCESSING
         self.updated_at = now
 
+    def mark_exported(self) -> None:
+        """标记任务已生成导出产物。"""
+        now = _current_time()
+        self.status = JobStatus.EXPORTED
+        self.updated_at = now
+
 
 @dataclass(slots=True)
 class Segment:
@@ -111,6 +117,10 @@ class Segment:
     def apply_text_edit(self, edited_text: str) -> None:
         """保存人工文本修订，且绝不覆盖模型原始转写。"""
         self.edited_text = edited_text
+
+    def confirm(self) -> None:
+        """将片段标记为人工已确认。"""
+        self.review_status = SegmentReviewStatus.CONFIRMED
 
 
 @dataclass(slots=True)

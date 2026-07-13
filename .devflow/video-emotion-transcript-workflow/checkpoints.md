@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-06-10 11:47:50 +08:00
-- 更新时间（Updated At）：2026-07-13 14:12:10 +08:00
+- 更新时间（Updated At）：2026-07-13 14:17:58 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录当前 mission 最近 checkpoint，便于后续恢复。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -13,6 +13,13 @@
 - 文档边界（Scope / Boundary）：本文件是最近 checkpoint 真相源（source of truth），只保留近期状态，不替代完整计划或最终文档。
 
 ## 最近 checkpoint
+
+### 2026-07-13 14:17:58 +08:00 - Task 4 转绿：上传/查询/确认/导出 API
+
+- 完成内容：实现 `api/routes/{jobs,segments,exports}`、`ReviewService`、`ExportService`、运行时依赖注入；上传媒体创建 Job，支持片段确认与 Markdown 导出。
+- 验证证据：`backend/.venv/bin/python -m pytest -q` 8 passed（含 API 3 项）。
+- 范围边界：未实现设置页 Provider API、完整审核编排与真实模型管线；延期项未扩大。
+- 下一步：Task 5，React 任务页、设置页、状态进度与基础导出入口。
 
 ### 2026-07-13 14:12:10 +08:00 - Task 3 转绿：SQLite / 产物 / 失败与重启恢复
 
@@ -27,10 +34,3 @@
 - 当前状态：SQLite repository（仓储）、Artifact Store（产物存储）与任务恢复尚未实现，测试因缺少 `app.services` 正确失败。
 - 范围：第一版范围和明确延期项均未改变；用户授权本次相关文件提交，并将在新会话继续。
 - 下一步：从 `backend/tests/services/test_job_lifecycle.py` 继续 Task 3，先实现最小持久化闭环。
-
-### 2026-07-10 16:24:25 +08:00 - Task 1 工程骨架与验证完成
-
-- 完成内容：建立 `backend/.venv`（Python 3.11）、FastAPI 健康检查和本地 CORS；建立 React + Vite + Ant Design 前端骨架、`/api` 本地代理和前端依赖锁文件。
-- 验证证据：后端 `pytest -q` 通过 2 项、`pip check` 通过；前端 `npm run build` 通过。CORS 预检覆盖 `localhost:5173` 与 `127.0.0.1:5173`。
-- 环境决策：清华 npm 镜像不提供可用 Registry，用户已授权改用默认 npm / PyPI 源；不执行提交。
-- 下一步：Task 2，先为 `Segment.raw_text` 不可被人工修订覆盖编写失败测试，再实现领域模型。

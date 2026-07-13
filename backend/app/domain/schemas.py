@@ -72,3 +72,10 @@ class ExportArtifactSchema(BaseModel):
     format: ExportFormat
     artifact_path: str
     created_at: datetime
+
+
+class ExportRequestSchema(BaseModel):
+    """创建导出任务时的请求体。"""
+
+    format: ExportFormat
+

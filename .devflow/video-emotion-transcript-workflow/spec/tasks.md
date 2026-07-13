@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-07-13 14:11:48 +08:00
+- 更新时间（Updated At）：2026-07-13 14:17:58 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：追踪 MVP 从工程骨架到真实样本验证的可验证实施任务。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -24,8 +24,9 @@
 - [x] 落地 SQLite repository、本地产物目录和可恢复任务状态。
   - 验证：任务失败后既有质量报告等产物仍存在，重启后任务可恢复。
   - 验证结果：`backend/.venv/bin/python -m pytest tests/services/test_job_lifecycle.py -v` 2 passed；失败保留 `quality/report.json`，重启将 `processing` 任务标为可重试失败且不删产物。
-- [ ] 实现媒体文件上传、任务查询、片段查询和导出的本地 API。
+- [x] 实现媒体文件上传、任务查询、片段查询和导出的本地 API。
   - 验证：API 测试覆盖上传、确认片段和导出。
+  - 验证结果：`backend/.venv/bin/python -m pytest tests/api -v` 3 passed；全量回归 8 passed。覆盖上传创建任务、片段列表、确认片段与 Markdown 导出。
 - [ ] 实现 React 任务页、设置页、状态进度与基础导出入口。
   - 验证：组件测试覆盖上传提交，API Key 不写入浏览器 localStorage。
 

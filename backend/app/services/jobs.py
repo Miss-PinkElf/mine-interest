@@ -81,6 +81,36 @@ class JobService:
             repository.save(job)
             return job
 
+
+    def create_from_upload(self, filename: str, content: bytes) -> Job:
+        """根据上传字节创建任务，并把原始媒体写入任务产物目录。"""
+        if not content:
+            raise ValueError(constants.UPLOAD_ERROR_EMPTY_FILE)
+
+        safe_name = Path(filename or constants.DEFAULT_UPLOAD_FILENAME).name
+        if not safe_name:
+            safe_name = constants.DEFAULT_UPLOAD_FILENAME
+
+        job = Job.create(source_media_path=safe_name)
+        relative_path = f"{constants.SOURCE_MEDIA_RELATIVE_DIR}/{safe_name}"
+        stored_path = self._artifact_store.write_bytes(job.id, relative_path, content)
+        job.source_media_path = str(stored_path)
+
+        with session_scope(self._session_factory) as session:
+            JobRepository(session).save(job)
+        return job
+
+    def mark_exported(self, job_id: str) -> Job:
+        """将任务标记为已导出。"""
+        with session_scope(self._session_factory) as session:
+            repository = JobRepository(session)
+            job = repository.get(job_id)
+            if job is None:
+                raise JobNotFoundError(job_id)
+            job.mark_exported()
+            repository.save(job)
+            return job
+
     def recover_interrupted_jobs(self) -> list[Job]:
         """应用启动时将处理中任务转为可恢复失败，且不删除产物。"""
         recovered: list[Job] = []
