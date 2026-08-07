@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "roots": [
+    {
+      "type": "folder",
+      "path": ".devflow/bilibili-fanqie-mobile-plugin"
+    },
+    {
+      "type": "file",
+      "path": "zzz-cmd.md"
+    }
+  ]
+}
