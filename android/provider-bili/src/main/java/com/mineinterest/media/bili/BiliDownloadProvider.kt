@@ -30,10 +30,18 @@ class BiliDownloadProvider(
     ): Result<String> = runCatching {
         val options = biliOptions ?: error("缺少 B站选项")
         onProgress.onProgress(5, "解析视频 ID")
-        val bvid = resolver.resolveToBvid(parsed)
-        onProgress.onProgress(15, "获取媒体流")
-        val selection = streams.fetchSelection(bvid, options).getOrThrow()
-        onProgress.onProgress(30, "开始导出")
-        exporter.export(selection, options, onProgress).getOrThrow()
+        val bvid = try {
+            resolver.resolveToBvid(parsed)
+        } catch (e: Exception) {
+            error("解析 BV 失败: ${e.message}")
+        }
+        onProgress.onProgress(15, "获取媒体流 $bvid")
+        val selection = streams.fetchSelection(bvid, options).getOrElse { e ->
+            throw IllegalStateException("获取媒体流失败: ${e.message}", e)
+        }
+        onProgress.onProgress(30, "开始导出 ${selection.title}")
+        exporter.export(selection, options, onProgress).getOrElse { e ->
+            throw IllegalStateException("下载导出失败: ${e.message}", e)
+        }
     }
 }

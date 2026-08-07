@@ -40,10 +40,16 @@ class BiliIdResolver(
                 ?: error(ERROR_NO_BVID)
         }
 
-        val request = Request.Builder().url(url).get().build()
+        val request = Request.Builder()
+            .url(url)
+            .headers(BiliHttp.apiHeaders())
+            .get()
+            .build()
         http.newCall(request).execute().use { response ->
             val finalUrl = response.request.url.toString()
-            extractBvidFromText(finalUrl) ?: error(ERROR_SHORT_LINK_NO_BVID)
+            extractBvidFromText(finalUrl)
+                ?: extractBvidFromText(response.body?.string().orEmpty())
+                ?: error(ERROR_SHORT_LINK_NO_BVID)
         }
     }
 

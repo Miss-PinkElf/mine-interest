@@ -17,7 +17,7 @@ class BiliSubtitleClient(
         destFile: File,
     ): Result<File> = withContext(Dispatchers.IO) {
         runCatching {
-            val body = BiliHttp.get(http, subtitleUrl)
+            val body = BiliHttp.apiGet(http, subtitleUrl)
             val srt = if (body.contains("\"body\"") || body.contains("\"content\"")) {
                 jsonSubtitleToSrt(body)
             } else {

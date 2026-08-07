@@ -14,8 +14,8 @@ import java.io.FileOutputStream
 /**
  * 下载媒体流并导出到用户目录。
  *
- * - format=mp4：优先下载视频轨（有音频轨时一并落盘旁路音频，MVP 不强求完美合并）
- * - format=mp3：优先音频轨，保存为 m4a（设备无转码能力时的明确降级）
+ * - 多候选 URL 依次尝试（base + backup），缓解单链 CDN 403
+ * - CDN 请求带 www 视频页 Referer + buvid3
  */
 class BiliExporter(
     private val tempDir: File,
@@ -35,35 +35,47 @@ class BiliExporter(
             val baseName = "$safeTitle-${selection.bvid}"
 
             val isAudioOnly = options.format == CoreMediaFormats.MP3
-            val primaryUrl = if (isAudioOnly) {
-                selection.audioUrl ?: selection.videoUrl
-                    ?: error("无可用音频/视频流")
+            val primaryCandidates = if (isAudioOnly) {
+                selection.audioUrls.ifEmpty { selection.videoUrls }
             } else {
-                selection.videoUrl ?: selection.audioUrl
-                    ?: error("无可用视频/音频流")
+                selection.videoUrls.ifEmpty { selection.audioUrls }
+            }
+            if (primaryCandidates.isEmpty()) {
+                error("无可用音频/视频流")
             }
 
-            onProgress.onProgress(35, "下载媒体")
+            onProgress.onProgress(35, "下载媒体（${primaryCandidates.size} 个候选）")
+            val sampleUrl = primaryCandidates.first()
             val ext = when {
                 isAudioOnly -> EXT_M4A
-                primaryUrl.contains(".m4s") -> EXT_MP4
-                primaryUrl.contains(".flv") -> EXT_FLV
+                sampleUrl.contains(".m4s") -> EXT_MP4
+                sampleUrl.contains(".flv") -> EXT_FLV
                 else -> EXT_MP4
             }
             val tempMedia = File(tempDir, "$baseName-primary$ext")
-            downloadToFile(primaryUrl, tempMedia) { percent ->
+            downloadWithFallback(
+                urls = primaryCandidates,
+                dest = tempMedia,
+                bvid = selection.bvid,
+                stageLabel = "主媒体",
+            ) { percent ->
                 val mapped = 35 + (percent * 0.45).toInt()
                 onProgress.onProgress(mapped.coerceIn(35, 80), "下载中 $percent%")
             }
 
-            // mp4 且存在独立音频：旁路保存，便于用户自行合并
-            if (!isAudioOnly && !selection.audioUrl.isNullOrBlank() &&
-                selection.videoUrl != null && selection.audioUrl != primaryUrl
+            if (!isAudioOnly &&
+                selection.audioUrls.isNotEmpty() &&
+                selection.videoUrls.isNotEmpty()
             ) {
                 onProgress.onProgress(82, "下载音轨旁路")
                 val tempAudio = File(tempDir, "$baseName-audio$EXT_M4A")
                 runCatching {
-                    downloadToFile(selection.audioUrl, tempAudio) {}
+                    downloadWithFallback(
+                        urls = selection.audioUrls,
+                        dest = tempAudio,
+                        bvid = selection.bvid,
+                        stageLabel = "音轨",
+                    ) {}
                     fileWriter.writeFile(
                         options.saveDirUri,
                         "$baseName-audio$EXT_M4A",
@@ -74,7 +86,6 @@ class BiliExporter(
 
             var finalName = "$baseName$ext"
             if (isAudioOnly && options.format == CoreMediaFormats.MP3) {
-                // 接口保留 mp3 选项；实际多为 dash 音频 aac → m4a 降级
                 finalName = "$baseName$EXT_M4A"
             }
 
@@ -103,20 +114,42 @@ class BiliExporter(
         }
     }
 
+    private fun downloadWithFallback(
+        urls: List<String>,
+        dest: File,
+        bvid: String,
+        stageLabel: String,
+        onPercent: (Int) -> Unit,
+    ) {
+        var lastError: Exception? = null
+        for (url in urls) {
+            try {
+                downloadToFile(url, dest, bvid, onPercent)
+                return
+            } catch (e: Exception) {
+                lastError = e
+            }
+        }
+        val detail = lastError?.message ?: "未知错误"
+        error("$stageLabel 下载失败（已试 ${urls.size} 个地址）: $detail")
+    }
+
     private fun downloadToFile(
         url: String,
         dest: File,
+        bvid: String,
         onPercent: (Int) -> Unit,
     ) {
         val request = Request.Builder()
             .url(url)
-            .header("User-Agent", BiliHttp.USER_AGENT)
-            .header("Referer", BiliHttp.REFERER)
+            .headers(BiliHttp.mediaHeaders(bvid))
             .get()
             .build()
         http.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                error("下载失败 HTTP ${response.code}")
+                error(
+                    "CDN HTTP ${response.code} ${BiliHttp.shortUrl(url)}",
+                )
             }
             val body = response.body ?: error("空响应体")
             val total = body.contentLength()

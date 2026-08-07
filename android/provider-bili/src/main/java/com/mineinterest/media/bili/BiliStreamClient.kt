@@ -7,17 +7,18 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 
 /**
- * B站播放信息与流地址获取（单点实现，接口漂移时只改本类）。
+ * B站播放信息与流地址获取（单点实现）。
  *
- * 使用公开接口：
- * - view: `api.bilibili.com/x/web-interface/view`
- * - playurl: `api.bilibili.com/x/player/playurl`（fnval=16 拿 DASH）
- * - 字幕: `api.bilibili.com/x/player/v2`
+ * 流程：
+ * 1. view 拿 title/cid
+ * 2. WBI 签名后请求 wbi/playurl（失败则回退普通 playurl）
+ * 3. 解析 dash baseUrl + backupUrl，或 durl
  *
- * **风险：** 非官方稳定 API，可能需登录/风控；个人自用 MVP 接受失败与后续修补。
+ * **风险：** 非官方 API；高清/部分稿件仍可能需登录 Cookie。
  */
 class BiliStreamClient(
     private val http: OkHttpClient = BiliHttp.createClient(),
+    private val wbi: BiliWbiSigner = BiliWbiSigner(http),
 ) {
 
     suspend fun fetchSelection(
@@ -25,34 +26,38 @@ class BiliStreamClient(
         options: BiliTaskOptions,
     ): Result<BiliPlaySelection> = withContext(Dispatchers.IO) {
         runCatching {
-            val viewJson = BiliHttp.get(http, "$VIEW_API?bvid=$bvid")
+            val viewJson = BiliHttp.apiGet(http, "$VIEW_API?bvid=$bvid")
             val code = BiliJson.intField(viewJson, "code")
             if (code != null && code != 0) {
-                error(BiliJson.stringField(viewJson, "message") ?: "获取视频信息失败 code=$code")
+                error(
+                    "获取视频信息失败 code=$code " +
+                        (BiliJson.stringField(viewJson, "message") ?: ""),
+                )
             }
             val title = BiliJson.stringField(viewJson, "title") ?: bvid
             val cid = BiliJson.longField(viewJson, "cid")
-                ?: error("无法解析 cid，视频可能需登录或接口变更")
+                ?: error("无法解析 cid（视频可能需登录或接口变更）")
 
             val qn = qualityToQn(options.videoQualityHeight)
-            val playUrl =
-                "$PLAYURL_API?bvid=$bvid&cid=$cid&qn=$qn&fnval=$FNVAL_DASH&fourk=1&fnver=0"
-            val playJson = BiliHttp.get(http, playUrl)
+            val playJson = fetchPlayJson(bvid, cid, qn)
             val playCode = BiliJson.intField(playJson, "code")
             if (playCode != null && playCode != 0) {
-                error(BiliJson.stringField(playJson, "message") ?: "获取播放地址失败 code=$playCode")
+                error(
+                    "获取播放地址失败 code=$playCode " +
+                        (BiliJson.stringField(playJson, "message") ?: "（可能需登录/地区限制）"),
+                )
             }
 
             val dashBlock = extractObjectBlock(playJson, "dash")
-            val (videoUrl, audioUrl) = if (dashBlock != null) {
+            val (videoUrls, audioUrls) = if (dashBlock != null) {
                 selectDashStreams(dashBlock, options)
             } else {
-                val durl = BiliJson.allStringFields(playJson, "url").firstOrNull()
-                durl to null
+                val durl = BiliJson.allStringFields(playJson, "url")
+                durl to emptyList()
             }
 
-            if (videoUrl.isNullOrBlank() && audioUrl.isNullOrBlank()) {
-                error("未找到可用媒体流，可能需要登录或清晰度受限")
+            if (videoUrls.isEmpty() && audioUrls.isEmpty()) {
+                error("未找到可用媒体流（可能需要登录 SESSDATA 或清晰度受限）")
             }
 
             var subtitleUrl: String? = null
@@ -64,66 +69,123 @@ class BiliStreamClient(
                 }
             }
 
-            if (options.format == CoreMediaFormats.MP3 && audioUrl == null && videoUrl != null) {
-                hint = listOfNotNull(hint, "无独立音频轨，将尝试从视频导出").joinToString("；")
+            if (options.format == CoreMediaFormats.MP3 && audioUrls.isEmpty() && videoUrls.isNotEmpty()) {
+                hint = listOfNotNull(hint, "无独立音频轨，将尝试从视频轨导出").joinToString("；")
             }
 
             BiliPlaySelection(
                 bvid = bvid,
                 title = title,
                 cid = cid,
-                videoUrl = videoUrl,
-                audioUrl = audioUrl,
+                videoUrls = videoUrls,
+                audioUrls = audioUrls,
                 subtitleUrl = subtitleUrl,
                 messageHint = hint,
             )
         }
     }
 
+    private fun fetchPlayJson(bvid: String, cid: Long, qn: Int): String {
+        val baseParams = mapOf(
+            "bvid" to bvid,
+            "cid" to cid.toString(),
+            "qn" to qn.toString(),
+            "fnval" to FNVAL_DASH.toString(),
+            "fnver" to "0",
+            "fourk" to "1",
+            "platform" to "html5",
+            "high_quality" to "1",
+        )
+        // 优先 WBI 签名接口
+        try {
+            val signed = wbi.signUrl(WBI_PLAYURL_API, baseParams)
+            val body = BiliHttp.apiGet(http, signed)
+            val code = BiliJson.intField(body, "code")
+            if (code == null || code == 0) return body
+            // 签名过期等，刷新一次
+            if (code == -352 || code == -403) {
+                wbi.invalidate()
+                val retry = wbi.signUrl(WBI_PLAYURL_API, baseParams)
+                val retryBody = BiliHttp.apiGet(http, retry)
+                val retryCode = BiliJson.intField(retryBody, "code")
+                if (retryCode == null || retryCode == 0) return retryBody
+            }
+        } catch (_: Exception) {
+            // fall through to legacy
+        }
+
+        val legacy = buildString {
+            append(LEGACY_PLAYURL_API)
+            append("?bvid=").append(bvid)
+            append("&cid=").append(cid)
+            append("&qn=").append(qn)
+            append("&fnval=").append(FNVAL_DASH)
+            append("&fnver=0&fourk=1&platform=html5&high_quality=1")
+        }
+        return BiliHttp.apiGet(http, legacy)
+    }
+
     private fun selectDashStreams(
         dashJson: String,
         options: BiliTaskOptions,
-    ): Pair<String?, String?> {
-        val videoUrls = extractStreamBaseUrls(extractArrayBlock(dashJson, "video") ?: "")
-        val audioUrls = extractStreamBaseUrls(extractArrayBlock(dashJson, "audio") ?: "")
-        val heights = BiliJson.allIntFields(dashJson, "height")
+    ): Pair<List<String>, List<String>> {
+        val videoBlock = extractArrayBlock(dashJson, "video").orEmpty()
+        val audioBlock = extractArrayBlock(dashJson, "audio").orEmpty()
+        val videoUrls = extractStreamUrls(videoBlock)
+        val audioUrls = extractStreamUrls(audioBlock)
+        val heights = BiliJson.allIntFields(videoBlock, "height")
 
-        val videoUrl = when {
-            options.format == CoreMediaFormats.MP3 -> null
-            videoUrls.isEmpty() -> null
-            else -> pickClosestVideo(videoUrls, heights, options.videoQualityHeight)
+        val selectedVideo = when {
+            options.format == CoreMediaFormats.MP3 -> emptyList()
+            videoUrls.isEmpty() -> emptyList()
+            else -> pickClosestVideoUrls(videoUrls, heights, options.videoQualityHeight)
         }
-        val audioUrl = audioUrls.lastOrNull() // 通常码率升序，取较高
-
-        return videoUrl to audioUrl
+        // 音频取码率较高的若干候选（列表末尾通常更高）
+        val selectedAudio = if (audioUrls.isEmpty()) {
+            emptyList()
+        } else {
+            audioUrls.takeLast(3).reversed()
+        }
+        return selectedVideo to selectedAudio
     }
 
-    private fun pickClosestVideo(
+    /**
+     * 返回主选清晰度的 baseUrl + 其 backup，再附带相邻清晰度作回退。
+     */
+    private fun pickClosestVideoUrls(
         urls: List<String>,
         heights: List<Int>,
         targetHeight: Int,
-    ): String {
+    ): List<String> {
+        if (urls.isEmpty()) return emptyList()
         if (heights.isEmpty() || heights.size != urls.size) {
-            return urls.last()
+            return urls.takeLast(2).reversed()
         }
-        val indexed = heights.indices.minByOrNull { idx ->
+        val bestIdx = heights.indices.minByOrNull { idx ->
             kotlin.math.abs(heights[idx] - targetHeight)
         } ?: (urls.size - 1)
-        return urls[indexed]
+        val ordered = linkedSetOf<String>()
+        ordered.add(urls[bestIdx])
+        // 邻近清晰度
+        if (bestIdx + 1 < urls.size) ordered.add(urls[bestIdx + 1])
+        if (bestIdx - 1 >= 0) ordered.add(urls[bestIdx - 1])
+        urls.lastOrNull()?.let { ordered.add(it) }
+        return ordered.toList()
     }
 
-    private fun extractStreamBaseUrls(arrayJson: String): List<String> {
+    private fun extractStreamUrls(arrayJson: String): List<String> {
         if (arrayJson.isBlank()) return emptyList()
-        // baseUrl 优先，其次 base_url
-        val baseUrls = BiliJson.allStringFields(arrayJson, "baseUrl")
-        if (baseUrls.isNotEmpty()) return baseUrls
-        return BiliJson.allStringFields(arrayJson, "base_url")
+        val base = BiliJson.allStringFields(arrayJson, "baseUrl")
+            .ifEmpty { BiliJson.allStringFields(arrayJson, "base_url") }
+        val backup = BiliJson.allStringFields(arrayJson, "backupUrl")
+            .ifEmpty { BiliJson.allStringFields(arrayJson, "backup_url") }
+        // 保持「每个 base 后跟其 backup 段」的近似顺序：先全部 base，再 backup
+        return (base + backup).distinct().filter { it.startsWith("http") }
     }
 
     private fun fetchSubtitleUrl(bvid: String, cid: Long): String? {
         return runCatching {
-            val json = BiliHttp.get(http, "$PLAYER_V2_API?bvid=$bvid&cid=$cid")
-            // subtitle.subtitles[].subtitle_url
+            val json = BiliHttp.apiGet(http, "$PLAYER_V2_API?bvid=$bvid&cid=$cid")
             val urls = BiliJson.allStringFields(json, "subtitle_url")
             val first = urls.firstOrNull() ?: return null
             if (first.startsWith("//")) "https:$first" else first
@@ -137,12 +199,9 @@ class BiliStreamClient(
         else -> QN_360
     }
 
-    /**
-     * 粗提取 `"key":{...}` 对象块（括号匹配）。
-     */
     private fun extractObjectBlock(json: String, key: String): String? {
         val startMarker = Regex(""""$key"\s*:\s*\{""").find(json) ?: return null
-        val start = startMarker.range.last // points to '{'
+        val start = startMarker.range.last
         return sliceBalanced(json, start, '{', '}')
     }
 
@@ -176,9 +235,7 @@ class BiliStreamClient(
                 open -> depth++
                 close -> {
                     depth--
-                    if (depth == 0) {
-                        return text.substring(start, i + 1)
-                    }
+                    if (depth == 0) return text.substring(start, i + 1)
                 }
             }
         }
@@ -187,8 +244,10 @@ class BiliStreamClient(
 
     companion object {
         private const val VIEW_API = "https://api.bilibili.com/x/web-interface/view"
-        private const val PLAYURL_API = "https://api.bilibili.com/x/player/playurl"
+        private const val WBI_PLAYURL_API = "https://api.bilibili.com/x/player/wbi/playurl"
+        private const val LEGACY_PLAYURL_API = "https://api.bilibili.com/x/player/playurl"
         private const val PLAYER_V2_API = "https://api.bilibili.com/x/player/v2"
+        /** dash + 部分额外能力 */
         private const val FNVAL_DASH = 16
         private const val QN_360 = 16
         private const val QN_480 = 32
