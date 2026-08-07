@@ -1,0 +1,1 @@
+# core consumer proguard rules

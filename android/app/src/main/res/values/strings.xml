@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mine Media</string>
+    <string name="main_title">Mine Media</string>
+    <string name="empty_task_list">暂无任务</string>
+    <string name="manual_input_label">手动 / 批量链接</string>
+    <string name="manual_input_hint">每行一条链接，也可一次粘贴多段分享文案</string>
+    <string name="btn_start_batch">解析并开始</string>
+    <string name="btn_pick_bili_dir">B站目录</string>
+    <string name="btn_pick_fanqie_dir">番茄目录</string>
+    <string name="btn_save_settings">保存设置</string>
+    <string name="bili_options_label">B站选项（本批共用）</string>
+    <string name="hint_bitrate">音频码率 kbps</string>
+    <string name="hint_height">视频高度</string>
+    <string name="check_subtitle">下载字幕</string>
+    <string name="check_clipboard">打开时检测剪贴板一次</string>
+    <string name="fanqie_endpoints_label">番茄正文 API 端点（多行，含 {item_id}）</string>
+    <string name="fanqie_endpoints_hint">https://example.com/content?id={item_id}</string>
+    <string name="task_list_label">任务列表</string>
+    <string name="toast_skipped">已跳过 %1$d 条无法识别</string>
+    <string name="toast_enqueued">已入队 %1$d 个任务</string>
+    <string name="toast_settings_saved">设置已保存</string>
+    <string name="toast_empty_input">请输入链接</string>
+    <string name="dialog_clipboard_title">检测到剪贴板链接</string>
+    <string name="dialog_clipboard_message">是否解析？\n\n%1$s</string>
+    <string name="dialog_yes">解析</string>
+    <string name="dialog_no">忽略</string>
+    <string name="path_hint">B站: %1$s\n番茄: %2$s</string>
+    <string name="notification_channel_name">下载进度</string>
+    <string name="notification_downloading">正在下载…</string>
+    <string name="notification_progress">进行中 %1$d / 共 %2$d</string>
+    <string name="personal_use_notice">个人设备本地自用工具，请遵守平台协议与版权。</string>
+</resources>
