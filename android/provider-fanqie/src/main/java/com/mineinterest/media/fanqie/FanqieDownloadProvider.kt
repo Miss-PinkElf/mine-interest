@@ -14,18 +14,20 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * 番茄 TXT 下载主流程：
- * book_id → 目录 → 分章正文（可配置）→ 断点 → finalize TXT
+ * book_id（含 changdunovel /t/ 短链解跳）→ 目录 → 分章正文（可配置）→ 断点 → finalize TXT
  */
 class FanqieDownloadProvider(
     private val catalogClient: FanqieCatalogClient,
     private val contentFetcher: FanqieContentFetcher,
     private val cacheRootDir: File,
     private val fileWriter: FanqieFileWriter,
+    private val http: OkHttpClient,
     private val concurrency: Int = FanqieConstants.DEFAULT_CONCURRENCY,
 ) : DownloadProvider {
 
@@ -40,9 +42,7 @@ class FanqieDownloadProvider(
     ): Result<String> = runCatching {
         val options = fanqieOptions ?: error("缺少番茄选项")
         onProgress.onProgress(3, "解析 book_id")
-        val bookId = FanqieBookIdResolver.resolve(parsed.idHint ?: parsed.rawText)
-            ?: FanqieBookIdResolver.resolve(parsed.canonicalUrl.orEmpty())
-            ?: error("无法解析番茄 book_id")
+        val bookId = FanqieBookIdResolver.resolveFromParsed(parsed, http)
 
         onProgress.onProgress(8, "获取书信息")
         val meta = catalogClient.fetchMeta(bookId)

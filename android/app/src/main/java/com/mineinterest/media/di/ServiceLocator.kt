@@ -70,6 +70,7 @@ object ServiceLocator {
             contentFetcher = SettingsBackedContentFetcher(settings, http),
             cacheRootDir = fanqieCache,
             fileWriter = fileWriter,
+            http = http,
         )
 
         val registry = ProviderRegistry(listOf(biliProvider, fanqieProvider))

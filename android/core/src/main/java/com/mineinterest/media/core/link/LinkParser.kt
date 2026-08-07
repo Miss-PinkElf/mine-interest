@@ -31,9 +31,11 @@ class LinkParser {
             )
         }
 
+        // 含番茄/常读分享域（含 changdunovel.com/t/ 短链）；book_id 可为空，下载时再解跳
         val isFanqie = FANQIE_HOST_MARKERS.any { lower.contains(it) } ||
             BOOK_ID_QUERY.containsMatchIn(text) ||
             BOOK_ID_PATH.containsMatchIn(text) ||
+            isFanqieShortShareUrl(url) ||
             (url == null && BOOK_ID_PLAIN.matches(text))
         if (isFanqie) {
             val id = BOOK_ID_QUERY.find(text)?.groupValues?.get(1)
@@ -96,16 +98,50 @@ class LinkParser {
         return BatchParseResult(items = items, skippedLines = skipped)
     }
 
+    /**
+     * 番茄分享短链：`https://changdunovel.com/t/<token>/` 等。
+     * 仅做形态识别；book_id 在 Provider 内跟跳转解析。
+     */
+    private fun isFanqieShortShareUrl(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        if (!FANQIE_SHORT_LINK_PATH.matches(url)) return false
+        val host = urlHost(url) ?: return false
+        return FANQIE_SHORT_LINK_HOSTS.any { host == it || host.endsWith(".$it") }
+    }
+
+    private fun urlHost(url: String): String? {
+        val afterScheme = when {
+            url.startsWith("https://", ignoreCase = true) -> url.substring(8)
+            url.startsWith("http://", ignoreCase = true) -> url.substring(7)
+            else -> return null
+        }
+        return afterScheme.substringBefore('/').substringBefore(':').lowercase()
+    }
+
     companion object {
         private const val DEDUPE_KEY_SEPARATOR = "|"
 
         private val URL_REGEX = Regex("""https?://[^\s]+""")
         private val BILI_HOST_MARKERS = listOf("bilibili.com", "b23.tv", "bili2233.cn")
-        private val FANQIE_HOST_MARKERS = listOf("fanqienovel.com", "fqnovel.com", "novelfm.com")
+        /** 与 provider-fanqie 短链白名单对齐（core 不依赖 fanqie 模块） */
+        private val FANQIE_HOST_MARKERS = listOf(
+            "fanqienovel.com",
+            "fqnovel.com",
+            "novelfm.com",
+            "changdunovel.com",
+        )
+        private val FANQIE_SHORT_LINK_HOSTS = listOf(
+            "changdunovel.com",
+            "fanqienovel.com",
+            "fqnovel.com",
+        )
+        private val FANQIE_SHORT_LINK_PATH = Regex(
+            """(?i)^https?://[^/\s]+/t/[A-Za-z0-9_-]+/?(?:[?#][^\s]*)?$""",
+        )
         private val BV_REGEX = Regex("""BV[0-9A-Za-z]+""")
         private val AV_REGEX = Regex("""av(\d+)""", RegexOption.IGNORE_CASE)
-        private val BOOK_ID_QUERY = Regex("""[?&]book_id=(\d{10,})""")
-        private val BOOK_ID_PATH = Regex("""/page/(\d{10,})""")
-        private val BOOK_ID_PLAIN = Regex("""^\d{10,}$""")
+        private val BOOK_ID_QUERY = Regex("""(?i)[?&](?:book_id|bookId)=(\d{5,})""")
+        private val BOOK_ID_PATH = Regex("""/page/(\d{5,})""")
+        private val BOOK_ID_PLAIN = Regex("""^\d{5,}$""")
     }
 }

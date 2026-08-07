@@ -32,6 +32,26 @@ class LinkParserTest {
     }
 
     @Test
+    fun parse_fanqie_changdunovel_short_share_with_title() {
+        val text =
+            "变身灾厄萝莉，我发动了诸神黄昏https://changdunovel.com/t/sZ-unSSoOow/"
+        val result = parser.parse(text)
+        assertEquals(Platform.FANQIE, result.platform)
+        assertTrue(result.canonicalUrl!!.contains("changdunovel.com/t/"))
+        // 短链阶段尚无 book_id，下载时再解跳
+        assertEquals(null, result.idHint)
+    }
+
+    @Test
+    fun parse_bilibili_share_title_with_b23() {
+        val text =
+            "【“要是能重来！哦我要选李白~”-哔哩哔哩】 https://b23.tv/s6Vc5FT"
+        val result = parser.parse(text)
+        assertEquals(Platform.BILIBILI, result.platform)
+        assertTrue(result.canonicalUrl!!.contains("b23.tv"))
+    }
+
+    @Test
     fun parse_unknown() {
         val result = parser.parse("hello world")
         assertEquals(Platform.UNKNOWN, result.platform)
