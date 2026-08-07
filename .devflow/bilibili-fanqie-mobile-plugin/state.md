@@ -2,38 +2,30 @@
 
 ## Metadata（元数据）
 
-- 更新时间（Updated At）：2026-08-07 17:45:25 CST
+- 更新时间（Updated At）：2026-08-07 18:22:06 CST
 - 作者（Author）：Grok
 - 关联 mission：bilibili-fanqie-mobile-plugin
-- 当前状态（Status）：Apply 源码完成；待 SDK 齐后 Verify；会话交接
+- 当前状态（Status）：主线 B站可用性；番茄增强已延期落盘
 - 文档边界：短当前态快照。
 
 ## 当前目标
 
-Kotlin Android 单 App：B站可配置导出 + 番茄 TXT + 手动批量解析（个人自用）。
+Kotlin Android 单 App：优先打通 **B站** 一体式下载；番茄维持链接/短链 + 自配端点。
 
 ## 当前阶段
 
-- 路径：重型（Heavy）
-- Align / Plan / Propose：完成
-- Apply：Task 1–12 **源码已落地**（`android/`）
-- Verify：未通过 — 本机 Android Platform 未装全，`assembleDebug`/单测未跑通
-- 完整 Close：**禁止**，待真机验收后用户允许
-- 分支：`rin-bilibili-fanqie-mobile/dev`
-
-## 最新交接
-
-- handoff：`handoffs/2026-08-07-002-apply-code-ready-verify-pending.md`
-- 提示词：`NEXT-SESSION-PROMPT-bilibili-fanqie-mobile-plugin.md`
-- 范围：`deferred/mvp-与延期范围总表.md`
+- Apply 源码已有；B站 403 缓解已提交本地（`ba63d16`，可能未 push）
+- 番茄 Official-API / 搜书名 / 零配置：**延期**（见 deferred 单条）
+- 完整 Close：禁止
 
 ## 下一步
 
-1. 安装 Android SDK Platform 36（与 compileSdk 对齐）
-2. `cd android && ./gradlew :core:test :provider-bili:test :provider-fanqie:test :app:assembleDebug`
-3. 真机装 APK 验收 S1–S8
-4. 按需修编译/运行问题；完整 Close 另说
+1. **B站**：装新 APK 复测；看失败是「获取媒体流」还是「CDN 403」；继续修一体式或评估 Cookie/yt-dlp 延期
+2. 番茄：不扩 Official-API；仅 bug/短链类
+3. 推送 APK/代码按用户要求
 
-## 风险
+## 延期入口
 
-- B站接口漂移；番茄正文需配置端点；mp3→m4a 降级；SDK 未齐无法出 APK
+- `deferred/番茄-Official-API与搜书名零配置正文.md`
+- `deferred/b站-外部引擎-yt-dlp-ffmpeg.md`
+- `deferred/mvp-与延期范围总表.md`
