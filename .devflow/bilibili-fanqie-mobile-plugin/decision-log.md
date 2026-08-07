@@ -166,3 +166,8 @@
 - 决策：不接入 Tomato 闭源 Official-API；搜书名与零配置正文整包延期；用户确认先推进 B站。
 - 记录：`deferred/番茄-Official-API与搜书名零配置正文.md`；总表已同步。
 - 影响：番茄维持链接+目录+自配端点；禁止把闭源 token/Official-API 写进仓库。
+
+### D019 - 会话交接：B站主路径验收通过，音量 bug 下次修
+
+- 时间：2026-08-07 18:28:48 CST
+- 决策：不完整 Close；BUG-001 记入 bug-log；handoff 003。

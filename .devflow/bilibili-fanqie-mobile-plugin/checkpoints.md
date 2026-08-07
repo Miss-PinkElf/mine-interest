@@ -2,22 +2,22 @@
 
 ## Metadata（元数据）
 
-- 更新时间（Updated At）：2026-08-07 17:45:25 CST
+- 更新时间（Updated At）：2026-08-07 18:28:48 CST
 - 关联 mission：bilibili-fanqie-mobile-plugin
 - 文档边界：仅最近 3 条。
 
 ## 最近检查点
 
-### 2026-08-07 — 会话交接：Apply 源码齐，待 Verify
+### 2026-08-07 — 用户确认 B站下载与目录切换成功；音量 bug 待修
 
-- 完成：全 Task 源码 + README + handoff/NEXT-SESSION-PROMPT；准备提交
-- 未做：assembleDebug 通过、真机验收、完整 Close
-- 下一步：新会话装 SDK Platform 36 → 编译测试 → 真机
+- 通过：B站一体式可下；SAF/目录切换可用  
+- 问题：导出声音偏小 → `bug-log.md` BUG-001，**下次对话修**  
+- 交接：handoff 003 + NEXT-SESSION-PROMPT  
 
-### 2026-08-07 — Apply 全 Task 源码落地
+### 2026-08-07 — 番茄 Official-API 延期；主线 B站
 
-- B站/番茄 Provider、UI 三入口、前台服务、spec/tasks 勾选
+- 延期单条落盘；D018；push `359cf15`  
 
-### 2026-08-07 — Propose 完成进入 Apply
+### 2026-08-07 — B站 403 缓解 + 番茄短链 + Apply 源码
 
-- `spec/proposal|design|tasks`；用户路径 A + 授权写代码
+- WBI/CDN；changdunovel；APK dist 推送  

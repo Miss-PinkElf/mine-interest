@@ -2,38 +2,32 @@
 
 ## Metadata（元数据）
 
-- 更新时间（Updated At）：2026-08-07 17:45:25 CST
+- 更新时间（Updated At）：2026-08-07 18:28:48 CST
 - 关联 mission：bilibili-fanqie-mobile-plugin
-- 当前状态（Status）：Apply 完成源码，待 Verify
+- 当前状态（Status）：Verify 部分通过；bug 修复迭代
 - 文档边界：当前流程快照。
 
 ## 路径
 
-- 重型路径；分支 `rin-bilibili-fanqie-mobile/dev`
+- 重型；分支 `rin-bilibili-fanqie-mobile/dev`
 
 ## 主线
 
 ```text
-Align -> Plan -> Propose -> Apply(源码) -> Verify(待) -> Close(待用户)
+Align → Plan → Propose → Apply → Verify(B站主路径通过) → 修 BUG-001 → …
 ```
 
 ## 当前阶段
 
 | 阶段 | 状态 |
 |------|------|
-| Align / Plan / Propose | 完成 |
-| Apply | 源码完成（12 Task） |
-| Verify | 阻塞：SDK Platform |
+| Apply | 完成 |
+| Verify B站下载/目录 | **用户确认通过** |
+| Verify 音质/音量 | **未通过**（音量小） |
+| 番茄完整体验 | 延期（自配端点 MVP） |
 | Close | 未开始 |
-
-## 里程碑
-
-1. 对齐与延期边界 — 完成  
-2. Plan + spec 三件套 — 完成  
-3. android 多模块实现 — 完成（未编译验证）  
-4. 真机 APK 验收 — 未开始  
-5. 完整 Close — 未开始  
 
 ## 下一步
 
-装 Platform → gradle 测试与 APK → 真机 → 用户允许后 Close
+1. 新会话修音频音量  
+2. 不启动 Official-API 延期包  
