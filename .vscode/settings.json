@@ -1,0 +1,10 @@
+{
+  // 在 Markdown 中粘贴 / 拖入图片时，保存到当前 md 同级的 images_md 目录
+  "markdown.copyFiles.destination": {
+    "**/*.md": "images_md/${fileName}"
+  },
+  "markdown.copyFiles.overwriteBehavior": "nameIncrementally",
+  "markdown.editor.filePaste.enabled": true,
+  "markdown.editor.filePaste.copyIntoWorkspace": "mediaFiles",
+  "markdown.editor.drop.copyIntoWorkspace": "mediaFiles"
+}
