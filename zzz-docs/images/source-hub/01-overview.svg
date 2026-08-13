@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 900" width="1280" height="900" role="img" aria-labelledby="t1 d1">
+  <title id="t1">多源信息中心全景</title>
+  <desc id="d1">四类活水源进入收集层，经人在回路筛选后，编译成个人维基，再由展示层阅读。</desc>
+  <rect width="1280" height="900" fill="#F3F0E9"/>
+
+  <text x="64" y="52" font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif" font-size="12" letter-spacing="3.2" fill="#8A8378">SOURCE HUB  ·  01</text>
+  <text x="64" y="92" font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif" font-size="30" font-weight="500" fill="#1C1916">多源信息中心全景</text>
+  <text x="64" y="124" font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif" font-size="15" fill="#6F685F">先收住「我觉得有用」，再编译成会复利的个人维基（Personal Wiki）</text>
+
+  <!-- source cards -->
+  <g font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif">
+    <g transform="translate(64,168)">
+      <rect width="268" height="132" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="22" y="32" font-size="11" letter-spacing="1.6" fill="#8A8378">CHAT</text>
+      <text x="22" y="62" font-size="18" fill="#1C1916">聊天平台</text>
+      <text x="22" y="88" font-size="13" fill="#6F685F">QQ / 微信 / TG / Discord</text>
+      <text x="22" y="112" font-size="12" fill="#1C1916">Bot 接入</text>
+    </g>
+    <g transform="translate(356,168)">
+      <rect width="268" height="132" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="22" y="32" font-size="11" letter-spacing="1.6" fill="#8A8378">DOCS</text>
+      <text x="22" y="62" font-size="18" fill="#1C1916">文档仓库</text>
+      <text x="22" y="88" font-size="13" fill="#6F685F">GitHub / 语雀 / Obsidian</text>
+      <text x="22" y="112" font-size="12" fill="#1C1916">同步 / 拉取</text>
+    </g>
+    <g transform="translate(648,168)">
+      <rect width="268" height="132" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="22" y="32" font-size="11" letter-spacing="1.6" fill="#8A8378">PUBLIC</text>
+      <text x="22" y="62" font-size="18" fill="#1C1916">公开内容</text>
+      <text x="22" y="88" font-size="13" fill="#6F685F">B 站 / 小红书 / X / 微博</text>
+      <text x="22" y="112" font-size="12" fill="#1C1916">在内容里 @bot</text>
+    </g>
+    <g transform="translate(940,168)">
+      <rect width="276" height="132" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="22" y="32" font-size="11" letter-spacing="1.6" fill="#8A8378">SELF</text>
+      <text x="22" y="62" font-size="18" fill="#1C1916">自己手记</text>
+      <text x="22" y="88" font-size="13" fill="#6F685F">想法 / 冷门知识 / 项目</text>
+      <text x="22" y="112" font-size="12" fill="#1C1916">手动记录</text>
+    </g>
+  </g>
+
+  <!-- stems into collector -->
+  <g stroke="#1C1916" stroke-width="1.15" fill="none">
+    <path d="M198 300 V348"/>
+    <path d="M490 300 V348"/>
+    <path d="M782 300 V348"/>
+    <path d="M1078 300 V348"/>
+    <path d="M198 348 H1078"/>
+    <path d="M640 348 V388"/>
+  </g>
+
+  <!-- collect layer -->
+  <g font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif">
+    <rect x="280" y="388" width="720" height="88" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+    <text x="304" y="424" font-size="11" letter-spacing="1.8" fill="#8A8378">COLLECT  ·  收集层</text>
+    <text x="304" y="454" font-size="17" fill="#1C1916">原始资料（Raw Sources）只进不出，带结构化元数据（Structured Metadata）</text>
+  </g>
+
+  <path d="M640 476 V516" stroke="#1C1916" stroke-width="1.15"/>
+
+  <!-- human loop -->
+  <g font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif">
+    <rect x="360" y="516" width="560" height="56" fill="none" stroke="#1C1916" stroke-width="1.15"/>
+    <text x="640" y="551" text-anchor="middle" font-size="15" fill="#1C1916">人在回路（Human-in-the-loop）· 粗收 → LLM 建议 → 人做去留</text>
+  </g>
+
+  <path d="M640 572 V612" stroke="#1C1916" stroke-width="1.15"/>
+
+  <!-- compile layer -->
+  <g font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif">
+    <rect x="280" y="612" width="720" height="100" fill="#1C1916"/>
+    <text x="304" y="648" font-size="11" letter-spacing="1.8" fill="#C9B8A4">COMPILE  ·  编译层</text>
+    <text x="304" y="680" font-size="18" fill="#FFFCF7">LLM Wiki · 摘要 / 实体 / 主题 / 综合页</text>
+    <text x="304" y="704" font-size="13" fill="#C9B8A4">会复利的持久产物（Persistent, Compounding Artifact）</text>
+  </g>
+
+  <path d="M640 712 V752" stroke="#1C1916" stroke-width="1.15"/>
+
+  <!-- skin -->
+  <g font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif">
+    <rect x="280" y="752" width="224" height="72" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+    <text x="392" y="782" text-anchor="middle" font-size="11" letter-spacing="1.4" fill="#8A8378">SKIN</text>
+    <text x="392" y="806" text-anchor="middle" font-size="15" fill="#1C1916">Obsidian</text>
+
+    <rect x="528" y="752" width="224" height="72" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+    <text x="640" y="782" text-anchor="middle" font-size="11" letter-spacing="1.4" fill="#8A8378">INTERFACE</text>
+    <text x="640" y="806" text-anchor="middle" font-size="15" fill="#1C1916">CLI / API</text>
+
+    <rect x="776" y="752" width="224" height="72" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+    <text x="888" y="782" text-anchor="middle" font-size="11" letter-spacing="1.4" fill="#8A8378">PLUGIN</text>
+    <text x="888" y="806" text-anchor="middle" font-size="15" fill="#1C1916">自定义信息源</text>
+  </g>
+</svg>

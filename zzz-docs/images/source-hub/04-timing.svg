@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 780" width="1280" height="780" role="img" aria-labelledby="t4 d4">
+  <title id="t4">组织时机对比</title>
+  <desc id="d4">传统 RAG 在提问时切块；LLM Wiki 在资料进入时编译。当前主航道是编译，目录检索垫底，图谱和向量后补。</desc>
+  <rect width="1280" height="780" fill="#F3F0E9"/>
+
+  <text x="64" y="52" font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif" font-size="12" letter-spacing="3.2" fill="#8A8378">SOURCE HUB  ·  04</text>
+  <text x="64" y="92" font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif" font-size="30" font-weight="500" fill="#1C1916">知识在什么时候被组织</text>
+  <text x="64" y="124" font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif" font-size="15" fill="#6F685F">不是再换一个检索算法，而是换处理时机。</text>
+
+  <g font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif">
+    <!-- RAG -->
+    <g transform="translate(64,168)">
+      <rect width="560" height="360" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="32" y="40" font-size="12" letter-spacing="2" fill="#8A8378">NOT FIRST</text>
+      <text x="32" y="80" font-size="24" fill="#1C1916">传统 RAG</text>
+      <text x="32" y="112" font-size="14" fill="#6F685F">提问时才组织 · 知识形态是碎片（Chunk）</text>
+      <line x1="32" y1="136" x2="528" y2="136" stroke="#D8D1C5" stroke-width="1"/>
+
+      <text x="32" y="176" font-size="15" fill="#1C1916">1  切成碎片</text>
+      <text x="32" y="208" font-size="15" fill="#1C1916">2  做成向量</text>
+      <text x="32" y="240" font-size="15" fill="#1C1916">3  提问时取最像的几段</text>
+      <text x="32" y="272" font-size="15" fill="#1C1916">4  当场拼一个答案</text>
+
+      <text x="32" y="320" font-size="14" fill="#8A8378">明天再问更细的问题，还得重新考古。</text>
+      <text x="32" y="344" font-size="14" fill="#8A8378">关系留不住，知识不会积累。</text>
+    </g>
+
+    <!-- Wiki -->
+    <g transform="translate(656,168)">
+      <rect width="560" height="360" fill="#1C1916"/>
+      <text x="32" y="40" font-size="12" letter-spacing="2" fill="#C9B8A4">MAIN PATH</text>
+      <text x="32" y="80" font-size="24" fill="#FFFCF7">LLM Wiki</text>
+      <text x="32" y="112" font-size="14" fill="#C9B8A4">进入时就编译 · 知识形态是页面</text>
+      <line x1="32" y1="136" x2="528" y2="136" stroke="#4A433C" stroke-width="1"/>
+
+      <text x="32" y="176" font-size="15" fill="#FFFCF7">1  写源摘要页</text>
+      <text x="32" y="208" font-size="15" fill="#FFFCF7">2  更新实体 / 概念 / 综合页</text>
+      <text x="32" y="240" font-size="15" fill="#FFFCF7">3  提问时先读 Wiki</text>
+      <text x="32" y="272" font-size="15" fill="#FFFCF7">4  好答案回写进 Wiki</text>
+
+      <text x="32" y="320" font-size="14" fill="#C9B8A4">交叉引用、矛盾、综合判断会沉淀。</text>
+      <text x="32" y="344" font-size="14" fill="#C9B8A4">一份会复利的持久产物。</text>
+    </g>
+
+    <!-- sequence -->
+    <g transform="translate(64,564)">
+      <text x="0" y="0" font-size="12" letter-spacing="2" fill="#8A8378">BUILD ORDER</text>
+
+      <rect y="24" width="276" height="128" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="24" y="56" font-size="12" fill="#8A8378">1</text>
+      <text x="24" y="88" font-size="18" fill="#1C1916">先能存</text>
+      <text x="24" y="116" font-size="13" fill="#6F685F">原文 + metadata</text>
+
+      <rect x="300" y="24" width="276" height="128" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="324" y="56" font-size="12" fill="#8A8378">2</text>
+      <text x="324" y="88" font-size="18" fill="#1C1916">再能编</text>
+      <text x="324" y="116" font-size="13" fill="#6F685F">Schema + Wiki 页</text>
+
+      <rect x="600" y="24" width="276" height="128" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="624" y="56" font-size="12" fill="#8A8378">3</text>
+      <text x="624" y="88" font-size="18" fill="#1C1916">再能连</text>
+      <text x="624" y="116" font-size="13" fill="#6F685F">交叉引用 / 图谱</text>
+
+      <rect x="900" y="24" width="316" height="128" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="924" y="56" font-size="12" fill="#8A8378">4</text>
+      <text x="924" y="88" font-size="18" fill="#1C1916">最后检索</text>
+      <text x="924" y="116" font-size="13" fill="#6F685F">目录 → 关键词 → 向量</text>
+    </g>
+  </g>
+</svg>

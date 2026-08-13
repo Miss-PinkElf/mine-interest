@@ -11,6 +11,8 @@
   - `zzz-prompt-debug/llm-wiki-mine.md`
   - `zzz-prompt-debug/images_md/image.png`
 - 当前状态（Status）：讨论纪要（Discussion Recap）。不是已批准计划（Plan），也不是候选项方案（Candidate Design）。
+- 关联结构图（Related Diagrams）：`zzz-docs/多源信息中心结构图.md`
+- 关联 PRD（Related PRD）：`zzz-docs/多源信息中心PRD.md`
 - 文档边界（Scope / Boundary）：本文只整理本轮对话已经说过的判断和取舍，不是真相源（source of truth），不代表已批准方向，不会触发实现（Apply）。若后续要做，需要另开 Align / Mini Align。
 
 # 多源信息中心与 LLM Wiki 知识预编译讨论整理

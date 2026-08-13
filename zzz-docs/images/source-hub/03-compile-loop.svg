@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 820" width="1280" height="820" role="img" aria-labelledby="t3 d3">
+  <title id="t3">编译回路</title>
+  <desc id="d3">原文不可改，Wiki 由 LLM 维护。日常只有摄入、查询、巡检三个动作。</desc>
+  <rect width="1280" height="820" fill="#F3F0E9"/>
+
+  <text x="64" y="52" font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif" font-size="12" letter-spacing="3.2" fill="#8A8378">SOURCE HUB  ·  03</text>
+  <text x="64" y="92" font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif" font-size="30" font-weight="500" fill="#1C1916">编译回路：原文不动，Wiki 会长</text>
+  <text x="64" y="124" font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif" font-size="15" fill="#6F685F">人负责选源和判断重要；LLM 负责摘要、交叉引用和记账。</text>
+
+  <g font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif">
+    <!-- left stack -->
+    <g transform="translate(64,176)">
+      <rect width="360" height="132" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="28" y="36" font-size="11" letter-spacing="1.8" fill="#8A8378">IMMUTABLE</text>
+      <text x="28" y="68" font-size="20" fill="#1C1916">原始资料</text>
+      <text x="28" y="96" font-size="14" fill="#6F685F">不可改 · 真相源（Source of Truth）</text>
+      <text x="28" y="118" font-size="13" fill="#8A8378">LLM 只读不写</text>
+
+      <path d="M180 132 V168" stroke="#1C1916" stroke-width="1.15"/>
+
+      <rect y="168" width="360" height="132" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="28" y="204" font-size="11" letter-spacing="1.8" fill="#8A8378">OWNED BY LLM</text>
+      <text x="28" y="236" font-size="20" fill="#1C1916">Wiki 页面</text>
+      <text x="28" y="264" font-size="14" fill="#6F685F">Markdown · 人只读，LLM 维护</text>
+      <text x="28" y="286" font-size="13" fill="#8A8378">一次 ingest 可能改 10–15 页</text>
+
+      <path d="M180 300 V336" stroke="#1C1916" stroke-width="1.15"/>
+
+      <rect y="336" width="360" height="132" fill="#1C1916"/>
+      <text x="28" y="372" font-size="11" letter-spacing="1.8" fill="#C9B8A4">CONTRACT</text>
+      <text x="28" y="404" font-size="20" fill="#FFFCF7">结构约定 Schema</text>
+      <text x="28" y="432" font-size="14" fill="#C9B8A4">告诉 LLM 怎么整理、怎么更新</text>
+      <text x="28" y="454" font-size="13" fill="#8A8378">例如 AGENTS.md</text>
+    </g>
+
+    <!-- three operations -->
+    <g transform="translate(500,176)">
+      <text x="0" y="0" font-size="12" letter-spacing="2" fill="#8A8378">THREE OPERATIONS</text>
+
+      <rect y="24" width="716" height="140" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="28" y="60" font-size="13" letter-spacing="1.6" fill="#8A8378">INGEST</text>
+      <text x="28" y="92" font-size="22" fill="#1C1916">摄入</text>
+      <text x="28" y="124" font-size="14" fill="#6F685F">新资料进来：写摘要、更新实体 / 概念页、改索引、写日志。</text>
+      <text x="28" y="148" font-size="13" fill="#8A8378">一份资料可能碰到很多旧页，这正是知识能养住的原因。</text>
+
+      <rect y="180" width="716" height="140" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="28" y="216" font-size="13" letter-spacing="1.6" fill="#8A8378">QUERY</text>
+      <text x="28" y="248" font-size="22" fill="#1C1916">查询</text>
+      <text x="28" y="280" font-size="14" fill="#6F685F">先读已经编好的 Wiki，而不是每次从原文重新发现。</text>
+      <text x="28" y="304" font-size="13" fill="#8A8378">好答案要回写。提问本身也是知识生产。</text>
+
+      <rect y="336" width="716" height="140" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="28" y="372" font-size="13" letter-spacing="1.6" fill="#8A8378">LINT</text>
+      <text x="28" y="404" font-size="22" fill="#1C1916">巡检</text>
+      <text x="28" y="436" font-size="14" fill="#6F685F">定期体检矛盾、过时结论、孤儿页、缺失交叉引用。</text>
+      <text x="28" y="460" font-size="13" fill="#8A8378">LLM 不会烦，但会一本正经写错，所以必须能回到原文。</text>
+    </g>
+
+    <!-- bottom files -->
+    <g transform="translate(64,676)">
+      <rect width="556" height="80" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="28" y="34" font-size="12" letter-spacing="1.6" fill="#8A8378">index.md</text>
+      <text x="28" y="60" font-size="16" fill="#1C1916">内容目录 · 中等规模先读目录再下钻</text>
+
+      <rect x="580" width="572" height="80" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="608" y="34" font-size="12" letter-spacing="1.6" fill="#8A8378">log.md</text>
+      <text x="608" y="60" font-size="16" fill="#1C1916">只追加的时间线 · 记录 ingest / query / lint</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 760" width="1280" height="760" role="img" aria-labelledby="t2 d2">
+  <title id="t2">三层分工</title>
+  <desc id="d2">收集层、编译层、展示层分开。收集是当前想法独有且更难的一层。</desc>
+  <rect width="1280" height="760" fill="#F3F0E9"/>
+
+  <text x="64" y="52" font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif" font-size="12" letter-spacing="3.2" fill="#8A8378">SOURCE HUB  ·  02</text>
+  <text x="64" y="92" font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif" font-size="30" font-weight="500" fill="#1C1916">三层分工，不要混成一件事</text>
+  <text x="64" y="124" font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif" font-size="15" fill="#6F685F">Karpathy 默认资料已在文件夹里。当前想法真正多出来的，是前半段活水源。</text>
+
+  <g font-family="'IBM Plex Sans', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif">
+    <!-- collect -->
+    <g transform="translate(64,176)">
+      <rect width="368" height="500" fill="#1C1916"/>
+      <text x="32" y="44" font-size="12" letter-spacing="2" fill="#C9B8A4">01  ·  COLLECT</text>
+      <text x="32" y="88" font-size="26" fill="#FFFCF7">收集层</text>
+      <text x="32" y="122" font-size="14" fill="#C9B8A4">当前想法独有，也更难</text>
+      <line x1="32" y1="148" x2="336" y2="148" stroke="#4A433C" stroke-width="1"/>
+      <text x="32" y="188" font-size="15" fill="#FFFCF7">把散落的「有意思」捞进来</text>
+      <text x="32" y="228" font-size="14" fill="#C9B8A4">聊天、社交、仓库、手记</text>
+      <text x="32" y="256" font-size="14" fill="#C9B8A4">插件式信息源接入</text>
+      <text x="32" y="284" font-size="14" fill="#C9B8A4">结构化元数据</text>
+      <text x="32" y="312" font-size="14" fill="#C9B8A4">原文只进不出</text>
+      <text x="32" y="368" font-size="13" fill="#8A8378">噪声模型完全不同</text>
+      <text x="32" y="396" font-size="13" fill="#8A8378">活水源 ≠ 已选过的论文</text>
+      <text x="32" y="456" font-size="13" fill="#C9B8A4">先能存，再谈编</text>
+    </g>
+
+    <!-- compile -->
+    <g transform="translate(456,176)">
+      <rect width="368" height="500" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="32" y="44" font-size="12" letter-spacing="2" fill="#8A8378">02  ·  COMPILE</text>
+      <text x="32" y="88" font-size="26" fill="#1C1916">编译层</text>
+      <text x="32" y="122" font-size="14" fill="#6F685F">直接借鉴 LLM Wiki / Graphify</text>
+      <line x1="32" y1="148" x2="336" y2="148" stroke="#D8D1C5" stroke-width="1"/>
+      <text x="32" y="188" font-size="15" fill="#1C1916">资料进来时就整理一次</text>
+      <text x="32" y="228" font-size="14" fill="#6F685F">摘要页 / 实体页 / 综合页</text>
+      <text x="32" y="256" font-size="14" fill="#6F685F">Schema 约束整理法</text>
+      <text x="32" y="284" font-size="14" fill="#6F685F">index.md + log.md</text>
+      <text x="32" y="312" font-size="14" fill="#6F685F">好答案必须回写</text>
+      <text x="32" y="368" font-size="13" fill="#8A8378">页面给人看</text>
+      <text x="32" y="396" font-size="13" fill="#8A8378">关系以后再补</text>
+      <text x="32" y="456" font-size="13" fill="#6F685F">能编，才开始变成知识</text>
+    </g>
+
+    <!-- present -->
+    <g transform="translate(848,176)">
+      <rect width="368" height="500" fill="#FFFCF7" stroke="#1C1916" stroke-width="1.15"/>
+      <text x="32" y="44" font-size="12" letter-spacing="2" fill="#8A8378">03  ·  PRESENT</text>
+      <text x="32" y="88" font-size="26" fill="#1C1916">展示层</text>
+      <text x="32" y="122" font-size="14" fill="#6F685F">只是皮肤，可以后换</text>
+      <line x1="32" y1="148" x2="336" y2="148" stroke="#D8D1C5" stroke-width="1"/>
+      <text x="32" y="188" font-size="15" fill="#1C1916">给人逛，给 AI 管</text>
+      <text x="32" y="228" font-size="14" fill="#6F685F">Obsidian 看图谱和链接</text>
+      <text x="32" y="256" font-size="14" fill="#6F685F">CLI / API 让 Agent 维护</text>
+      <text x="32" y="284" font-size="14" fill="#6F685F">自研界面可后做</text>
+      <text x="32" y="312" font-size="14" fill="#6F685F">不要先做另一个语雀</text>
+      <text x="32" y="368" font-size="13" fill="#8A8378">没有编译层</text>
+      <text x="32" y="396" font-size="13" fill="#8A8378">界面只是另一个文件夹</text>
+      <text x="32" y="456" font-size="13" fill="#6F685F">最后才换皮肤</text>
+    </g>
+  </g>
+</svg>
