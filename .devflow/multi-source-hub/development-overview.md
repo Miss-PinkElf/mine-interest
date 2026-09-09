@@ -7,10 +7,15 @@
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
 - 原始需求（Original Requirement）：`zzz-prompt-debug/多种信息源整合.md`。
 - 关联计划（Related Plan）：`.devflow/multi-source-hub/plans/2026-09-09-多源信息中心-通用接入与QQ收藏闭环-plan.md`。
-- 当前状态（Status）：文档阶段收束，任务暂停（Paused）。
+- 更新时间（Updated At）：2026-09-09 18:55:33 +08:00。
+- 当前状态（Status）：检查插件实测后暂停交接（Paused）。
 - 文档边界（Scope / Boundary）：整体过程记录，不是默认恢复热路径；决定以 decision-log.md 及当前状态为准。
 
 # 多源信息中心开发总记录
+
+## 2026-09-09 18:55:33 +08:00：已进入真实插件探测
+
+此前纯文档状态已被局部诊断实施取代：用户运行桌面版 v4.27.5 并连接 QQ，检查插件已生成快照。日志路由已修复并同步安装源码。实测证实正文可保存，但媒体只是临时引用，多层转发深层缺失的根因未知。详见 handoff 002 与 bug-log.md。正式信息中心仍未实施，不能把探测当首期闭环完成。
 
 ## 本轮演进
 

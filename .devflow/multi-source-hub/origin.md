@@ -1,7 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-09 11:14:50 +08:00
-- 更新时间（Updated At）：2026-09-09 15:37:05 +08:00
+- 更新时间（Updated At）：2026-09-09 18:55:33 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：索引原始需求及相关历史资料。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub（`.`）
@@ -11,6 +11,10 @@
 - 文档边界（Scope / Boundary）：原始输入索引真相源（Source of Truth）；历史草案只作为参考，不自动转为批准方案。
 
 # 原始输入索引
+
+## 2026-09-09 18:55:33 +08:00：检查插件与新会话交接
+
+用户先要求本地保存、检查嵌套消息、日志前缀和源码覆盖，后要求收尾、提交及推送。官方教程：https://docs.astrbot.app/dev/star/plugin-new.html。对话中的实测截图和日志已提炼到 handoff 002，不复制鉴权数据；插件源码位于 integrations/astrbot/astrbot_plugin_sourcehub_inspector/。
 
 ## 2026-09-09 15:37:05：收尾与暂停请求
 

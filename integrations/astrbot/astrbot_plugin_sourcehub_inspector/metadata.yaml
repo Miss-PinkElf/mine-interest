@@ -1,0 +1,7 @@
+name: astrbot_plugin_sourcehub_inspector
+display_name: SourceHub 消息检查器
+desc: 保存 AstrBot 消息事件快照，帮助检查嵌套转发和附件结构。
+version: 0.1.0
+author: Codex
+support_platforms:
+  - qq_official

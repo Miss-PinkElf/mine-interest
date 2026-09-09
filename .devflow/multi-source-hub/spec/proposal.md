@@ -1,7 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-09 15:19:34 +08:00
-- 更新时间（Updated At）：2026-09-09 15:37:05 +08:00
+- 更新时间（Updated At）：2026-09-09 18:55:33 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：定义 QQ 收藏群首期问题、范围、验收与开放问题
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub（`.`）。
@@ -14,6 +14,8 @@
 - 文档边界（Scope / Boundary）：记录范围与要求，不替代设计和任务清单，属于当前任务规格真相源（Source of Truth）；用户授权本轮编写规格，不等于批准实施（Apply）。
 
 # QQ 收藏群主动收藏提案（Proposal）
+
+> 2026-09-09 18:55:33 +08:00 状态补充：用户已授权独立检查插件并完成部分真实 QQ 接收探测，源码见 integrations/astrbot/astrbot_plugin_sourcehub_inspector/；不属于完整核心实施。旧文“无业务代码/无真实联调”仅描述 15:37 当时。T07 有局部证据但未验收，14 项任务仍未完成，设计建议仍待审。后续优先查嵌套缺失和媒体保存，见 handoff 002 / bug-log.md。
 
 用户最新要求暂停实施。本文待审，不因本轮获准提交文档而成为已批准实现；新会话先讨论/审阅，按 `../handoffs/2026-09-09-001-规格待审暂停.md` 恢复。
 
