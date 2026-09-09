@@ -1,10 +1,11 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-08-13 18:59:56 +08:00
+- 更新时间（Updated At）：2026-09-09 15:37:05 +08:00（Codex 追加后续状态，不改写原讨论）
 - 作者（Author）：Grok
 - 目的（Purpose）：把本轮关于「多源信息中心」和 LLM Wiki（大语言模型维基）的讨论整理成可独立阅读的纪要，保留前因后果、决策逻辑、例子和自然延伸，方便后续对齐或开 mission。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub
-- 关联 mission（Related Mission）：无。本轮只做讲解和讨论整理，尚未进入 Align / Plan / Apply。
+- 关联 mission（Related Mission）：`.devflow/multi-source-hub/`；原讨论发生时未建任务，后续已有对齐、计划及待审规格。
 - 关联原始笔记（Related Notes）：
   - `zzz-prompt-debug/多种信息源整合.md`
   - `zzz-prompt-debug/llm-wiki.md`
@@ -16,6 +17,12 @@
 - 文档边界（Scope / Boundary）：本文只整理本轮对话已经说过的判断和取舍，不是真相源（source of truth），不代表已批准方向，不会触发实现（Apply）。若后续要做，需要另开 Align / Mini Align。
 
 # 多源信息中心与 LLM Wiki 知识预编译讨论整理
+
+## 后续状态说明（2026-09-09）
+
+本文继续保留 2026-08-13 的历史讨论，不代表当前方案全部获批。后续用户确认：原始数据仅用户可编辑、二次内容人机共编；借用 AstrBot 承接多平台，收藏入口为自用 QQ 群，无 @/命令；自动整理默认开且可关，后台可独立运行并有开关，支持手动、去重与本地 Git 历史。
+
+当前恢复入口为 `.devflow/multi-source-hub/state.md`。整体对齐已确认，计划和规格已写出，但规格待审，用户明确暂停实施。日常群规则/正则/LLM 筛选明确延期；GitHub 同步等仍待单独讨论。下面“尚未建 mission”和旧权限约束是当时记录，不再用于判断当前状态。本文提及外部文章的效果比较不自动等于本任务实测结论。
 
 ## 一句话结论
 

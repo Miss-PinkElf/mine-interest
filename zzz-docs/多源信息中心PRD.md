@@ -1,11 +1,11 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-08-13 21:48:00 +08:00
-- 更新时间（Updated At）：2026-08-13 21:48:00 +08:00
+- 更新时间（Updated At）：2026-09-09 15:37:05 +08:00（Codex 补充当前任务状态，历史正文保留）
 - 作者（Author）：Grok
 - 目的（Purpose）：把「多源信息中心 + LLM Wiki 知识预编译」写成完整终态的产品需求文档（PRD, Product Requirements Document），作为后续 Align / Plan 的需求输入。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub
-- 关联 mission（Related Mission）：无。本文只收需求，尚未进入 Align / Plan / Apply。
+- 关联 mission（Related Mission）：`.devflow/multi-source-hub/`；原文起草时未建任务，目前已完成对齐和计划，规格待审、实施暂停。
 - 关联文档（Related Documents）：
   - `zzz-prompt-debug/多种信息源整合.md`
   - `zzz-prompt-debug/llm-wiki.md`
@@ -13,10 +13,18 @@
   - `zzz-prompt-debug/images_md/image.png`
   - `zzz-docs/多源信息中心与LLM-Wiki知识预编译讨论整理.md`
   - `zzz-docs/多源信息中心结构图.md`
-- 当前状态（Status）：需求终态草案（PRD Draft, End-State）。待用户确认后，可作为需求真相源（source of truth）。不是已批准计划（Plan），不会触发实现（Apply）。
+- 当前状态（Status）：历史终态草案（Historical PRD Draft）；部分要求已被任务内后续决定替代，不代表当前批准规格。
 - 文档边界（Scope / Boundary）：本文描述产品完整终态，不是第一期施工图。路线图只说明到达终态的交付顺序。技术栈、模型供应商、上线工期未指定处一律标 `TBD`，禁止把未确认选型写成约束。
 
 # 多源信息中心产品需求文档（Source Hub PRD）
+
+## 当前状态提示（2026-09-09）
+
+用户已确认 AstrBot 承接多平台，单一桥接插件连接独立信息中心；首期主动转发到现有自用 QQ 收藏群，无 @ 或命令。原始资料只有用户可编辑，二次内容人与 AI 均可编辑；自动整理默认开且有开关，后台独立运行有开关，支持手动与去重，本地 Git 管理历史。
+
+下文“原文对任何人不可变”“维基用户只读”“所有收藏强制人工再审核”等旧表述不再作为当前约束；不得按历史路线图自动裁剪需求。当前对齐/计划/待审规格位于 `.devflow/multi-source-hub/`，恢复先看 `state.md`。用户目前暂停实施，规格三件套写出不等于批准执行。
+
+已批准延期为日常群规则/正则/模型筛选，见 `.devflow/multi-source-hub/deferred/QQ指定群持续收集与规则筛选.md`。GitHub 同步与其他来源阶段安排见该任务 `backlog.md`，仍需讨论。历史正文保留用于追溯，正式逐条规格修订留在任务 T14，不因本提示就宣称已经实现。
 
 ## 1. Executive Summary（执行摘要）
 
