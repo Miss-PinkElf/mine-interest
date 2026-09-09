@@ -2,7 +2,22 @@
 # 协作约束
 
 ## 工具约束
+### 文件编辑与变更展示
 
+目标：让 Codex CLI 能稳定渲染每个文件的 Added / Edited 内联差异；禁止“黑盒批量写盘”。
+
+1. 修改仓库内可追踪的文本文件时，必须优先使用补丁编辑（`apply_patch` / 内置 patch 工具），确保能展示：
+   - 改了哪个文件（path）
+   - 增删了哪几行（hunk / line diff）
+2. 普通文本编辑不得使用 Shell / 脚本写盘替代补丁编辑，包括但不限于：
+   - Windows：`Set-Content`、`Add-Content`
+   - 跨平台：`echo` / `printf` 重定向、`>` / `>>`、`cat <<EOF` / heredoc、`tee`
+   - macOS / Unix 常见：`python3 <<'PY'`、`node -e`、`Path.write_text` / `open().write`、`fs.writeFileSync`，以及 `sed -i` / `perl -pi -e` 等原地改文件且不展示 diff 的方式
+3. 仅在生成文件、二进制文件或批量工具不可替代时，才可使用 Shell / 脚本写入；完成后必须同时做到：
+   - 展示 `git status --short` 与 `git diff -- <相对路径>`（新文件可用 `git add -N <相对路径>` 后再 diff，或等价方式）
+   - 在回复中列出变更文件清单（相对路径）与每个文件的变更意图（1 句话）
+   - 明确说明：该方式不保证 Codex CLI 渲染 `Added` / `Edited` 内联差异，请以 `git diff` 为准
+4. 像 `.devflow/<mission>/` 下的 `proposal.md`、`design.md`、`tasks.md`、`state.md` 等文本，默认禁止用 `python3 <<'PY'` 一次写入多个文件；应逐个（或少量相关文件）使用 `apply_patch` 创建 / 修改。
 ## 1. 输出与语言
 
 1. 必须始终使用简体中文。
