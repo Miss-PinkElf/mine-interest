@@ -1,0 +1,8 @@
+{
+  "enabled_group_ids": {
+    "description": "启用检查的群号白名单（Enabled Group IDs）",
+    "type": "list",
+    "hint": "只对这些群保存快照并展开合并转发。留空 = 所有群都启用。填纯数字群号，例如 836229427；可填多个。",
+    "default": []
+  }
+}
