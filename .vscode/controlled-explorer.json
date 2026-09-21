@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "roots": [
+    {
+      "type": "folder",
+      "path": ".devflow/multi-source-hub"
+    }
+  ]
+}
