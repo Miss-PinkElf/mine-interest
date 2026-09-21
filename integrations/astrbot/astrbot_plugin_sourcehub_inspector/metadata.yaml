@@ -1,7 +1,7 @@
 name: astrbot_plugin_sourcehub_inspector
 display_name: SourceHub 消息检查器
-desc: 保存 AstrBot 消息事件快照，并展开合并转发的完整内层聊天记录，帮助检查嵌套结构和附件。
-version: 0.4.0
+desc: 保存消息快照、展开合并转发，并把收藏群消息写成统一条目（envelope.json + content.md）。
+version: 0.5.0
 author: Codex
 support_platforms:
   - aiocqhttp

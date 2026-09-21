@@ -7,6 +7,10 @@ from contextlib import suppress
 
 from astrbot.api.star import Context, Star, StarTools, register
 
+from pathlib import Path
+
+from .sourcehub.vault import Vault
+
 from .client import BilibiliClient, FetchError
 from .collector import Collector, numeric_id
 from .constants import (
@@ -24,6 +28,8 @@ class SourceHubBilibili(Star):
         self.config = config or {}
         self.task = None
         self.client = None
+        vault_dir = Path(str(self.config.get("vault_dir") or "data/sourcehub"))
+        self.vault = Vault(vault_dir, git_enabled=True)
 
     async def initialize(self):
         if not self.config.get("enabled", False):
@@ -51,7 +57,9 @@ class SourceHubBilibili(Star):
                 account = numeric_id(identity.get("mid"))
                 if poller is None or account != current_account:
                     current_account = account
-                    store = Store(StarTools.get_data_dir(PLUGIN_NAME) / account)
+                    store = Store(StarTools.get_data_dir(PLUGIN_NAME) / account, vault=self.vault)
+                    exported = store.export_existing()
+                    self.logger.info("%s 已导出已有档案到 Vault：%s", LOG_PREFIX, exported)
                     poller = Poller(self.client, Collector(self.client), store)
                 await poller.cycle()
             except asyncio.CancelledError:

@@ -1,7 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-09 11:35:22 +08:00
-- 更新时间（Updated At）：2026-09-21 15:51:15 +08:00
+- 更新时间（Updated At）：2026-09-21 18:38:00 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：保存超过最近三条的历史检查点（Checkpoint）。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub（`.`）。
@@ -11,6 +11,12 @@
 - 文档边界（Scope / Boundary）：历史追溯记录，不是当前状态真相源（Source of Truth）；恢复优先读取同目录 `state.md` 与 `checkpoints.md`，不触发实施。
 
 # 历史检查点
+
+## 2026-09-21 15:51:15 +08:00：B 站只读采集首版跑通
+
+- 审查四项、图文动态正文、字段合并清缺口均已修。33 项离线测试通过。
+- 五类真实 @ 均为完整：视频顶层、回根评、回子评、专栏、图文动态。
+- 能力边界与可选续测见 `qq-bilibili-capability-boundary.md`。
 
 ## 2026-09-20 19:10:00 +08:00：个人号转发展开跑通，媒体待落盘
 

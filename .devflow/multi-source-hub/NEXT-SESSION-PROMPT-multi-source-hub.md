@@ -1,41 +1,38 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-09-21 15:51:15 +08:00
-- 作者（Author）：Codex。
-- 目的（Purpose）：新对话恢复 B 站首版之后的工作。
+- 更新时间（Updated At）：2026-09-21 18:38:00 +08:00
+- 作者（Author）：Grok
+- 目的（Purpose）：新对话恢复成条入库之后的工作。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
-- 最新交接（Latest Handoff）：`handoffs/2026-09-21-005-B站只读采集首版跑通与能力边界.md`。
-- 当前状态（Status）：B 站只读采集首版已验收；可选实测与 QQ 延期项待用户选择。
-- 文档边界（Scope / Boundary）：恢复入口。004 已过时。
+- 最新交接（Latest Handoff）：`handoffs/2026-09-21-006-成条入库首版与QQ会话标记.md`。
+- 当前状态（Status）：成条首版已落地；QQ 会话段落待用宽松标记重测。
+- 文档边界（Scope / Boundary）：恢复入口。005 仍是 B 站采集事实来源。
 
 # 下一次对话提示词
 
 请恢复 `.devflow/multi-source-hub/`。默认先读 `state.md` 与 `checkpoints.md`，再读最新交接：
 
-`.devflow/multi-source-hub/handoffs/2026-09-21-005-B站只读采集首版跑通与能力边界.md`
+`.devflow/multi-source-hub/handoffs/2026-09-21-006-成条入库首版与QQ会话标记.md`
 
-能力与待测清单：`qq-bilibili-capability-boundary.md`。
+延期：`deferred/成条与原始资料落盘-首版未做.md`。
 
-**方向已批准：复用 AstrBot，收到 B 站 @ 后采集保存，不自动公开回复。不要再问方向。不要启用完整 BiliBot 互动来替代本插件。**
+**方向已批准：先成条，再知识整理。判断槽关闭。不要开工外层 14 项。不要用 BiliBot 自动回复替代只读采集。**
 
 ## 当前进度
 
-B 站只读采集首版已完成：插件安装并启用，五类真实 @（视频顶层、回根评、回子评、专栏、图文动态）均为完整。离线测试 33 项通过。图文动态空模块漏正文已修。
+成条入库首版已实现：统一封套、Vault（`~/.astrbot/data/sourcehub/`）、QQ 成条、B 站按作品合并。B 站用户认为没有大问题。QQ 会话标记已放宽（去空白、中英文逗号/句号等价）。
 
-QQ 嵌套转发已在 003 跑通。不要重做。媒体落盘、自身消息、去重仍延期。
+表情包合集已在 `items/qq/session/1693473199/`。第二段「段落测试 / 123 / 喜欢你」因旧标记过严拆成单条，需重载插件后整段重发。
 
 ## 建议优先
 
-由用户选一条，不要默认开工外层 14 项：
-
-1. 按能力边界 B1–B3 补测（专栏子评、动态子评、转发动态）。
-2. 回到 QQ：重启 NapCat 测自身消息（Q1），或等体积策略后做媒体落盘。
+1. 重载两个 SourceHub 插件，用 `, , ,` 或 `，，，` 重发一段会话并收口。
+2. 若用户要 `content.md` 按转发层分组，或会话内转发拆成独立条目，先对齐再改。
 3. 不要把 Cookie、真实快照、`sourcehub-image-urls.json` 提交或发到聊天。
 
 ## 注意
 
-- 验证：`backend/.venv/bin/python -m unittest discover -s tests -p 'test_bilibili*.py' -v`
-- 源码：`integrations/astrbot/astrbot_plugin_sourcehub_bilibili/`，改完覆盖 `~/.astrbot/data/plugins/` 再重载
-- 运行数据在 AstrBot 用户目录，不写仓库
-- 首版不做：扫码登录、自动下载视频、发送者白名单。见 `deferred/B站首版未做与可选实测.md`
+- 验证：`PYTHONPATH=.:backend/src backend/.venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v`
+- 源码：`backend/src/sourcehub/` 与两个插件；改完覆盖 `~/.astrbot/data/plugins/` 再重载
+- `media/` 是哈希库，条目在 `items/`

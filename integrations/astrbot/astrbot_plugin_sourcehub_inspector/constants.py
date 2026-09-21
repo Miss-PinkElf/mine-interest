@@ -31,6 +31,12 @@ FORWARD_ERROR_KEY = "_sourcehub_error"
 
 # 插件配置项：启用检查的群号白名单（留空表示全部群启用）
 ENABLED_GROUP_IDS_KEY = "enabled_group_ids"
+COLLECT_ENABLED_KEY = "collect_enabled"
+VAULT_DIR_KEY = "vault_dir"
+SESSION_START_KEY = "session_start"
+SESSION_END_KEY = "session_end"
+MEDIA_MAX_BYTES_KEY = "media_max_bytes"
+DEFAULT_VAULT_DIR = "data/sourcehub"
 
 # 白名单留空时日志里的说明文案
 ALL_GROUPS_SCOPE_LABEL = "全部群"

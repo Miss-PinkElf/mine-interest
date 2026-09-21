@@ -8,6 +8,12 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .sourcehub.bili_ingest import record_to_fragment
+from .sourcehub.bili_merge import merge_work_envelope
+from .sourcehub.constants import NODE_IMAGE
+from .sourcehub.envelope import ContentNode
+from .sourcehub.media import hash_name, image_extension
+
 from .client import FetchError
 from .collector import numeric_id
 from .content import EXISTING_BODY_GAPS
@@ -151,8 +157,9 @@ def read_json(path: Path, default):
 
 
 class Store:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, vault=None):
         self.path = path
+        self.vault = vault
         self.notifications = path / NOTIFICATION_DIR
         self.notifications.mkdir(parents=True, exist_ok=True)
 
@@ -187,6 +194,7 @@ class Store:
         identity = numeric_id(notification.get("id"))
         previous = self.record(identity)
         if previous.get("status") == COMPLETE:
+            self._export_vault(previous, self.item_path(identity))
             return
         folder = self.item_path(identity)
         media = []
@@ -225,3 +233,55 @@ class Store:
         atomic_write(folder / CONTENT_FILE, text.encode("utf-8"))
         # 最后提交成功状态：中途崩溃仍然可以重试。
         write_json(folder / RECORD_FILE, merged)
+        self._export_vault(merged, folder)
+
+    def export_existing(self) -> int:
+        if self.vault is None:
+            return 0
+        count = 0
+        for path in (self.path / ITEM_DIR).glob("*/" + RECORD_FILE):
+            record = read_json(path, {})
+            if not record:
+                continue
+            try:
+                self._export_vault(record, path.parent)
+                count += 1
+            except Exception:
+                continue
+        return count
+
+    def _export_vault(self, merged: dict, folder: Path) -> None:
+        if self.vault is None:
+            return
+        fragment = record_to_fragment(merged)
+        if not fragment:
+            return
+        object_id = str(fragment.get("object_id") or "")
+        existing_id = self.vault.lookup("bilibili", object_id) if object_id else None
+        existing = self.vault.get(existing_id) if existing_id else None
+        envelope = merge_work_envelope(existing, fragment)
+        for media in merged.get("media") or []:
+            relative = media.get("local_path")
+            if not relative:
+                continue
+            source = folder / relative
+            if not source.exists():
+                continue
+            data = source.read_bytes()
+            name = hash_name(data)
+            self.vault.store_media(data, name)
+            digest = name.rsplit(".", 1)[0]
+            known = {node.sha256 for node in envelope.content if node.sha256}
+            if digest not in known:
+                envelope.attachments.append(
+                    {"sha256": digest, "filename": name, "url": media.get("source_url")}
+                )
+                envelope.content.append(
+                    ContentNode(
+                        type=NODE_IMAGE,
+                        url=media.get("source_url"),
+                        sha256=digest,
+                        extra={"ext": image_extension(data)},
+                    )
+                )
+        self.vault.upsert(envelope, object_key=object_id)

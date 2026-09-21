@@ -1,7 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-21 13:04:29 +08:00
-- 更新时间（Updated At）：2026-09-21 15:51:15 +08:00
+- 更新时间（Updated At）：2026-09-21 17:40:00 +08:00
 - 作者（Author）：Codex。
 - 目的（Purpose）：说明 B 站只读提及采集插件的安装、配置、数据位置、失败补取与验证边界。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
@@ -13,7 +13,7 @@
 
 # SourceHub B 站只读采集（Read-only Mention Collection）
 
-收到 B 站 @ 通知后，把触发评论、直接父评论、根评论和作品原文保存到本地。插件复用 AstrBot 的配置与生命周期（Lifecycle），不注册发送评论、私信、点赞等写接口，也不会自动公开回复。
+收到 B 站 @ 通知后，把触发评论、直接父评论、根评论和作品原文保存到本地，并按作品合并进统一资料目录（同一视频/专栏/动态多次 @ 只有一个 `item`、一篇 `content.md`）。插件复用 AstrBot 的配置与生命周期（Lifecycle），不注册发送评论、私信、点赞等写接口，也不会自动公开回复。
 
 本机可以同时安装完整 BiliBot（`astrbot_plugin_bilibili_ai_bot`），二者职责不同：BiliBot 会互动；本插件只采集。不要用 BiliBot 的自动回复替代本插件。
 
@@ -39,6 +39,7 @@
 | `buvid3` | 浏览器设备标识（buvid3） | 空 |
 | `poll_seconds` | 轮询间隔秒数（Polling Interval） | `120`，最小 `60` |
 | `media_max_bytes` | 单图片最大字节数（Media Limit） | `52428800`（50 MiB） |
+| `vault_dir` | 统一资料目录（Vault），与 QQ 成条共用 | `data/sourcehub` |
 
 当前只支持把已有登录态填进配置。扫码登录（QR Login）和自动刷新尚未实现。本机若已在 BiliBot 里登录过同一账号，可在 WebUI 把同一组本地凭证填到本插件；不要把完整 BiliBot 打开成采集器。
 

@@ -23,5 +23,11 @@
     "description": "单图片最大字节数（Media Limit），默认 50 MiB；超限明确记为未完成",
     "type": "int",
     "default": 52428800
+  },
+  "vault_dir": {
+    "description": "统一资料目录（Vault Directory），与 QQ 成条共用",
+    "type": "string",
+    "hint": "相对 AstrBot 工作目录或绝对路径，默认 data/sourcehub",
+    "default": "data/sourcehub"
   }
 }

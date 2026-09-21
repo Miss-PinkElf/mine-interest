@@ -1,22 +1,23 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-09-20 19:05:00 +08:00。
+- 更新时间（Updated At）：2026-09-21 17:40:00 +08:00。
 - 作者（Author）：rin（Claude 协助）。
 - 目的（Purpose）：说明诊断插件的安装、配置、测试方式、展开能力与已知限制。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
 - 关联计划（Related Plan）：`.devflow/multi-source-hub/plans/2026-09-20-检查插件嵌套转发展开-plan.md`、`.devflow/multi-source-hub/plans/2026-09-20-检查插件群级启用范围-plan.md`。
-- 当前状态（Status）：诊断原型（Diagnostic Prototype），不用于正式收藏。
+- 当前状态（Status）：快照 + 成条入库（0.5.0）。
 - 文档边界（Scope / Boundary）：使用说明；问题真相源为 `.devflow/multi-source-hub/bug-log.md`。
 
 # SourceHub 消息检查器（Message Inspector）
 
-在 AstrBot Desktop v4.27.5 + QQ 个人号（NapCat / aiocqhttp，OneBot v11）上生成真实消息快照，并展开合并转发的完整内层聊天记录。仅保存 JSON，不自动回复，不接完整信息中心。
+在 AstrBot Desktop + QQ 个人号（NapCat / aiocqhttp，OneBot v11）上保存消息快照、展开合并转发，并把启用群的消息写成统一条目。
 
-## 它做两件事
+## 它做三件事
 
 1. **事件快照**：把整条消息事件存成 JSON，落到 `data/sourcehub-inspector/snapshots/`。
 2. **转发展开**：消息里含合并转发（`Forward`）时，调用 OneBot v11 的 `get_forward_msg` 取回内层消息树，落到 `data/sourcehub-inspector/forwards/`。
+3. **成条入库**：`collect_enabled` 默认开启。按规则包把消息写成 `data/sourcehub/items/.../envelope.json` 与 `content.md`。会话标记默认整句 `，，，` 开始、`。。。` 结束；图片当场下载到 `data/sourcehub/media/`。
 
 为什么要二次调用：推送事件里的转发段只有 `{"type": "forward", "data": {"id": "<res_id>"}}`，正文不在事件中。官方 QQ 机器人没有这个二次获取入口，个人号（NapCat）有。
 

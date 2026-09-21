@@ -1,6 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-21 15:25:25 +08:00
+- 更新时间（Updated At）：2026-09-21 18:38:00 +08:00
 - 作者（Author）：Codex。
 - 目的（Purpose）：说明 QQ 与 B 站当前「能拿到什么、拿不到什么」，以及还可以请用户帮忙测的样本。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
@@ -18,9 +19,9 @@
 | --- | --- | --- |
 | 插件 | `astrbot_plugin_sourcehub_inspector` | `astrbot_plugin_sourcehub_bilibili` |
 | 入口 | 群里实时推送（OneBot v11 / NapCat） | 轮询「收到的 @」（`/x/msgfeed/at`） |
-| 现在做什么 | 整条事件快照 + 合并转发展开 | 保存 @ 评论、父/根评论、作品正文和图片 |
-| 不做什么 | 不回复、不正式收藏、不下载媒体 | 不公开回复、不扫码登录、不下载视频文件 |
-| 数据目录 | `data/sourcehub-inspector/` | `data/plugin_data/astrbot_plugin_sourcehub_bilibili/<mid>/` |
+| 现在做什么 | 快照 + 转发展开 + 成条写入 Vault | 保存 @ 后按作品合并进 Vault |
+| 不做什么 | 不回复；会话内嵌套转发首版不拆独立条目 | 不公开回复、不扫码登录、不下载视频文件 |
+| 数据目录 | 快照 `data/sourcehub-inspector/`；条目 `data/sourcehub/` | 旧档案 `plugin_data/...`；统一条目 `data/sourcehub/` |
 
 平台前提：QQ 走 **个人号 NapCat**，官方 QQ 机器人没有 `get_forward_msg`。B 站必须在本插件配置里填本地 `SESSDATA` 并打开 **启用只读采集**。
 

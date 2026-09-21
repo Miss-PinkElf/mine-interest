@@ -4,5 +4,32 @@
     "type": "list",
     "hint": "只对这些群保存快照并展开合并转发。留空 = 所有群都启用。填纯数字群号，例如 836229427；可填多个。",
     "default": []
+  },
+  "collect_enabled": {
+    "description": "启用成条入库（Collect to Vault）",
+    "type": "bool",
+    "hint": "在快照之外把消息写成统一条目和 Markdown。",
+    "default": true
+  },
+  "vault_dir": {
+    "description": "资料目录（Vault Directory）",
+    "type": "string",
+    "hint": "相对 AstrBot 工作目录，或绝对路径。默认 data/sourcehub。",
+    "default": "data/sourcehub"
+  },
+  "session_start": {
+    "description": "会话开始标记（整句匹配）",
+    "type": "string",
+    "default": "，，，"
+  },
+  "session_end": {
+    "description": "会话结束标记（整句匹配）",
+    "type": "string",
+    "default": "。。。"
+  },
+  "media_max_bytes": {
+    "description": "单图片最大字节数，默认 50 MiB",
+    "type": "int",
+    "default": 52428800
   }
 }

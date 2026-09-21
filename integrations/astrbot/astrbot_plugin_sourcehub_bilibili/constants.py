@@ -1,7 +1,7 @@
 """接口契约和业务常量（Protocol and Business Constants）。"""
 
 PLUGIN_NAME = "astrbot_plugin_sourcehub_bilibili"
-PLUGIN_VERSION = "0.1.0"
+PLUGIN_VERSION = "0.2.0"
 LOG_PREFIX = "[SourceHub Bilibili]"
 API_BASE = "https://api.bilibili.com"
 SITE_BASE = "https://www.bilibili.com"

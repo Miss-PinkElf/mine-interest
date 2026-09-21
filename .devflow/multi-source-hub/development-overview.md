@@ -7,11 +7,15 @@
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
 - 原始需求（Original Requirement）：`zzz-prompt-debug/多种信息源整合.md`。
 - 关联计划（Related Plan）：`.devflow/multi-source-hub/plans/2026-09-09-多源信息中心-通用接入与QQ收藏闭环-plan.md`。
-- 更新时间（Updated At）：2026-09-21 15:51:15 +08:00。
-- 当前状态（Status）：检查插件实测后暂停交接（Paused）。
+- 更新时间（Updated At）：2026-09-21 18:38:00 +08:00。
+- 当前状态（Status）：成条入库首版已落地。
 - 文档边界（Scope / Boundary）：整体过程记录，不是默认恢复热路径；决定以 decision-log.md 及当前状态为准。
 
 # 多源信息中心开发总记录
+
+## 2026-09-21 18:38:00 +08:00：采集之后进入统一成条
+
+两条来源（QQ 检查插件、B 站只读采集）开始写入同一 Vault：捕获封套 + `content.md`。这是信息中心核心服务之前的薄存储，不改变「AstrBot 承接平台、知识核心独立」总方向。知识整理、判断槽执行、14 项核心仍未做。
 
 ## 2026-09-21 15:51:15 +08:00：B 站只读采集成为第二条已跑通的来源
 

@@ -11,13 +11,20 @@ from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.message_components import Forward
 from astrbot.api.star import Context, Star, register
 
+from .collect import build_pack, collect_event, load_engine
 from .constants import (
     ALL_GROUPS_SCOPE_LABEL,
+    COLLECT_ENABLED_KEY,
+    DEFAULT_VAULT_DIR,
     ENABLED_GROUP_IDS_KEY,
     FORWARD_DIR_NAME,
     LOG_PREFIX,
+    MEDIA_MAX_BYTES_KEY,
     SNAPSHOT_DIR_NAME,
+    VAULT_DIR_KEY,
 )
+from .sourcehub.constants import DEFAULT_MEDIA_MAX_BYTES, SPOOL_DIR
+from .sourcehub.vault import Vault
 from .forward_expander import (
     expand_forward_tree,
     fetch_forward_messages,
@@ -62,7 +69,7 @@ def _describe_group(event: AstrMessageEvent) -> str:
     return group_name or group_id or "非群聊"
 
 
-@register("astrbot_plugin_sourcehub_inspector", "Codex", "保存消息事件快照", "0.4.0")
+@register("astrbot_plugin_sourcehub_inspector", "Codex", "保存消息事件快照并成条入库", "0.5.0")
 class SourceHubInspector(Star):
     def __init__(self, context: Context, config: dict | None = None):
         super().__init__(context, config)
@@ -74,11 +81,21 @@ class SourceHubInspector(Star):
         self._snapshot_dir.mkdir(parents=True, exist_ok=True)
         self._forward_dir.mkdir(parents=True, exist_ok=True)
 
+        self._collect_enabled = bool(self.config.get(COLLECT_ENABLED_KEY, True))
+        vault_dir = Path(str(self.config.get(VAULT_DIR_KEY) or DEFAULT_VAULT_DIR))
+        self._vault = Vault(vault_dir, git_enabled=True) if self._collect_enabled else None
+        self._pack = build_pack(self.config)
+        self._spool_path = vault_dir / SPOOL_DIR / "qq_sessions.json"
+        self._engine = load_engine(self._pack, self._spool_path) if self._collect_enabled else None
+        self._media_max_bytes = int(self.config.get(MEDIA_MAX_BYTES_KEY) or DEFAULT_MEDIA_MAX_BYTES)
+
         self.logger.info(
-            "%s 插件已加载，快照目录：%s，启用范围：%s",
+            "%s 插件已加载，快照目录：%s，启用范围：%s，成条：%s，Vault：%s",
             LOG_PREFIX,
             self._snapshot_dir,
             self._describe_scope(),
+            self._collect_enabled,
+            vault_dir,
         )
 
     def _describe_scope(self) -> str:
@@ -116,11 +133,25 @@ class SourceHubInspector(Star):
             "%s 已保存消息快照：%s -> %s", LOG_PREFIX, _describe_group(event), file_path
         )
 
-        await self._expand_forwards(event, received_at, event_id)
+        expanded = await self._expand_forwards(event, received_at, event_id)
+        if self._collect_enabled and self._vault is not None and self._engine is not None:
+            try:
+                item_ids = collect_event(
+                    event,
+                    expanded,
+                    self._vault,
+                    self._engine,
+                    self._spool_path,
+                    self._media_max_bytes,
+                )
+                if item_ids:
+                    self.logger.info("%s 已成条入库：%s", LOG_PREFIX, "、".join(item_ids))
+            except Exception:
+                self.logger.exception("%s 成条入库失败", LOG_PREFIX)
 
     async def _expand_forwards(
         self, event: AstrMessageEvent, received_at: str, event_id: str
-    ) -> None:
+    ) -> dict:
         """对消息里的每个合并转发段调用 get_forward_msg，展开完整内层树并落盘。"""
         forward_ids = [
             component.id
@@ -128,15 +159,19 @@ class SourceHubInspector(Star):
             if isinstance(component, Forward) and component.id
         ]
         if not forward_ids:
-            return
+            return {}
 
         call_action = resolve_call_action(event)
         if call_action is None:
             self.logger.info("%s 当前平台不支持 get_forward_msg，跳过转发展开", LOG_PREFIX)
-            return
+            return {}
 
+        expanded = {}
         for forward_id in forward_ids:
-            await self._expand_one_forward(event, call_action, received_at, event_id, forward_id)
+            messages = await self._expand_one_forward(event, call_action, received_at, event_id, forward_id)
+            if messages is not None:
+                expanded[str(forward_id)] = messages
+        return expanded
 
     async def _expand_one_forward(
         self,
@@ -145,7 +180,7 @@ class SourceHubInspector(Star):
         received_at: str,
         event_id: str,
         forward_id: str,
-    ) -> None:
+    ):
         messages = await fetch_forward_messages(call_action, forward_id)
         if messages is None:
             self.logger.warning(
@@ -154,7 +189,7 @@ class SourceHubInspector(Star):
                 _describe_group(event),
                 forward_id,
             )
-            return
+            return None
 
         # 补全嵌套转发的 content，再统计成摘要写日志
         await expand_forward_tree(messages, call_action)
@@ -182,7 +217,7 @@ class SourceHubInspector(Star):
                 forward_id,
                 file_path,
             )
-            return
+            return messages
 
         self.logger.info(
             "%s 已展开转发消息：%s 层数=%s 内层条数=%s 段类型=%s -> %s",
@@ -193,6 +228,7 @@ class SourceHubInspector(Star):
             summary["segment_type_counts"],
             text_path,
         )
+        return messages
 
     async def terminate(self):
         self.logger.info("%s 插件已卸载", LOG_PREFIX)
