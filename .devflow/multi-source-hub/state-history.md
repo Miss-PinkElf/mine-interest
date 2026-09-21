@@ -7,11 +7,19 @@
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
 - 原始需求（Original Requirement）：`zzz-prompt-debug/多种信息源整合.md`。
 - 关联计划（Related Plan）：`.devflow/multi-source-hub/plans/2026-09-09-多源信息中心-通用接入与QQ收藏闭环-plan.md`。
-- 更新时间（Updated At）：2026-09-09 18:55:33 +08:00。
+- 更新时间（Updated At）：2026-09-21 15:51:15 +08:00。
 - 当前状态（Status）：历史记录（Historical）。
 - 文档边界（Scope / Boundary）：历史追溯资料，不是当前状态真相源（Source of Truth）；恢复优先 state.md 与 checkpoints.md。
 
 # 状态历史
+
+## 2026-09-21 13:11:04 快照（已安装、等待 T7）
+
+当时插件已安装但 `enabled=false`，T7 未做。已被 2026-09-21 15:51 首版验收快照替换。
+
+## 2026-09-21 10:35:00 快照（B 站探索刚恢复）
+
+当时 `state.md` 仍写 QQ 转发展开与 B 站探索入口，未记录后来的采集代码、审查修复和安装。已被 2026-09-21 13:11 快照替换。
 
 ## 2026-09-09 15:31:02 快照（收尾前）
 

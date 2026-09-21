@@ -1,7 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-09 15:19:34 +08:00
-- 更新时间（Updated At）：2026-09-20 19:10:00 +08:00
+- 更新时间（Updated At）：2026-09-21 15:51:15 +08:00
 - 作者（Author）：rin（Claude 协助）
 - 目的（Purpose）：保留首期 QQ 闭环之外尚需对齐的用户需求，避免丢失。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub（`.`）。
@@ -12,6 +12,12 @@
 - 文档边界（Scope / Boundary）：意图与范围待办真相源（Source of Truth），不代表用户批准实现或正式延期，不触发远端操作。
 
 # 后续范围待办
+
+## 2026-09-21 15:51:15 +08:00：B 站首版之后
+
+- B 站只读采集首版已跑通，不再挡 QQ。
+- 可选续测 B1–B10 见 `qq-bilibili-capability-boundary.md`，不是必须立刻做。
+- QQ 仍最急：媒体落盘（等体积策略）、重启 NapCat 测自身消息。
 
 ## 2026-09-20 19:10:00 +08:00：当前必须续接，不是正式延期
 

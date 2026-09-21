@@ -1,6 +1,6 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-09-20 19:10:00 +08:00
+- 更新时间（Updated At）：2026-09-21 14:56:00 +08:00
 - 作者（Author）：rin（Claude 协助）。
 - 目的（Purpose）：恢复插件诊断上下文。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
@@ -10,6 +10,17 @@
 - 文档边界（Scope / Boundary）：本任务记录；诊断插件不代表完整信息中心已获准实施。
 
 # 问题清单（Bug Log）
+
+## B 站只读采集审查修复（2026-09-21）
+
+| 问题现象 | 原因 | 解决方案与状态 |
+| --- | --- | --- |
+| 部分归档重试覆盖已拿到的原文和 `objects` | `store.save()` 只保护 Complete，Partial 直接整文件覆盖 | 按字段合并：失败/空结果保留旧正文和对象；合并后仍有缺口保持 Partial。已用回归覆盖 |
+| 单条 `AttributeError` 卡住后续通知 | `process()` 未捕获，失败项不写 `attempted_at` | 隔离普通异常并落盘；`CancelledError` 传播；`desc is None` 等链式空值改为 `as_map`。已用回归覆盖 |
+| 空 delta / 空节点 / 空 HTML 被标 Complete | 只检查字段存在，不看渲染结果 | 内容层无文本且无图片记 `empty_body` |
+| 标题/通知/链接把空正文冲成 Complete | 落盘时用组装后 Markdown 是否非空来清除 `empty_body` | 空正文缺口只在本轮内容层不再报告、且非采集失败时才清除。聚焦复审发现并补回归 |
+| 缺失或 null 的 parent/root 当成没有父评论 | `.get(...) or ''` 把缺失和明确 `0` 混在一起 | 缺失/null 记 `parent_missing`/`root_missing`；明确零值才表示顶层。已用回归覆盖 |
+| 图文动态有图无正文，`body_missing` 重复多次 | Opus 详情每个模块都带空的 `module_content`（protobuf 风格），空段落被当成缺正文 | 只解析有段落/图片的模块；回退 `major.opus.summary`；合并时清掉已补上的 `body_missing`。33 项测试通过，两条真实动态已完整 |
 
 ## 已解决
 

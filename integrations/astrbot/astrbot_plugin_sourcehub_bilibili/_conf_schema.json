@@ -1,0 +1,27 @@
+{
+  "enabled": {
+    "description": "启用只读采集（Read-only Collection）",
+    "type": "bool",
+    "default": false
+  },
+  "sessdata": {
+    "description": "账号登录凭证（SESSDATA），仅在本地填写，勿粘贴到聊天或提交",
+    "type": "string",
+    "default": ""
+  },
+  "buvid3": {
+    "description": "浏览器设备标识（buvid3），按本地登录配置填写",
+    "type": "string",
+    "default": ""
+  },
+  "poll_seconds": {
+    "description": "轮询间隔秒数（Polling Interval），最小 60 秒",
+    "type": "int",
+    "default": 120
+  },
+  "media_max_bytes": {
+    "description": "单图片最大字节数（Media Limit），默认 50 MiB；超限明确记为未完成",
+    "type": "int",
+    "default": 52428800
+  }
+}
