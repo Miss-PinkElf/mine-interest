@@ -19,6 +19,7 @@ from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.content import (
 )
 from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.poller import Poller
 from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.store import Store, image_extension
+from sourcehub.vault import Vault
 
 UNIQUE_BODY_MARKER = "UNIQUE_BODY_MARKER_xyz"
 SYNTHETIC_IMAGE_URL = "https://i0.hdslb.com/a.jpg"
@@ -52,6 +53,8 @@ class FakeClient:
             return {"replies": [], "page": {"count": 0}}
         if endpoint == "video":
             return {"bvid": "BVsynthetic", "title": "测试视频", "desc": "长简介" * 1000, "pages": [{"cid": 1}]}
+        if endpoint == "playurl":
+            return {"durl": [{"url": SYNTHETIC_IMAGE_URL}]}
         raise FetchError("test_endpoint_missing")
 
     async def image(self, url):
@@ -159,6 +162,7 @@ class CollectorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(raw["comments"]["parent"]["rpid"], 20)
         self.assertEqual(raw["comments"]["root"]["rpid"], 10)
         self.assertIn("长简介" * 1000, doc.text)
+        self.assertIn(SYNTHETIC_IMAGE_URL, doc.downloads)
         self.assertEqual(doc.gaps, [])
 
     async def test_deleted_parent_not_confused_with_root(self):
@@ -282,6 +286,27 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
         path.write_text("用户修改", encoding="utf-8")
         await self.store.save(notification(), {}, Document("重采"), FakeClient())
         self.assertEqual(path.read_text(encoding="utf-8"), "用户修改")
+
+    async def test_export_existing_uses_readable_article_body_for_vault(self):
+        vault = Vault(Path(self.temp.name) / "vault", git_enabled=False)
+        store = Store(Path(self.temp.name) / "archive", vault=vault)
+        folder = store.item_path("1")
+        folder.mkdir(parents=True)
+        (folder / "content.md").write_text(
+            "# 正文标题\n\n第一段正文\n\n![图片](media/a.jpg)", encoding="utf-8"
+        )
+        from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.store import write_json
+        write_json(folder / "record.json", {
+            "notification": {"item": {"source_id": 1, "uri": "https://www.bilibili.com/read/cv99"}},
+            "source_url": "https://www.bilibili.com/read/cv99",
+            "objects": [{"title": "专栏标题", "summary": "错误摘要"}],
+            "comments": {"trigger": {"rpid": 1, "content": {"message": "@机器人"}}},
+        })
+
+        self.assertEqual(store.export_existing(), 1)
+        content = (vault.item_dir("bilibili:article:99") / "content.md").read_text(encoding="utf-8")
+        self.assertIn("第一段正文", content)
+        self.assertNotIn("错误摘要", content)
 
     async def test_scan_paginates_and_persists_before_cursor(self):
         class PagingClient:

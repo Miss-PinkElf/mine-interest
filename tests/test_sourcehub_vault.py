@@ -35,19 +35,21 @@ class VaultTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             vault = Vault(Path(folder), git_enabled=False)
             vault.upsert(envelope())
-            item = Path(folder) / "items" / "qq" / "message" / "5"
+            item = Path(folder) / "items" / "qq" / "2026-09-21" / "items" / "message-5"
             self.assertTrue((item / ENVELOPE_FILE).exists())
             self.assertTrue((item / CONTENT_FILE).exists())
             payload = json.loads((item / ENVELOPE_FILE).read_text(encoding="utf-8"))
             self.assertEqual(payload["item_id"], "qq:message:5")
             self.assertIn("单独一条", (item / CONTENT_FILE).read_text(encoding="utf-8"))
+            daily_index = Path(folder) / "items" / "qq" / "2026-09-21" / CONTENT_FILE
+            self.assertIn("message-5", daily_index.read_text(encoding="utf-8"))
 
     def test_second_upsert_overwrites_same_item(self):
         with tempfile.TemporaryDirectory() as folder:
             vault = Vault(Path(folder), git_enabled=False)
             vault.upsert(envelope(text="旧"))
             vault.upsert(envelope(text="新"))
-            text = (Path(folder) / "items" / "qq" / "message" / "5" / CONTENT_FILE).read_text(encoding="utf-8")
+            text = (Path(folder) / "items" / "qq" / "2026-09-21" / "items" / "message-5" / CONTENT_FILE).read_text(encoding="utf-8")
             self.assertIn("新", text)
             self.assertNotIn("旧", text)
 
@@ -70,7 +72,7 @@ class VaultTests(unittest.TestCase):
             self.assertIn("qq:message:5", log)
             tracked = subprocess.check_output(["git", "-C", str(root), "ls-files"], text=True)
             self.assertNotIn("private/events/secret.json", tracked)
-            self.assertIn("items/qq/message/5/envelope.json", tracked)
+            self.assertIn("items/qq/2026-09-21/items/message-5/envelope.json", tracked)
 
 
 if __name__ == "__main__":

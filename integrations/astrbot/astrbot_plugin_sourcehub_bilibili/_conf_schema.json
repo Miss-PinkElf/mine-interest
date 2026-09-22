@@ -22,7 +22,7 @@
   "media_max_bytes": {
     "description": "单图片最大字节数（Media Limit），默认 50 MiB；超限明确记为未完成",
     "type": "int",
-    "default": 52428800
+    "default": 104857600
   },
   "vault_dir": {
     "description": "统一资料目录（Vault Directory），与 QQ 成条共用",

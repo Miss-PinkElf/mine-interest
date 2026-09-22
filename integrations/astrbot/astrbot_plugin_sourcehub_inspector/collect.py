@@ -9,14 +9,21 @@ from pathlib import Path
 from typing import Any
 
 from .sourcehub.constants import DEFAULT_MEDIA_MAX_BYTES, DEFAULT_SESSION_END, DEFAULT_SESSION_START
+from .sourcehub.constants import GROUPING_SINGLE, SPOOL_DIR
+from .sourcehub.daily import DailyLedger
 from .sourcehub.download import fetch_bytes
 from .sourcehub.grouping import GroupingEngine
 from .sourcehub.media import persist_image_nodes
+from .sourcehub.media_jobs import MediaJobQueue
 from .sourcehub.qq_ingest import parse_onebot_message
 from .sourcehub.rules import RulePack
 from .sourcehub.vault import Vault
 
 SPOOL_FILE = "qq_sessions.json"
+MAX_CONCURRENT_MEDIA_DOWNLOADS = 2
+MEDIA_JOB_NODE_PATH = "all_images"
+_media_queues: dict[str, MediaJobQueue] = {}
+_media_workers: dict[str, asyncio.Task] = {}
 
 
 def build_pack(config: dict) -> RulePack:
@@ -59,6 +66,7 @@ def collect_event(
     engine: GroupingEngine,
     spool_path: Path,
     max_bytes: int,
+    daily_ledger: DailyLedger | None = None,
 ) -> list[str]:
     payload = event_payload(event, expanded_forwards)
     incoming = parse_onebot_message(payload)
@@ -71,24 +79,54 @@ def collect_event(
     spool_path.parent.mkdir(parents=True, exist_ok=True)
     spool_path.write_text(json.dumps(engine.dump_sessions(), ensure_ascii=False, indent=2), encoding="utf-8")
     for envelope in envelopes:
+        if daily_ledger is not None and envelope.grouping.get("type") == GROUPING_SINGLE:
+            daily_ledger.append(incoming, now)
+            vault.append_daily_message(envelope)
+            continue
         vault.upsert(envelope)
         item_ids.append(envelope.item_id)
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            persist_image_nodes(envelope, vault, max_bytes, fetch_bytes)
-            vault.upsert(envelope)
-        else:
-            loop.create_task(_enrich_media(envelope, vault, max_bytes))
+        _enqueue_media(envelope.item_id, vault, max_bytes)
     return item_ids
 
 
-async def _enrich_media(envelope, vault, max_bytes) -> None:
-    def work():
-        persist_image_nodes(envelope, vault, max_bytes, fetch_bytes)
-        vault.upsert(envelope)
+def finalize_daily_collection(vault: Vault, ledger: DailyLedger, conversation_id: str, day: str) -> str | None:
+    """手动与定时整理共用的唯一入口，成功落库后才推进日账本游标。"""
+    envelope = ledger.finalize(conversation_id, day)
+    if envelope is None:
+        return None
+    vault.upsert(envelope)
+    ledger.mark_finalized(conversation_id, day, envelope.grouping["member_event_ids"])
+    return envelope.item_id
 
-    await asyncio.to_thread(work)
+
+def _enqueue_media(item_id: str, vault: Vault, max_bytes: int) -> None:
+    """先持久入队，再由单个 worker 有限并发下载，事件处理路径不等待网络。"""
+    queue_key = str(vault.root)
+    queue = _media_queues.setdefault(
+        queue_key,
+        MediaJobQueue(vault.root / SPOOL_DIR, concurrency=MAX_CONCURRENT_MEDIA_DOWNLOADS),
+    )
+    queue.enqueue(item_id, MEDIA_JOB_NODE_PATH, "")
+    task = _media_workers.get(queue_key)
+    if task is None or task.done():
+        _media_workers[queue_key] = asyncio.create_task(_drain_media_jobs(queue, vault, max_bytes))
+
+
+async def _drain_media_jobs(queue: MediaJobQueue, vault: Vault, max_bytes: int) -> None:
+    async def enrich(job) -> None:
+        envelope = vault.get(job.item_id)
+        if envelope is None:
+            return
+
+        def work() -> None:
+            persist_image_nodes(envelope, vault, max_bytes, fetch_bytes)
+            vault.upsert(envelope)
+
+        await asyncio.to_thread(work)
+
+    # drain 会保存每个任务状态；循环处理 worker 运行期间追加的新任务。
+    while queue.pending():
+        await queue.drain(enrich)
 
 
 def load_engine(pack: RulePack, spool_path: Path) -> GroupingEngine:

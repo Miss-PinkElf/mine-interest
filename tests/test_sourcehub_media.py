@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import tempfile
 import unittest
+from pathlib import Path
 
-from sourcehub.constants import GAP_MEDIA_TOO_LARGE
-from sourcehub.media import accept_media, hash_name, image_extension
+from sourcehub.constants import GAP_MEDIA_TOO_LARGE, NODE_FILE, SCHEMA_VERSION
+from sourcehub.envelope import ContentNode, Envelope
+from sourcehub.media import accept_media, hash_name, image_extension, persist_media_nodes
+from sourcehub.vault import Vault
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 16
 JPEG = b"\xff\xd8\xff" + b"\x00" * 16
@@ -31,6 +35,22 @@ class MediaTests(unittest.TestCase):
         self.assertEqual(data, PNG)
         self.assertTrue(name.endswith(".png"))
         self.assertIsNone(gap)
+
+    def test_file_node_uses_same_direct_media_persistence(self):
+        with tempfile.TemporaryDirectory() as folder:
+            vault = Vault(Path(folder), git_enabled=False)
+            envelope = Envelope(
+                schema_version=SCHEMA_VERSION, platform="qq", conversation_id="g",
+                item_id="qq:message:1", event_id="1", sender_id="u", source_time=None,
+                received_at="2026-09-21T12:00:00Z",
+                content=[ContentNode(type=NODE_FILE, url="https://example.test/file")],
+                attachments=[], gaps=[], grouping={},
+            )
+            persist_media_nodes(
+                envelope, vault, 100 * 1024 * 1024,
+                lambda *_: (b"GIF89a", "a.gif", None),
+            )
+            self.assertEqual(envelope.content[0].sha256, hash_name(b"GIF89a").split(".")[0])
 
 
 if __name__ == "__main__":

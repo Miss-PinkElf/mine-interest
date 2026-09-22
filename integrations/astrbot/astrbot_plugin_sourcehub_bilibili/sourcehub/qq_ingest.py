@@ -8,6 +8,7 @@ from typing import Any
 from .constants import (
     GAP_EVENT_ID_MISSING,
     NODE_FORWARD,
+    NODE_FILE,
     NODE_IMAGE,
     NODE_TEXT,
     NODE_UNKNOWN,
@@ -68,6 +69,9 @@ def _parse_segment(segment: dict[str, Any]):
     if kind == "image":
         url = str(data.get("url") or data.get("file") or "")
         return ContentNode(type=NODE_IMAGE, url=url), "", False
+    if kind == "file":
+        url = str(data.get("url") or data.get("file_url") or data.get("file") or "")
+        return ContentNode(type=NODE_FILE, url=url, extra={"name": data.get("name") or ""}), "", False
     if kind == "forward":
         children = []
         for inner in data.get("content") or []:

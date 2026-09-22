@@ -25,11 +25,13 @@ def as_list(value) -> list:
 class Document:
     text: str = ""
     images: list[str] = field(default_factory=list)
+    downloads: list[str] = field(default_factory=list)
     gaps: list[str] = field(default_factory=list)
 
     def append(self, other: Document):
         self.text += "\n\n" + other.text
         self.images.extend(other.images)
+        self.downloads.extend(other.downloads)
         self.gaps.extend(other.gaps)
 
     def picture(self, url: str):
@@ -37,7 +39,12 @@ class Document:
             self.gaps.append("image_url_missing")
             return
         self.images.append(url)
+        self.downloads.append(url)
         self.text += f"\n\n![图片]({url})"
+
+    def download(self, url: str):
+        if url:
+            self.downloads.append(url)
 
 
 def has_visible_body(doc: Document) -> bool:

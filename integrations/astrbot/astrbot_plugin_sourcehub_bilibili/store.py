@@ -198,7 +198,7 @@ class Store:
             return
         folder = self.item_path(identity)
         media = []
-        for url in dict.fromkeys(doc.images):
+        for url in dict.fromkeys(doc.downloads or doc.images):
             try:
                 content = await client.image(url)
                 name = hashlib.sha256(content).hexdigest() + image_extension(content)
@@ -207,7 +207,7 @@ class Store:
                 doc.text = doc.text.replace(url, relative)
                 media.append({"source_url": url, "local_path": relative})
                 if relative not in doc.text:
-                    doc.text += f"\n\n![附件]({relative})"
+                    doc.text += f"\n\n[附件]({relative})"
             except FetchError as exc:
                 doc.gaps.append(f"{IMAGE_GAP_PREFIX}{exc}")
                 media.append({"source_url": url, "error": str(exc)})
@@ -256,6 +256,12 @@ class Store:
         fragment = record_to_fragment(merged)
         if not fragment:
             return
+        content_path = folder / CONTENT_FILE
+        if content_path.exists():
+            # 已采集档案的 content.md 是专栏/动态的完整可读正文；优先它而非摘要字段。
+            archived_body = markdown_body(content_path.read_text(encoding="utf-8"))
+            if archived_body:
+                fragment["body"] = archived_body
         object_id = str(fragment.get("object_id") or "")
         existing_id = self.vault.lookup("bilibili", object_id) if object_id else None
         existing = self.vault.get(existing_id) if existing_id else None

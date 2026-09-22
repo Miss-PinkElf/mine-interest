@@ -6,7 +6,7 @@
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
 - 关联计划（Related Plan）：`.devflow/multi-source-hub/plans/2026-09-20-检查插件嵌套转发展开-plan.md`、`.devflow/multi-source-hub/plans/2026-09-20-检查插件群级启用范围-plan.md`。
-- 当前状态（Status）：快照 + 成条入库（0.5.0）。
+- 当前状态（Status）：快照 + 成条入库（0.5.4）。
 - 文档边界（Scope / Boundary）：使用说明；问题真相源为 `.devflow/multi-source-hub/bug-log.md`。
 
 # SourceHub 消息检查器（Message Inspector）

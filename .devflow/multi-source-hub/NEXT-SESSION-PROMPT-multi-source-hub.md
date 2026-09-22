@@ -1,38 +1,38 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-09-21 18:38:00 +08:00
-- 作者（Author）：Grok
-- 目的（Purpose）：新对话恢复成条入库之后的工作。
-- 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
+- 更新时间（Updated At）：2026-09-22 18:35:00 +08:00
+- 作者（Author）：Codex。
+- 目的（Purpose）：为下一次对话提供短恢复入口和明确的未完成边界。
+- 关联仓库（Related Repository）：`.`。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
-- 最新交接（Latest Handoff）：`handoffs/2026-09-21-006-成条入库首版与QQ会话标记.md`。
-- 当前状态（Status）：成条首版已落地；QQ 会话段落待用宽松标记重测。
-- 文档边界（Scope / Boundary）：恢复入口。005 仍是 B 站采集事实来源。
+- 最新交接（Latest Handoff）：`handoffs/2026-09-22-007-按天归档与直连媒体首版.md`。
+- 当前状态（Status）：等待下一阶段对齐（Awaiting Align）。
+- 文档边界（Scope / Boundary）：恢复入口；不自动授权实施（Apply）。
 
 # 下一次对话提示词
 
-请恢复 `.devflow/multi-source-hub/`。默认先读 `state.md` 与 `checkpoints.md`，再读最新交接：
+请恢复 `.devflow/multi-source-hub/`。默认先读 `state.md` 与 `checkpoints.md`，再读：
 
-`.devflow/multi-source-hub/handoffs/2026-09-21-006-成条入库首版与QQ会话标记.md`
+`.devflow/multi-source-hub/handoffs/2026-09-22-007-按天归档与直连媒体首版.md`
 
-延期：`deferred/成条与原始资料落盘-首版未做.md`。
+需要理解整体演进时再读 `development-overview.md`；所有明确延期先读 `deferred/按天归档与媒体首版未做.md`。
 
-**方向已批准：先成条，再知识整理。判断槽关闭。不要开工外层 14 项。不要用 BiliBot 自动回复替代只读采集。**
+## 已完成且无需重做
 
-## 当前进度
+- QQ 当天总文档实时扩充，`@bot 整理` 与午夜整理不会重复成条。
+- QQ / B 站按采集日归档；历史 27 项和后续发现的 2 条旧路径 QQ 转发均已迁移，真实 Vault 预演剩余 0。
+- QQ 媒体默认 100 MiB 直连队列；B 站可解析视频播放流 URL；插件已重载为检查器 0.5.4、B 站 0.2.4。
+- 全量离线回归 75 项通过。
 
-成条入库首版已实现：统一封套、Vault（`~/.astrbot/data/sourcehub/`）、QQ 成条、B 站按作品合并。B 站用户认为没有大问题。QQ 会话标记已放宽（去空白、中英文逗号/句号等价）。
+## 未完成 / 必须先讨论
 
-表情包合集已在 `items/qq/session/1693473199/`。第二段「段落测试 / 123 / 喜欢你」因旧标记过严拆成单条，需重载插件后整段重发。
-
-## 建议优先
-
-1. 重载两个 SourceHub 插件，用 `, , ,` 或 `，，，` 重发一段会话并收口。
-2. 若用户要 `content.md` 按转发层分组，或会话内转发拆成独立条目，先对齐再改。
-3. 不要把 Cookie、真实快照、`sourcehub-image-urls.json` 提交或发到聊天。
+1. QQ 最终目录要不要改成 `日期/message|forward|session/条目`。当前实现是 `日期/items/类型-ID`，不能静默当作符合最新需求。
+2. B 站下载要不要接入持久媒体队列（Media Job Queue），以避免大媒体阻塞轮询。
+3. 链接筛选与格式化：需要确认 GitHub、Gitee、百度网盘、夸克网盘等首批规则和输出样式。
+4. 自动推送到 `git@github.com:Miss-PinkElf/data-hub.git`：先确认访问、私有资料范围、媒体策略和失败重试。
 
 ## 注意
 
-- 验证：`PYTHONPATH=.:backend/src backend/.venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v`
-- 源码：`backend/src/sourcehub/` 与两个插件；改完覆盖 `~/.astrbot/data/plugins/` 再重载
-- `media/` 是哈希库，条目在 `items/`
+- 不要提交 Cookie、真实快照或 `sourcehub-image-urls.json`。
+- 不要开始外层 14 项信息中心任务。
+- 改动插件运行文件时同步递增 `metadata.yaml` 与注册版本，并同步到本机插件目录后重载。

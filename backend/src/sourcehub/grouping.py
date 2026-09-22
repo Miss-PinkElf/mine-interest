@@ -9,6 +9,7 @@ from typing import Any
 from .constants import (
     GAP_SESSION_END_MISSING,
     GROUPING_MERGED_FORWARD,
+    GROUPING_DAILY,
     GROUPING_SESSION_MARKERS,
     GROUPING_SINGLE,
     NODE_FORWARD,
@@ -247,3 +248,24 @@ class GroupingEngine:
             gaps=[],
             grouping={"type": grouping_type, "member_event_ids": [message.event_id]},
         )
+
+
+def daily_envelope(messages: list[IncomingMessage], day: str) -> Envelope | None:
+    """把同群同日尚未整理的普通消息投影为一个确定性日条目。"""
+    if not messages:
+        return None
+    first = messages[0]
+    return Envelope(
+        schema_version=SCHEMA_VERSION,
+        platform=PLATFORM_QQ,
+        conversation_id=first.conversation_id,
+        item_id=f"qq:daily:{first.conversation_id}:{day}:{first.event_id}",
+        event_id=first.event_id,
+        sender_id=first.sender_id,
+        source_time=first.source_time,
+        received_at=first.received_at,
+        content=[node for message in messages for node in message.nodes],
+        attachments=[],
+        gaps=[],
+        grouping={"type": GROUPING_DAILY, "member_event_ids": [message.event_id for message in messages], "day": day},
+    )

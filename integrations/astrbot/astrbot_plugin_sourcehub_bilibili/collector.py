@@ -128,6 +128,18 @@ class Collector:
                     raise FetchError("video_fields_missing")
                 raw["source_url"] = f"{SITE_BASE}/video/{bvid}"
                 doc.text += f"\n\n# {data.get('title', bvid)}\n\n{raw['source_url']}\n\n{data['desc']}"
+                first_page = as_list(data.get("pages"))[0] if as_list(data.get("pages")) else {}
+                cid = as_map(first_page).get("cid")
+                if cid:
+                    stream = await self.client.get(
+                        "playurl", bvid=bvid, cid=cid, qn=64, fnval=0, fnver=0,
+                    )
+                    durl = as_list(stream.get("durl"))
+                    stream_url = as_map(durl[0]).get("url") if durl else ""
+                    if stream_url:
+                        doc.download(str(stream_url))
+                    else:
+                        doc.gaps.append("video_stream_missing")
             elif kind == ARTICLE_COMMENT:
                 data = await self.client.get("article", id=oid)
                 raw["objects"].append(data)

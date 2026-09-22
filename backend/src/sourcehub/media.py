@@ -37,11 +37,12 @@ def walk_nodes(nodes):
         yield from walk_nodes(node.children)
 
 
-def persist_image_nodes(envelope, vault, max_bytes, fetcher) -> None:
-    from .constants import NODE_IMAGE
+def persist_media_nodes(envelope, vault, max_bytes, fetcher) -> None:
+    """将图片、视频和文件节点统一写入公共哈希媒体库。"""
+    from .constants import NODE_FILE, NODE_IMAGE
 
     for node in walk_nodes(envelope.content):
-        if node.type != NODE_IMAGE or not node.url or node.sha256:
+        if node.type not in {NODE_IMAGE, NODE_FILE} or not node.url or node.sha256:
             continue
         data, name, gap = fetcher(node.url, max_bytes)
         if gap:
@@ -55,3 +56,7 @@ def persist_image_nodes(envelope, vault, max_bytes, fetcher) -> None:
         envelope.attachments.append(
             {"sha256": node.sha256, "filename": name, "url": node.url}
         )
+
+
+# 兼容已发布插件内的旧调用名。
+persist_image_nodes = persist_media_nodes

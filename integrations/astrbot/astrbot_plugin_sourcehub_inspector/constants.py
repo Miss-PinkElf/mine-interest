@@ -36,6 +36,10 @@ VAULT_DIR_KEY = "vault_dir"
 SESSION_START_KEY = "session_start"
 SESSION_END_KEY = "session_end"
 MEDIA_MAX_BYTES_KEY = "media_max_bytes"
+TIMEZONE_KEY = "timezone"
+ORGANIZE_COMMAND_KEY = "organize_command"
+DEFAULT_TIMEZONE = "Asia/Shanghai"
+DEFAULT_ORGANIZE_COMMAND = "整理"
 DEFAULT_VAULT_DIR = "data/sourcehub"
 
 # 白名单留空时日志里的说明文案

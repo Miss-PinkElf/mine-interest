@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+import asyncio
+from contextlib import suppress
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +14,7 @@ from astrbot.api.message_components import Forward
 from astrbot.api.star import Context, Star, register
 
 from .collect import build_pack, collect_event, load_engine
+from .collect import finalize_daily_collection
 from .constants import (
     ALL_GROUPS_SCOPE_LABEL,
     COLLECT_ENABLED_KEY,
@@ -20,9 +23,14 @@ from .constants import (
     FORWARD_DIR_NAME,
     LOG_PREFIX,
     MEDIA_MAX_BYTES_KEY,
+    DEFAULT_ORGANIZE_COMMAND,
+    DEFAULT_TIMEZONE,
+    ORGANIZE_COMMAND_KEY,
     SNAPSHOT_DIR_NAME,
     VAULT_DIR_KEY,
+    TIMEZONE_KEY,
 )
+from .sourcehub.daily import DailyLedger
 from .sourcehub.constants import DEFAULT_MEDIA_MAX_BYTES, SPOOL_DIR
 from .sourcehub.vault import Vault
 from .forward_expander import (
@@ -69,7 +77,7 @@ def _describe_group(event: AstrMessageEvent) -> str:
     return group_name or group_id or "非群聊"
 
 
-@register("astrbot_plugin_sourcehub_inspector", "Codex", "保存消息事件快照并成条入库", "0.5.0")
+@register("astrbot_plugin_sourcehub_inspector", "Codex", "保存消息事件快照并成条入库", "0.5.4")
 class SourceHubInspector(Star):
     def __init__(self, context: Context, config: dict | None = None):
         super().__init__(context, config)
@@ -86,6 +94,14 @@ class SourceHubInspector(Star):
         self._vault = Vault(vault_dir, git_enabled=True) if self._collect_enabled else None
         self._pack = build_pack(self.config)
         self._spool_path = vault_dir / SPOOL_DIR / "qq_sessions.json"
+        self._daily_ledger = DailyLedger(
+            vault_dir / SPOOL_DIR,
+            timezone_name=str(self.config.get(TIMEZONE_KEY) or DEFAULT_TIMEZONE),
+        ) if self._collect_enabled else None
+        self._organize_command = str(
+            self.config.get(ORGANIZE_COMMAND_KEY) or DEFAULT_ORGANIZE_COMMAND
+        ).strip()
+        self._daily_task = None
         self._engine = load_engine(self._pack, self._spool_path) if self._collect_enabled else None
         self._media_max_bytes = int(self.config.get(MEDIA_MAX_BYTES_KEY) or DEFAULT_MEDIA_MAX_BYTES)
 
@@ -97,6 +113,11 @@ class SourceHubInspector(Star):
             self._collect_enabled,
             vault_dir,
         )
+
+    async def initialize(self):
+        """午夜调度与消息处理共用同一日整理入口。"""
+        if self._collect_enabled and self._vault is not None and self._daily_ledger is not None:
+            self._daily_task = asyncio.create_task(self._finalize_previous_days())
 
     def _describe_scope(self) -> str:
         """启用范围的日志文案。留空时明确说明是全部群。"""
@@ -143,11 +164,37 @@ class SourceHubInspector(Star):
                     self._engine,
                     self._spool_path,
                     self._media_max_bytes,
+                    self._daily_ledger,
                 )
                 if item_ids:
                     self.logger.info("%s 已成条入库：%s", LOG_PREFIX, "、".join(item_ids))
             except Exception:
                 self.logger.exception("%s 成条入库失败", LOG_PREFIX)
+
+    @filter.command("整理")
+    async def organize_today(self, event: AstrMessageEvent):
+        """用户 @机器人整理时立即收口当前群当天尚未处理的普通消息。"""
+        if self._vault is None or self._daily_ledger is None:
+            return
+        group_id = event.get_group_id() or ""
+        if not group_id or not self._is_group_enabled(group_id):
+            return
+        current_day = datetime.now(self._daily_ledger.timezone).date().isoformat()
+        item_id = finalize_daily_collection(self._vault, self._daily_ledger, group_id, current_day)
+        if item_id:
+            self.logger.info("%s 已立即整理日收集：%s", LOG_PREFIX, item_id)
+
+    async def _finalize_previous_days(self):
+        """每天零点后扫描昨日账本；日账本游标确保重载与手动执行均不重复。"""
+        while True:
+            now = datetime.now(self._daily_ledger.timezone)
+            tomorrow = (now + timedelta(days=1)).date()
+            midnight = datetime.combine(tomorrow, datetime.min.time(), self._daily_ledger.timezone)
+            await asyncio.sleep((midnight - now).total_seconds())
+            previous_day = (midnight - timedelta(days=1)).date().isoformat()
+            for group_path in self._daily_ledger.root.iterdir() if self._daily_ledger.root.exists() else []:
+                if group_path.is_dir():
+                    finalize_daily_collection(self._vault, self._daily_ledger, group_path.name, previous_day)
 
     async def _expand_forwards(
         self, event: AstrMessageEvent, received_at: str, event_id: str
@@ -231,4 +278,8 @@ class SourceHubInspector(Star):
         return messages
 
     async def terminate(self):
+        if self._daily_task:
+            self._daily_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._daily_task
         self.logger.info("%s 插件已卸载", LOG_PREFIX)

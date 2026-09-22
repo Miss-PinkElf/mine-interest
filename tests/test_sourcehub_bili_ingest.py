@@ -57,9 +57,9 @@ class BiliIngestTests(unittest.TestCase):
             item_dir.mkdir(parents=True)
             store._export_vault(raw, item_dir)
             self.assertEqual(vault.lookup("bilibili", "BV1xx"), "bilibili:video:BV1xx")
-            markdown = (
-                Path(folder) / "vault" / "items" / "bilibili" / "video" / "BV1xx" / CONTENT_FILE
-            ).read_text(encoding="utf-8")
+            markdown = (vault.item_dir("bilibili:video:BV1xx") / CONTENT_FILE).read_text(
+                encoding="utf-8"
+            )
             self.assertIn("简介", markdown)
             self.assertIn("@机器人", markdown)
 
@@ -82,9 +82,9 @@ class BiliIngestTests(unittest.TestCase):
             exported = store.export_existing()
             self.assertEqual(exported, 1)
             self.assertEqual(vault.lookup("bilibili", "99"), "bilibili:article:99")
-            markdown = (
-                Path(folder) / "vault" / "items" / "bilibili" / "article" / "99" / CONTENT_FILE
-            ).read_text(encoding="utf-8")
+            markdown = (vault.item_dir("bilibili:article:99") / CONTENT_FILE).read_text(
+                encoding="utf-8"
+            )
             self.assertIn("专栏标题", markdown)
             self.assertIn("@专栏", markdown)
 

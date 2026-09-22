@@ -30,6 +30,17 @@
   "media_max_bytes": {
     "description": "单图片最大字节数，默认 50 MiB",
     "type": "int",
-    "default": 52428800
+    "default": 104857600
+  },
+  "timezone": {
+    "description": "日收集时区（Daily Collection Timezone）",
+    "type": "string",
+    "default": "Asia/Shanghai"
+  },
+  "organize_command": {
+    "description": "立即整理命令（Organize Command）",
+    "type": "string",
+    "hint": "在群内 @机器人后发送此命令，默认“整理”。",
+    "default": "整理"
   }
 }
