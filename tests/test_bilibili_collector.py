@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.client import FetchError, media_url
+from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.client import BilibiliClient, FetchError, media_url
 from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.collector import Collector, dynamic_id
 from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.constants import (
     ARTICLE_COMMENT, COMPLETE, EMPTY_BODY_GAP, OBJECT_GAP_PREFIX,
@@ -40,6 +40,7 @@ def comment(identity, parent=0, root=0):
 class FakeClient:
     def __init__(self):
         self.calls = []
+        self.image_calls = 0
         self.image_fail = False
         self.comments = {10: comment(10), 20: comment(20, 10, 10), 30: comment(30, 20, 10)}
 
@@ -58,6 +59,7 @@ class FakeClient:
         raise FetchError("test_endpoint_missing")
 
     async def image(self, url):
+        self.image_calls += 1
         if self.image_fail:
             raise FetchError("test_image_failure")
         return b"GIF89a" + b"synthetic-image"
@@ -145,14 +147,55 @@ class ContentTests(unittest.TestCase):
 
     def test_image_magic_not_suffix(self):
         self.assertEqual(image_extension(b"GIF89a"), ".gif")
+        self.assertEqual(image_extension(b"\x00\x00\x00\x18ftypisom"), ".mp4")
+        self.assertEqual(image_extension(b"FLV\x01"), ".flv")
         with self.assertRaises(FetchError):
             image_extension(b"<html>error</html>")
 
     def test_media_url_rejects_other_hosts_and_credentials(self):
         self.assertEqual(media_url("//i0.hdslb.com/a.jpg"), "https://i0.hdslb.com/a.jpg")
+        self.assertEqual(
+            media_url("https://upos-sz-mirrorcoso1.bilivideo.com/a.mp4"),
+            "https://upos-sz-mirrorcoso1.bilivideo.com/a.mp4",
+        )
         for url in ["https://evil.example/a.jpg", "http://127.0.0.1/a.jpg", "https://i0.hdslb.com.evil/a", "https://u:p@i0.hdslb.com/a"]:
             with self.assertRaises(FetchError):
                 media_url(url)
+
+
+class MediaRetryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_media_recovers_on_fifth_attempt(self):
+        class Response:
+            status = 200
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *_):
+                return False
+
+            class content:
+                @staticmethod
+                async def iter_chunked(_size):
+                    yield b"GIF89a-image"
+
+        class Media:
+            calls = 0
+
+            def get(self, *_args, **_kwargs):
+                self.calls += 1
+                if self.calls < 5:
+                    raise TimeoutError("timeout")
+                return Response()
+
+        client = BilibiliClient.__new__(BilibiliClient)
+        client.media = Media()
+        client.media_limit = 100
+        from unittest.mock import patch
+        with patch("integrations.astrbot.astrbot_plugin_sourcehub_bilibili.client.asyncio.sleep"):
+            result = await client.image(SYNTHETIC_IMAGE_URL)
+        self.assertEqual(result, b"GIF89a-image")
+        self.assertEqual(client.media.calls, 5)
 
 
 class CollectorTests(unittest.IsolatedAsyncioTestCase):
@@ -295,18 +338,54 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
         (folder / "content.md").write_text(
             "# 正文标题\n\n第一段正文\n\n![图片](media/a.jpg)", encoding="utf-8"
         )
+        (folder / "media").mkdir()
+        (folder / "media/a.jpg").write_bytes(b"\xff\xd8\xff" + b"synthetic-image")
         from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.store import write_json
         write_json(folder / "record.json", {
             "notification": {"item": {"source_id": 1, "uri": "https://www.bilibili.com/read/cv99"}},
             "source_url": "https://www.bilibili.com/read/cv99",
             "objects": [{"title": "专栏标题", "summary": "错误摘要"}],
             "comments": {"trigger": {"rpid": 1, "content": {"message": "@机器人"}}},
+            "media": [{"source_url": SYNTHETIC_IMAGE_URL, "local_path": "media/a.jpg"}],
         })
 
         self.assertEqual(store.export_existing(), 1)
         content = (vault.item_dir("bilibili:article:99") / "content.md").read_text(encoding="utf-8")
         self.assertIn("第一段正文", content)
         self.assertNotIn("错误摘要", content)
+        self.assertNotIn("](media/a.jpg)", content)
+        self.assertIn("](../../../../../media/", content)
+
+    async def test_repair_failed_media_is_idempotent_and_preserves_body(self):
+        vault = Vault(Path(self.temp.name) / "vault", git_enabled=False)
+        store = Store(Path(self.temp.name) / "archive", vault=vault)
+        folder = store.item_path("1")
+        folder.mkdir(parents=True)
+        (folder / "content.md").write_text(
+            "采集状态（Collection Status）：partial\n\n正文原文\n\n![图片](https://i0.hdslb.com/a.jpg)\n\n## 未完成项\n\n- image:timeout",
+            encoding="utf-8",
+        )
+        from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.store import write_json
+        write_json(folder / "record.json", {
+            "notification": {"item": {"source_id": 1, "uri": "https://www.bilibili.com/read/cv99"}},
+            "source_url": "https://www.bilibili.com/read/cv99",
+            "objects": [{"title": "专栏标题", "summary": "摘要"}],
+            "comments": {"trigger": {"rpid": 1, "content": {"message": "@机器人"}}},
+            "media": [{"source_url": SYNTHETIC_IMAGE_URL, "error": "timeout"}],
+            "gaps": ["image:timeout"],
+            "status": PARTIAL,
+        })
+        client = FakeClient()
+
+        self.assertEqual(await store.repair_failed_media(client), 1)
+        self.assertEqual(await store.repair_failed_media(client), 0)
+        self.assertEqual(client.image_calls, 1)
+        record = store.record("1")
+        self.assertEqual(record["status"], COMPLETE)
+        self.assertTrue((folder / record["media"][0]["local_path"]).exists())
+        content = (vault.item_dir("bilibili:article:99") / "content.md").read_text(encoding="utf-8")
+        self.assertIn("正文原文", content)
+        self.assertIn("](../../../../../media/", content)
 
     async def test_scan_paginates_and_persists_before_cursor(self):
         class PagingClient:

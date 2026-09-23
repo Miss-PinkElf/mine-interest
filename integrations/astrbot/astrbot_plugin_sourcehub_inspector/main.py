@@ -18,6 +18,7 @@ from .collect import finalize_daily_collection
 from .constants import (
     ALL_GROUPS_SCOPE_LABEL,
     COLLECT_ENABLED_KEY,
+    PUBLISH_ENABLED_KEY,
     DEFAULT_VAULT_DIR,
     ENABLED_GROUP_IDS_KEY,
     FORWARD_DIR_NAME,
@@ -33,6 +34,7 @@ from .constants import (
 from .sourcehub.daily import DailyLedger
 from .sourcehub.constants import DEFAULT_MEDIA_MAX_BYTES, SPOOL_DIR
 from .sourcehub.vault import Vault
+from .sourcehub.publish import Publisher, PublishError, PUBLISH_INTERVAL_SECONDS
 from .forward_expander import (
     expand_forward_tree,
     fetch_forward_messages,
@@ -77,7 +79,7 @@ def _describe_group(event: AstrMessageEvent) -> str:
     return group_name or group_id or "非群聊"
 
 
-@register("astrbot_plugin_sourcehub_inspector", "Codex", "保存消息事件快照并成条入库", "0.5.4")
+@register("astrbot_plugin_sourcehub_inspector", "Codex", "保存消息事件快照并成条入库", "0.5.5")
 class SourceHubInspector(Star):
     def __init__(self, context: Context, config: dict | None = None):
         super().__init__(context, config)
@@ -92,6 +94,8 @@ class SourceHubInspector(Star):
         self._collect_enabled = bool(self.config.get(COLLECT_ENABLED_KEY, True))
         vault_dir = Path(str(self.config.get(VAULT_DIR_KEY) or DEFAULT_VAULT_DIR))
         self._vault = Vault(vault_dir, git_enabled=True) if self._collect_enabled else None
+        self._publisher = Publisher(vault_dir) if self._collect_enabled and self.config.get(PUBLISH_ENABLED_KEY, True) else None
+        self._publish_task = None
         self._pack = build_pack(self.config)
         self._spool_path = vault_dir / SPOOL_DIR / "qq_sessions.json"
         self._daily_ledger = DailyLedger(
@@ -118,6 +122,18 @@ class SourceHubInspector(Star):
         """午夜调度与消息处理共用同一日整理入口。"""
         if self._collect_enabled and self._vault is not None and self._daily_ledger is not None:
             self._daily_task = asyncio.create_task(self._finalize_previous_days())
+        if self._publisher is not None:
+            self._publish_task = asyncio.create_task(self._publish_loop())
+
+    async def _publish_loop(self):
+        while True:
+            try:
+                await asyncio.to_thread(self._publisher.sync_once)
+            except asyncio.CancelledError:
+                raise
+            except PublishError as exc:
+                self.logger.warning("%s 资料待推送：%s", LOG_PREFIX, exc)
+            await asyncio.sleep(PUBLISH_INTERVAL_SECONDS)
 
     def _describe_scope(self) -> str:
         """启用范围的日志文案。留空时明确说明是全部群。"""
@@ -278,6 +294,10 @@ class SourceHubInspector(Star):
         return messages
 
     async def terminate(self):
+        if self._publish_task:
+            self._publish_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._publish_task
         if self._daily_task:
             self._daily_task.cancel()
             with suppress(asyncio.CancelledError):

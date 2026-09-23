@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .sourcehub.bili_ingest import record_to_fragment
 from .sourcehub.bili_merge import merge_work_envelope
-from .sourcehub.constants import NODE_IMAGE
+from .sourcehub.constants import NODE_FILE, NODE_IMAGE
 from .sourcehub.envelope import ContentNode
 from .sourcehub.media import hash_name, image_extension
 
@@ -31,6 +31,8 @@ MERGE_SKIP_KEYS = {
 FETCH_FAILURE_GAP_PREFIXES = (
     COLLECTION_GAP_PREFIX, OBJECT_GAP_PREFIX, TRIGGER_GAP_PREFIX,
 )
+VIDEO_EXTENSIONS = {".mp4", ".flv"}
+MP4_BRANDS = {b"isom", b"iso2", b"mp41", b"mp42", b"avc1", b"dash"}
 
 
 def markdown_body(text: str) -> str:
@@ -133,6 +135,10 @@ def image_extension(data: bytes) -> str:
         return ".webp"
     if data[4:8] == b"ftyp" and data[8:12] in {b"avif", b"avis"}:
         return ".avif"
+    if data[4:8] == b"ftyp" and data[8:12] in MP4_BRANDS:
+        return ".mp4"
+    if data.startswith(b"FLV\x01"):
+        return ".flv"
     raise FetchError("unsupported_image_content")
 
 
@@ -235,6 +241,51 @@ class Store:
         write_json(folder / RECORD_FILE, merged)
         self._export_vault(merged, folder)
 
+    async def repair_failed_media(self, client) -> int:
+        """重试已有记录里缺失的媒体；成功项不重复下载。"""
+        repaired = 0
+        for record_path in (self.path / ITEM_DIR).glob("*/" + RECORD_FILE):
+            folder = record_path.parent
+            record = read_json(record_path, {})
+            content_path = folder / CONTENT_FILE
+            if not content_path.exists():
+                continue
+            body = markdown_body(content_path.read_text(encoding="utf-8"))
+            changed = False
+            for media in record.get("media") or []:
+                relative = media.get("local_path")
+                if relative and (folder / relative).exists():
+                    continue
+                url = media.get("source_url")
+                if not url:
+                    continue
+                try:
+                    data = await client.image(url)
+                    name = hashlib.sha256(data).hexdigest() + image_extension(data)
+                    relative = f"{MEDIA_DIR}/{name}"
+                    atomic_write(folder / relative, data)
+                except FetchError as exc:
+                    media["error"] = str(exc)
+                    continue
+                media["local_path"] = relative
+                media.pop("error", None)
+                body = body.replace(f"]({url})", f"]({relative})")
+                repaired += 1
+                changed = True
+            if not changed:
+                continue
+            gaps = drop_recovered_gaps(record.get("gaps") or [], record)
+            record["gaps"] = gaps
+            record["status"] = PARTIAL if gaps else COMPLETE
+            record["attempted_at"] = datetime.now(timezone.utc).isoformat()
+            text = f"{CONTENT_STATUS_PREFIX}{record['status']}\n\n{body}"
+            if gaps:
+                text += f"\n\n{CONTENT_GAPS_HEADING}\n\n" + "\n".join(f"- {gap}" for gap in gaps)
+            atomic_write(content_path, text.encode("utf-8"))
+            write_json(record_path, record)
+            self._export_vault(record, folder)
+        return repaired
+
     def export_existing(self) -> int:
         if self.vault is None:
             return 0
@@ -266,6 +317,9 @@ class Store:
         existing_id = self.vault.lookup("bilibili", object_id) if object_id else None
         existing = self.vault.get(existing_id) if existing_id else None
         envelope = merge_work_envelope(existing, fragment)
+        media_prefix = Path(os.path.relpath(
+            self.vault.root / MEDIA_DIR, self.vault.item_dir_for(envelope)
+        )).as_posix()
         for media in merged.get("media") or []:
             relative = media.get("local_path")
             if not relative:
@@ -276,6 +330,11 @@ class Store:
             data = source.read_bytes()
             name = hash_name(data)
             self.vault.store_media(data, name)
+            archived_link = f"]({relative})"
+            vault_link = f"]({media_prefix}/{name})"
+            for node in envelope.content:
+                if (node.extra or {}).get("role") == "object" and node.text:
+                    node.text = node.text.replace(archived_link, vault_link)
             digest = name.rsplit(".", 1)[0]
             known = {node.sha256 for node in envelope.content if node.sha256}
             if digest not in known:
@@ -284,7 +343,7 @@ class Store:
                 )
                 envelope.content.append(
                     ContentNode(
-                        type=NODE_IMAGE,
+                        type=NODE_FILE if Path(name).suffix in VIDEO_EXTENSIONS else NODE_IMAGE,
                         url=media.get("source_url"),
                         sha256=digest,
                         extra={"ext": image_extension(data)},

@@ -4,6 +4,12 @@
     "type": "bool",
     "default": false
   },
+  "publish_enabled": {
+    "description": "启用资料自动推送（Automatic Publication）",
+    "type": "bool",
+    "hint": "仅在目标远端私有性核验通过后，推送独立发布目录中的 Markdown。",
+    "default": true
+  },
   "sessdata": {
     "description": "账号登录凭证（SESSDATA），仅在本地填写，勿粘贴到聊天或提交",
     "type": "string",

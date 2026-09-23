@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from .envelope import ContentNode, Envelope, item_relpath
+from .envelope import ContentNode, Envelope
+from .paths import item_storage_path
 
 ROLE_HEADINGS = {
     "object": "作品",
@@ -10,10 +11,11 @@ ROLE_HEADINGS = {
     "parent": "上一级评论",
     "root": "根评论",
 }
+FILE_LABEL = "文件"
 
 
-def media_href(item_id: str, filename: str) -> str:
-    relpath = item_relpath(item_id)
+def media_href(envelope: Envelope, filename: str) -> str:
+    relpath = item_storage_path(envelope)
     depth = 1 + len([part for part in relpath.split("/") if part])
     return ("../" * depth) + f"media/{filename}"
 
@@ -36,11 +38,11 @@ def render_content_md(envelope: Envelope) -> str:
             lines.append(f"- {gap}")
         lines.append("")
     for node in envelope.content:
-        lines.extend(_render_node(envelope.item_id, node))
+        lines.extend(_render_node(envelope, node))
     return "\n".join(lines).rstrip() + "\n"
 
 
-def _render_node(item_id: str, node: ContentNode) -> list[str]:
+def _render_node(envelope: Envelope, node: ContentNode) -> list[str]:
     lines: list[str] = []
     role = (node.extra or {}).get("role")
     if role in ROLE_HEADINGS:
@@ -56,14 +58,20 @@ def _render_node(item_id: str, node: ContentNode) -> list[str]:
             lines.append("")
     if node.type == "image":
         filename = _image_filename(node)
-        href = media_href(item_id, filename) if node.sha256 else (node.url or "")
+        href = media_href(envelope, filename) if node.sha256 else (node.url or "")
         lines.append(f"![图片]({href})")
+        lines.append("")
+    elif node.type == "file":
+        filename = _image_filename(node)
+        href = media_href(envelope, filename) if node.sha256 else (node.url or "")
+        label = (node.extra or {}).get("name") or FILE_LABEL
+        lines.append(f"[{label}]({href})")
         lines.append("")
     elif node.text:
         lines.append(node.text)
         lines.append("")
     for child in node.children:
-        lines.extend(_render_node(item_id, child))
+        lines.extend(_render_node(envelope, child))
     return lines
 
 

@@ -34,7 +34,7 @@ class MarkdownTests(unittest.TestCase):
         self.assertIn("https://b23.tv/BV1xx", markdown)
         self.assertIn("@机器人 收藏", markdown)
         self.assertIn("session_end_missing", markdown)
-        self.assertIn("](../../../../media/abc123.jpg)", markdown)
+        self.assertIn("](../../../../../media/abc123.jpg)", markdown)
 
 
 if __name__ == "__main__":

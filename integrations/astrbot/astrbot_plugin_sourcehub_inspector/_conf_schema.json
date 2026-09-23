@@ -11,6 +11,12 @@
     "hint": "在快照之外把消息写成统一条目和 Markdown。",
     "default": true
   },
+  "publish_enabled": {
+    "description": "启用资料自动推送（Automatic Publication）",
+    "type": "bool",
+    "hint": "仅在目标远端私有性核验通过后，推送独立发布目录中的 Markdown。",
+    "default": true
+  },
   "vault_dir": {
     "description": "资料目录（Vault Directory）",
     "type": "string",

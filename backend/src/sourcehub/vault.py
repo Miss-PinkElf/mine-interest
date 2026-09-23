@@ -53,6 +53,12 @@ class Vault:
 
     def upsert(self, envelope: Envelope, object_key: Optional[str] = None) -> None:
         folder = self.item_dir_for(envelope)
+        previous = self.item_dir(envelope.item_id)
+        if previous != folder and previous.exists():
+            if folder.exists():
+                raise ValueError("item_path_conflict")
+            folder.parent.mkdir(parents=True, exist_ok=True)
+            previous.replace(folder)
         folder.mkdir(parents=True, exist_ok=True)
         atomic_write(
             folder / ENVELOPE_FILE,

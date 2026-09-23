@@ -1,7 +1,7 @@
 """接口契约和业务常量（Protocol and Business Constants）。"""
 
 PLUGIN_NAME = "astrbot_plugin_sourcehub_bilibili"
-PLUGIN_VERSION = "0.2.4"
+PLUGIN_VERSION = "0.2.5"
 LOG_PREFIX = "[SourceHub Bilibili]"
 API_BASE = "https://api.bilibili.com"
 SITE_BASE = "https://www.bilibili.com"
@@ -46,7 +46,10 @@ MAX_ITEMS_PER_CYCLE = 20
 MAX_FORWARD_DEPTH = 8
 MEDIA_MAX_BYTES = 100 * 1024 * 1024
 MEDIA_CHUNK_BYTES = 64 * 1024
-MEDIA_HOST_SUFFIX = ".hdslb.com"
+MEDIA_HOST_SUFFIXES = (".hdslb.com", ".bilivideo.com")
+MAX_MEDIA_ATTEMPTS = 5
+MEDIA_RETRY_BASE_DELAY_SECONDS = 0.25
+RETRYABLE_MEDIA_STATUSES = {429}
 USER_AGENT = "Mozilla/5.0 SourceHub-Bilibili/0.1"
 OPUS_FEATURES = "itemOpusStyle,opusBigCover,htmlNewStyle"
 NOTIFICATION_DIR = "notifications"

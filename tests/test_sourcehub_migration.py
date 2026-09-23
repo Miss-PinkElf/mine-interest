@@ -25,7 +25,7 @@ class MigrationTests(unittest.TestCase):
             plan = plan_migration(vault)
 
             self.assertEqual(plan[0].source, legacy)
-            self.assertEqual(plan[0].target, root / "items/qq/2026-09-21/items/message-5")
+            self.assertEqual(plan[0].target, root / "items/qq/2026-09-21/message/单独一条-5")
             self.assertTrue(legacy.exists())
 
     def test_execute_moves_item_and_updates_catalog(self):
@@ -41,7 +41,7 @@ class MigrationTests(unittest.TestCase):
             execute_migration(vault, plan_migration(vault))
 
             self.assertFalse(legacy.exists())
-            self.assertTrue((root / "items/qq/2026-09-21/items/message-5/envelope.json").exists())
+            self.assertTrue((root / "items/qq/2026-09-21/message/单独一条-5/envelope.json").exists())
             self.assertIsNotNone(vault.get("qq:message:5"))
 
 

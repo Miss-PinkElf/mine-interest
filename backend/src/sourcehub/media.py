@@ -6,6 +6,8 @@ import hashlib
 
 from .constants import GAP_MEDIA_TOO_LARGE
 
+MP4_BRANDS = {b"isom", b"iso2", b"mp41", b"mp42", b"avc1", b"dash"}
+
 
 def image_extension(data: bytes) -> str:
     if data.startswith(b"\x89PNG\r\n\x1a\n"):
@@ -18,6 +20,10 @@ def image_extension(data: bytes) -> str:
         return ".webp"
     if len(data) >= 12 and data[4:8] == b"ftyp" and data[8:12] in {b"avif", b"avis"}:
         return ".avif"
+    if len(data) >= 12 and data[4:8] == b"ftyp" and data[8:12] in MP4_BRANDS:
+        return ".mp4"
+    if data.startswith(b"FLV\x01"):
+        return ".flv"
     return ".bin"
 
 

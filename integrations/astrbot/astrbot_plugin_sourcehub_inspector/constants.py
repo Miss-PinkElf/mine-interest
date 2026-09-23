@@ -32,6 +32,7 @@ FORWARD_ERROR_KEY = "_sourcehub_error"
 # 插件配置项：启用检查的群号白名单（留空表示全部群启用）
 ENABLED_GROUP_IDS_KEY = "enabled_group_ids"
 COLLECT_ENABLED_KEY = "collect_enabled"
+PUBLISH_ENABLED_KEY = "publish_enabled"
 VAULT_DIR_KEY = "vault_dir"
 SESSION_START_KEY = "session_start"
 SESSION_END_KEY = "session_end"

@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
 from urllib.parse import urlsplit
 
 import aiohttp
 
 from .constants import (
-    API_BASE, ENDPOINTS, MEDIA_CHUNK_BYTES, MEDIA_HOST_SUFFIX,
-    MEDIA_MAX_BYTES, REQUEST_TIMEOUT_SECONDS, SITE_BASE, USER_AGENT,
+    API_BASE, ENDPOINTS, MAX_MEDIA_ATTEMPTS, MEDIA_CHUNK_BYTES,
+    MEDIA_HOST_SUFFIXES, MEDIA_MAX_BYTES, MEDIA_RETRY_BASE_DELAY_SECONDS,
+    REQUEST_TIMEOUT_SECONDS, RETRYABLE_MEDIA_STATUSES, SITE_BASE, USER_AGENT,
 )
 
 
@@ -21,7 +23,7 @@ def media_url(url: str) -> str:
     parts = urlsplit(url)
     if (
         parts.scheme not in {"http", "https"}
-        or not (parts.hostname or "").endswith(MEDIA_HOST_SUFFIX)
+        or not any((parts.hostname or "").endswith(suffix) for suffix in MEDIA_HOST_SUFFIXES)
         or parts.username or parts.password or parts.port not in {None, 80, 443}
     ):
         raise FetchError("media_host_not_allowed")
@@ -61,18 +63,28 @@ class BilibiliClient:
             raise FetchError(type(exc).__name__) from None
 
     async def image(self, url: str) -> bytes:
-        try:
-            async with self.media.get(media_url(url), allow_redirects=False) as response:
-                if response.status != 200:
-                    raise FetchError(f"media_http_{response.status}")
-                data = bytearray()
-                async for chunk in response.content.iter_chunked(MEDIA_CHUNK_BYTES):
-                    data.extend(chunk)
-                    if len(data) > self.media_limit:
-                        raise FetchError("media_size_limit")
-                return bytes(data)
-        except (aiohttp.ClientError, ValueError, TimeoutError) as exc:
-            raise FetchError(type(exc).__name__) from None
+        checked_url = media_url(url)
+        last_error = FetchError("media_download_failed")
+        for attempt in range(MAX_MEDIA_ATTEMPTS):
+            try:
+                async with self.media.get(checked_url, allow_redirects=False) as response:
+                    if response.status != 200:
+                        error = FetchError(f"media_http_{response.status}")
+                        if response.status not in RETRYABLE_MEDIA_STATUSES and not 500 <= response.status < 600:
+                            raise error
+                        last_error = error
+                    else:
+                        data = bytearray()
+                        async for chunk in response.content.iter_chunked(MEDIA_CHUNK_BYTES):
+                            data.extend(chunk)
+                            if len(data) > self.media_limit:
+                                raise FetchError("media_size_limit")
+                        return bytes(data)
+            except (aiohttp.ClientError, TimeoutError) as exc:
+                last_error = FetchError(type(exc).__name__)
+            if attempt + 1 < MAX_MEDIA_ATTEMPTS:
+                await asyncio.sleep(MEDIA_RETRY_BASE_DELAY_SECONDS * (attempt + 1))
+        raise last_error
 
     async def close(self):
         await self.api.close()

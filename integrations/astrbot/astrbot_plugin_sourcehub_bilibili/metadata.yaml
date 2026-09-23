@@ -1,5 +1,5 @@
 name: astrbot_plugin_sourcehub_bilibili
 display_name: SourceHub B站只读采集
 desc: 收到 B 站 @ 后保存评论和作品原文，并按作品合并进统一资料目录。
-version: 0.2.4
+version: 0.2.5
 author: Codex
