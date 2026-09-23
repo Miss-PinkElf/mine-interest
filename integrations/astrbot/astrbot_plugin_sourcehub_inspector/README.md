@@ -53,6 +53,8 @@ NapCat 对个别转发会返回 `status=ok` 但内容为空，这类会在文本
 
 插件只对配置的群生效。配置入口：AstrBot WebUI → 插件 → 本插件 → 配置，字段 `enabled_group_ids`（群号白名单，可填多个，纯数字）。
 
+`publish_enabled` 默认开启私有仓库安全自动发布（Automatic Publication）；发布器只同步统一资料目录（Vault）内的 Markdown，不上传图片、视频、Cookie 或原始快照。目标仓库私有性核验失败时会跳过发布，不影响本地采集。
+
 | 配置 | 行为 |
 | --- | --- |
 | 留空（默认） | **全部群**都保存快照并展开转发 |

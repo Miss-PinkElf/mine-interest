@@ -1,21 +1,23 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-09-22 18:35:00 +08:00
+- 更新时间（Updated At）：2026-09-23 16:52:08 +08:00。
 - 作者（Author）：Codex。
-- 目的（Purpose）：提供短恢复入口。
+- 目的（Purpose）：提供当前 mission 的短恢复入口。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
-- 原始需求（Original Requirement）：`zzz-prompt-debug/多种信息源整合.md`。
-- 最新交接（Latest Handoff）：`handoffs/2026-09-22-007-按天归档与直连媒体首版.md`。
-- 当前状态（Status）：按天归档和 QQ 日收集首版已部署并验证；有明确延期项待下一会话对齐。
+- 原始需求（Original Requirement）：`zzz-prompt-debug/prompt-1.md` 第 34–38 行；更早需求见 `origin.md`。
+- 最新交接（Latest Handoff）：`handoffs/2026-09-23-008-需求4首版与运行验收待续.md`。
+- 当前状态（Status）：需求 4 首版已提交；真实运行验收待续（Runtime Verification Pending）。
 - 文档边界（Scope / Boundary）：本任务记录；不代表整体信息中心 14 项业务已获准实施。
 
 # 当前状态
 
-- 阶段：本轮 Apply / Verify / Close 已完成；外层 14 项未开工。
-- Vault：历史 27 项已迁移；重载前旧进程额外写入的 2 条 QQ 转发也已补迁移，预演剩余项为 0。
-- 插件：检查器 0.5.4、B 站 0.2.4 已同步至本机 AstrBot 并完成重载。新收 QQ 转发已验证按 `2026-09-22` 入库。
-- 验证：2026-09-22 运行全量 `unittest`，75 项通过；`git diff --check` 通过。
-- 明确延期：`deferred/按天归档与媒体首版未做.md`；旧延期仍见 `deferred/成条与原始资料落盘-首版未做.md`。
-- 下一步：先对齐 QQ 最终目录层级；随后处理 B 站持久媒体队列、链接筛选和远端自动推送的范围。
-- 私人数据：Cookie、真实快照、`sourcehub-image-urls.json` 不提交。
+- 阶段：需求 4 实施已提交，暂停在真实运行验收（Verify）；下次无需重做已批准的 Align / Plan / Spec。
+- 代码提交：`2fae5a6`。检查器 0.5.5、B 站 0.2.5 已同步至本机插件目录；AstrBot 当时未运行，尚未重载或收新样本。
+- QQ：新路径 `items/qq/日期/message|forward|session/标题-ID/`；真实 Vault 17 项迁移后剩余旧路径为零。
+- 媒体：最多 5 次直连尝试；指定 B 站专栏 11 个媒体链接无断链；本机 Vault 有 2 个 MP4，远端不含媒体。
+- 发布：目标仓库私有性与 SSH 读取已核验；仅 Markdown 投影代码及合成测试通过，首次真实推送未验证。
+- 验证：2026-09-23 全量 `unittest` 86 项通过、编译检查与 `git diff --check` 通过。
+- 未完成：新 QQ 消息、新 B 站 @、AstrBot 重载及首次/后续自动推送的端到端验收；见 `spec/2026-09-23-需求4/tasks.md` T7。
+- 明确延期与待对齐：`deferred/需求4首版未做与运行验收.md`；新增需求 5 的 Cookie 检查/刷新仅列于 `backlog.md`。
+- 私人资料与不相关改动：Cookie、真实快照、媒体、`sourcehub-image-urls.json` 不提交；`zzz-prompt-debug/prompt-1.md` 混入需求 5 的未提交改动保持原样。

@@ -40,6 +40,7 @@
 | `poll_seconds` | 轮询间隔秒数（Polling Interval） | `120`，最小 `60` |
 | `media_max_bytes` | 单图片最大字节数（Media Limit） | `52428800`（50 MiB） |
 | `vault_dir` | 统一资料目录（Vault），与 QQ 成条共用 | `data/sourcehub` |
+| `publish_enabled` | 启用私有仓库安全自动发布；只发布 Markdown | `true` |
 
 当前只支持把已有登录态填进配置。扫码登录（QR Login）和自动刷新尚未实现。本机若已在 BiliBot 里登录过同一账号，可在 WebUI 把同一组本地凭证填到本插件；不要把完整 BiliBot 打开成采集器。
 
@@ -119,7 +120,7 @@ backend/.venv/bin/python -m unittest discover -s tests -p 'test_bilibili*.py' -v
 - 工程默认值（停用、120 秒、50 MiB、不清理）尚未作为长期产品策略单独确认。
 - 当前扫描接口可见的 @ 通知；不承诺平台不再提供的历史。
 - 未做发送者白名单；未做扫码登录与 Cookie 自动刷新。
-- 本轮保存可交给下载器的视频页面链接、标识和简介，不自动批量下载。
+- 当前首版会尝试下载接口返回的单段 MP4，并保存到 Vault 媒体目录；不保证最高画质、多分段、断点续传或任意视频可下载。远端自动发布仅包含 Markdown，不上传 MP4。
 - 未知正文节点会保留原始 JSON 并标 Partial。
 
 ## 来源依据
