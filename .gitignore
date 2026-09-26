@@ -10,7 +10,8 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-backend/data/perception/
+# 后端本地任务数据库与运行产物（Backend runtime data）。
+backend/data/
 # ===== pnpm =====
 .pnpm-store/
 .pnpm-debug.log*
