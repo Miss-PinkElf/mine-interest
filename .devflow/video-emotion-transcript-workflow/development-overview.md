@@ -3,12 +3,12 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-07-13 15:05:44 +08:00
+- 更新时间（Updated At）：2026-09-27 01:09:39 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录 mission 从可行性调研到 MVP 规格就绪的完整阶段脉络。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
-- 当前状态（Status）：实施中（In Progress）
+- 当前状态（Status）：演示闭环第一版已完成，真实能力待后续阶段对齐
 - 文档边界（Scope / Boundary）：本文件是长期过程概览，不替代 `state.md`、`checkpoints.md`、Plan 或 OpenSpec 真相源。
 
 ## 阶段脉络
@@ -38,4 +38,11 @@
 - 用户理解：tasks 是零件与插座；缺总装（JobRunner）与真引擎。
 - 交付一键启动脚本与动态端口代理。
 - 下一产品优先：上传后自动 Fake STT 闭环，而非重开延期项。
+
+## 2026-09-27 01:09:39 +08:00 - 自动演示转写第一版完成
+
+- 用户确认先做显式演示模式（Demo Mode），并授权按对齐（Align）→计划（Plan）→规格（OpenSpec）→实施（Apply）推进。
+- 应用内任务运行器（JobRunner）已串联上传、占位预处理、Fake STT、片段入库、待审核、人工修订与 Markdown/JSON 导出；任务和导出保留演示来源。浏览器刷新可恢复当前任务。
+- 后端 28 项测试、前端 8 项测试及构建通过；本地浏览器冒烟通过。用户计划随后自行手动验证，产品验收结论待其反馈。
+- 下一阶段可在手动验收后对齐真实 STT、真实媒体处理与证据链路；LLM 辅助工具选择仍是候选方向，不把演示闭环误写成真实音视频理解能力。
 

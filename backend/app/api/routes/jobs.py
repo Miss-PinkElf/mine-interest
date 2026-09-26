@@ -1,8 +1,9 @@
 """任务相关 API：上传、查询与片段列表。"""
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 
-from app.api.deps import provide_job_service, provide_review_service
+from app.api.deps import provide_job_service, provide_review_service, provide_runtime
+from app.api.runtime import AppRuntime
 from app.core import constants
 from app.domain.schemas import JobSchema, SegmentSchema
 from app.services.jobs import JobNotFoundError, JobService
@@ -17,8 +18,11 @@ router = APIRouter(tags=["jobs"])
     status_code=constants.HTTP_STATUS_CREATED,
 )
 async def create_job_from_upload(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
+    demo_mode: bool = Form(False, alias=constants.UPLOAD_DEMO_MODE_FORM_FIELD),
     job_service: JobService = Depends(provide_job_service),
+    runtime: AppRuntime = Depends(provide_runtime),
 ) -> JobSchema:
     """接收本地媒体上传并创建任务。"""
     content = await file.read()
@@ -26,12 +30,15 @@ async def create_job_from_upload(
         job = job_service.create_from_upload(
             filename=file.filename or constants.DEFAULT_UPLOAD_FILENAME,
             content=content,
+            demo_mode=demo_mode,
         )
     except ValueError as error:
         raise HTTPException(
             status_code=constants.HTTP_STATUS_BAD_REQUEST,
             detail=str(error),
         ) from error
+    if demo_mode:
+        background_tasks.add_task(runtime.job_runner.run, job.id)
     return JobSchema.model_validate(job)
 
 

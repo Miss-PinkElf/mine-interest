@@ -19,6 +19,7 @@ class JobSchema(BaseModel):
 
     id: str
     source_media_path: str
+    is_demo: bool = False
     status: JobStatus
     created_at: datetime
     failed_stage: str | None = None

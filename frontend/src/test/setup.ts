@@ -1,4 +1,9 @@
 import '@testing-library/jest-dom/vitest'
+import { cleanup } from '@testing-library/react'
+import { afterEach } from 'vitest'
+
+// Vitest 未启用全局 afterEach，需显式清理每个用例的 React 页面。
+afterEach(cleanup)
 
 // Ant Design 响应式观察依赖 matchMedia，jsdom 需提供最小桩。
 Object.defineProperty(window, 'matchMedia', {

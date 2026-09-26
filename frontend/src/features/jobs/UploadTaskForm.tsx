@@ -1,19 +1,20 @@
-import { Button, Form, Upload, message } from 'antd'
+import { Button, Checkbox, Form, Upload, message } from 'antd'
 import { useState } from 'react'
 import type { UploadFile } from 'antd/es/upload/interface'
 
-import { START_TASK_LABEL, UPLOAD_MEDIA_LABEL, UPLOAD_SUCCESS_MESSAGE } from '../../constants/copy'
+import { DEMO_MODE_LABEL, START_TASK_LABEL, UPLOAD_MEDIA_LABEL, UPLOAD_SUCCESS_MESSAGE } from '../../constants/copy'
 import type { JobDto } from '../../api/jobs'
 import styles from './index.module.scss'
 
 export type UploadTaskFormProps = {
-  createJob: (file: File) => Promise<JobDto>
+  createJob: (file: File, demoMode: boolean) => Promise<JobDto>
   onCreated?: (job: JobDto) => void
 }
 
 export function UploadTaskForm({ createJob, onCreated }: UploadTaskFormProps) {
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [demoMode, setDemoMode] = useState(false)
 
   const selectedFile = fileList[0]?.originFileObj as File | undefined
 
@@ -22,9 +23,10 @@ export function UploadTaskForm({ createJob, onCreated }: UploadTaskFormProps) {
       message.warning(UPLOAD_MEDIA_LABEL)
       return
     }
+    if (!demoMode) return
     setSubmitting(true)
     try {
-      const job = await createJob(selectedFile)
+      const job = await createJob(selectedFile, demoMode)
       message.success(UPLOAD_SUCCESS_MESSAGE)
       onCreated?.(job)
     } catch (error) {
@@ -48,11 +50,16 @@ export function UploadTaskForm({ createJob, onCreated }: UploadTaskFormProps) {
             <Button aria-label={UPLOAD_MEDIA_LABEL}>{UPLOAD_MEDIA_LABEL}</Button>
           </Upload>
         </Form.Item>
+        <Form.Item>
+          <Checkbox checked={demoMode} onChange={(event) => setDemoMode(event.target.checked)}>
+            {DEMO_MODE_LABEL}
+          </Checkbox>
+        </Form.Item>
         <Button
           type="primary"
           htmlType="submit"
           loading={submitting}
-          disabled={!selectedFile}
+          disabled={!selectedFile || !demoMode}
         >
           {START_TASK_LABEL}
         </Button>

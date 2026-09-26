@@ -123,6 +123,38 @@ EXPORT_ERROR_NO_SEGMENTS = "NO_SEGMENTS"
 UPLOAD_ERROR_EMPTY_FILE = "EMPTY_FILE"
 # 上传缺少文件名时的默认媒体文件名。
 DEFAULT_UPLOAD_FILENAME = "upload.bin"
+# 演示模式在 multipart 上传表单中的字段名。
+UPLOAD_DEMO_MODE_FORM_FIELD = "demo_mode"
+# 任务产物内的演示来源标记路径，重启后仍能辨认假转写。
+DEMO_MODE_MARKER_RELATIVE_PATH = "meta/demo-mode.txt"
+# 演示来源标记文件的固定内容。
+DEMO_MODE_MARKER_CONTENT = "demo"
+# Markdown 与 JSON 导出共同使用的演示来源声明。
+DEMO_TRANSCRIPT_NOTICE = "演示数据：内容由假转写引擎生成，并非上传媒体的真实转写。"
+# 假转写引擎在演示片段中写入的文案。
+DEMO_TRANSCRIPT_TEXT = "这是一段演示转写内容，不代表上传媒体中的真实语音。"
+# 演示片段的时间轴起点（秒）。
+DEMO_SEGMENT_START_SECONDS = 0.0
+# 演示片段的时间轴终点（秒），仅供审核流程演示。
+DEMO_SEGMENT_END_SECONDS = 2.0
+# 演示引擎写入原始结果中的来源键。
+DEMO_ENGINE_NAME = "demo"
+# JobRunner 媒体阶段的稳定名称。
+JOB_STAGE_MEDIA = "media"
+# JobRunner 预处理阶段的稳定名称。
+JOB_STAGE_PREPROCESS = "preprocess"
+# JobRunner 转写阶段的稳定名称。
+JOB_STAGE_TRANSCRIPTION = "transcription"
+# JobRunner 持久化阶段的稳定名称。
+JOB_STAGE_SEGMENTS = "segments"
+# JobRunner 空转写结果的稳定错误码。
+JOB_ERROR_CODE_NO_SEGMENTS = "NO_SEGMENTS"
+# JobRunner 意外阶段异常的稳定错误码。
+JOB_ERROR_CODE_PIPELINE_FAILED = "PIPELINE_FAILED"
+# JobRunner 被用于非演示任务时的稳定错误码。
+JOB_ERROR_RUNNER_NOT_DEMO = "RUNNER_REQUIRES_DEMO_JOB"
+# JobRunner 保存质量报告的相对路径。
+QUALITY_REPORT_RELATIVE_PATH = "quality/report.json"
 
 
 

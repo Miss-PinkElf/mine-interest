@@ -50,6 +50,9 @@ class JobService:
             job = JobRepository(session).get(job_id)
         if job is None:
             raise JobNotFoundError(job_id)
+        job.is_demo = self._artifact_store.exists(
+            job.id, constants.DEMO_MODE_MARKER_RELATIVE_PATH
+        )
         return job
 
     def mark_failed(
@@ -81,8 +84,21 @@ class JobService:
             repository.save(job)
             return job
 
+    def mark_review(self, job_id: str) -> Job:
+        """片段写入完成后，将任务持久化为待审核。"""
+        with session_scope(self._session_factory) as session:
+            repository = JobRepository(session)
+            job = repository.get(job_id)
+            if job is None:
+                raise JobNotFoundError(job_id)
+            job.mark_review()
+            repository.save(job)
+            return job
 
-    def create_from_upload(self, filename: str, content: bytes) -> Job:
+
+    def create_from_upload(
+        self, filename: str, content: bytes, *, demo_mode: bool = False
+    ) -> Job:
         """根据上传字节创建任务，并把原始媒体写入任务产物目录。"""
         if not content:
             raise ValueError(constants.UPLOAD_ERROR_EMPTY_FILE)
@@ -95,6 +111,13 @@ class JobService:
         relative_path = f"{constants.SOURCE_MEDIA_RELATIVE_DIR}/{safe_name}"
         stored_path = self._artifact_store.write_bytes(job.id, relative_path, content)
         job.source_media_path = str(stored_path)
+        if demo_mode:
+            self._artifact_store.write_text(
+                job.id,
+                constants.DEMO_MODE_MARKER_RELATIVE_PATH,
+                constants.DEMO_MODE_MARKER_CONTENT,
+            )
+            job.is_demo = True
 
         with session_scope(self._session_factory) as session:
             JobRepository(session).save(job)
@@ -112,11 +135,19 @@ class JobService:
             return job
 
     def recover_interrupted_jobs(self) -> list[Job]:
-        """应用启动时将处理中任务转为可恢复失败，且不删除产物。"""
+        """应用启动时标记失去后台执行机会的任务，且不删除产物。"""
         recovered: list[Job] = []
         with session_scope(self._session_factory) as session:
             repository = JobRepository(session)
             interrupted_jobs = repository.list_by_status(JobStatus.PROCESSING)
+            # 上传响应发出后、后台任务开始前退出时，演示任务仍停在 pending。
+            interrupted_jobs.extend(
+                job
+                for job in repository.list_by_status(JobStatus.PENDING)
+                if self._artifact_store.exists(
+                    job.id, constants.DEMO_MODE_MARKER_RELATIVE_PATH
+                )
+            )
             for job in interrupted_jobs:
                 job.mark_failed(
                     stage=constants.JOB_FAILED_STAGE_INTERRUPTED,

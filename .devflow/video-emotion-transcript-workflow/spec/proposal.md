@@ -3,13 +3,13 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-07-10 15:15:33 +08:00
+- 更新时间（Updated At）：2026-09-26 23:28:12 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：将已确认的 MVP 范围转为实施前的正式变更提案。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
 - 关联对齐（Related Align）：`.devflow/video-emotion-transcript-workflow/plans/2026-07-10-video-emotion-transcript-mvp-align.md`
-- 关联计划（Related Plan）：`.devflow/video-emotion-transcript-workflow/plans/2026-07-10-video-emotion-transcript-mvp-implementation-plan.md`
+- 关联计划（Related Plan）：`.devflow/video-emotion-transcript-workflow/plans/2026-07-10-video-emotion-transcript-mvp-implementation-plan.md`、`.devflow/video-emotion-transcript-workflow/plans/2026-09-26-upload-auto-demo-transcript-plan.md`
 - 当前状态（Status）：已提案（Proposed）
 - 文档边界（Scope / Boundary）：本文件是 OpenSpec 提案真相源，定义做什么和不做什么；不授权 Apply（实施）。
 
@@ -65,3 +65,10 @@
 ## 进入 Apply 的条件
 
 本 proposal、design 与 tasks 已完成。用户本轮明确要求先不 Apply；因此当前只具备规格就绪条件，不具备实施授权。下次会话必须先读取当前 mission 的 `state.md` 和 `checkpoints.md`，再由用户明确授权进入 Apply。
+# 2026-09-26 增量提案：上传后自动演示转写
+
+- 关联计划：`.devflow/video-emotion-transcript-workflow/plans/2026-09-26-upload-auto-demo-transcript-plan.md`。
+- 问题：既有上传只创建任务，片段需要测试代码手工入库，用户无法从上传自然进入审核。
+- 范围：显式演示模式、应用内 JobRunner、状态刷新、持久来源标识和导出声明。
+- 非目标：真实 FFmpeg/STT、LLM 工具选择、独立队列；进入条件见上述 Plan 的延期小节。
+- 结论：按现有服务边界补自动串联，不替换 V1 已完成的适配层。

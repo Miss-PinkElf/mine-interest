@@ -32,6 +32,12 @@ export const SAVE_SETTINGS_LABEL = '保存设置'
 export const SETTINGS_SAVED_MESSAGE = '设置已保存到本机服务'
 // 上传成功提示。
 export const UPLOAD_SUCCESS_MESSAGE = '任务已创建'
+// 显式选择假转写模式的复选框标签。
+export const DEMO_MODE_LABEL = '使用演示转写（Fake STT）'
+// 任务和审核页共用的演示来源声明。
+export const DEMO_MODE_NOTICE = '演示数据：内容由假转写引擎生成，并非上传媒体的真实转写。'
+// 人工修订或确认请求失败时的默认提示。
+export const SEGMENT_CONFIRM_FAILED_MESSAGE = '保存修订或确认片段失败'
 // 确认片段按钮。
 export const CONFIRM_SEGMENT_LABEL = '确认片段'
 // 切分片段按钮。

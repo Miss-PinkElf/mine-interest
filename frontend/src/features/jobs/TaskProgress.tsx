@@ -5,7 +5,7 @@ import {
   JOB_STATUS_LABELS,
   JOB_STATUS_PROGRESS,
 } from '../../constants/task'
-import { TASK_STATUS_TITLE } from '../../constants/copy'
+import { DEMO_MODE_NOTICE, TASK_STATUS_TITLE } from '../../constants/copy'
 import type { JobDto } from '../../api/jobs'
 import styles from './index.module.scss'
 
@@ -30,6 +30,9 @@ export function TaskProgress({ job }: TaskProgressProps) {
       </Typography.Paragraph>
       <Progress percent={percent} status={isFailed ? 'exception' : 'active'} />
       <Typography.Text>{label}</Typography.Text>
+      {job.is_demo && (
+        <Alert className={styles.alert} type="warning" showIcon title={DEMO_MODE_NOTICE} />
+      )}
       {isFailed && (
         <Alert
           className={styles.alert}

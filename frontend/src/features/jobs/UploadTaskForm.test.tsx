@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
-import { START_TASK_LABEL, UPLOAD_MEDIA_LABEL } from '../../constants/copy'
+import { DEMO_MODE_LABEL, START_TASK_LABEL, UPLOAD_MEDIA_LABEL } from '../../constants/copy'
 import { UploadTaskForm } from './UploadTaskForm'
 
 describe('UploadTaskForm', () => {
@@ -21,11 +21,14 @@ describe('UploadTaskForm', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
     expect(input).toBeTruthy()
     await user.upload(input, file)
+    expect(screen.getByRole('button', { name: START_TASK_LABEL })).toBeDisabled()
+    await user.click(screen.getByRole('checkbox', { name: DEMO_MODE_LABEL }))
     await user.click(screen.getByRole('button', { name: START_TASK_LABEL }))
 
     expect(createJob).toHaveBeenCalled()
     const [uploaded] = createJob.mock.calls[0]
     expect(uploaded).toBeInstanceOf(File)
     expect(uploaded.name).toBe('sample.mp4')
+    expect(createJob.mock.calls[0][1]).toBe(true)
   })
 })

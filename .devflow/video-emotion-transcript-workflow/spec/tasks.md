@@ -3,14 +3,14 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-07-13 14:24:19 +08:00
+- 更新时间（Updated At）：2026-09-27 00:47:18 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：追踪 MVP 从工程骨架到真实样本验证的可验证实施任务。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
 - 关联提案与设计（Related Spec）：`.devflow/video-emotion-transcript-workflow/spec/proposal.md`、`.devflow/video-emotion-transcript-workflow/spec/design.md`
-- 关联计划（Related Plan）：`.devflow/video-emotion-transcript-workflow/plans/2026-07-10-video-emotion-transcript-mvp-implementation-plan.md`
-- 当前状态（Status）：已完成（Completed）
+- 关联计划（Related Plan）：`.devflow/video-emotion-transcript-workflow/plans/2026-07-10-video-emotion-transcript-mvp-implementation-plan.md`、`.devflow/video-emotion-transcript-workflow/plans/2026-09-26-upload-auto-demo-transcript-plan.md`
+- 当前状态（Status）：V1 与自动演示转写增量任务均已完成（Completed）
 - 文档边界（Scope / Boundary）：本文件是实施任务追踪真相源；勾选任务前必须获得 Apply（实施）授权。
 
 ## 阶段 1：可运行的本地审核纵向链路
@@ -90,3 +90,14 @@
 - [x] 用户明确授权开始 Apply（实施）。
 - [x] 执行前重新读取本文件、`spec/design.md` 和正式实施计划。
 - [x] 每个阶段完成后执行聚焦审查与新鲜验证；用户已授权每完成一个 task 自动 commit。
+## 2026-09-26 增量任务：上传后自动演示转写
+
+- [x] 持久化演示来源，并在任务 API、Markdown/JSON 导出中保留演示声明。
+  - 验收：重启后任务仍能识别来源；旧任务不被误标；两种导出都可辨识演示数据。
+- [x] 接入应用内 JobRunner 和显式演示上传 API。
+  - 验收：无需手工写库，任务从 pending 经 processing 到 review 且至少有一个片段；空结果与引擎异常进入 failed 并保留产物。
+- [x] 前端增加显式演示选择、任务轮询和片段刷新。
+  - 验收：用户选择演示模式后上传，审核页自动出现带声明的片段；未选择不能发出演示任务；旧任务异步响应不会覆盖新任务。
+- [x] 验证确认与 Markdown/JSON 导出闭环，运行聚焦测试和现有回归。
+  - 验收：API/集成测试覆盖上传、人工修订、确认、导出；修订保存失败不确认；前端测试与构建通过；文档状态与验证结果一致。
+  - 验证结果：后端 28 passed，前端 8 passed，生产构建通过；本地浏览器完成上传、修订、确认、两种导出及刷新恢复。

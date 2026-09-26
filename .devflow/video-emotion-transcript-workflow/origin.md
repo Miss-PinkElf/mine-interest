@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-07-13 15:05:44 +08:00
+- 更新时间（Updated At）：2026-09-27 01:09:39 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：维护当前 mission 的原始输入索引（Raw Input Source Index）和吸收状态。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -40,4 +40,13 @@
 | 完成度与「task 是干啥的」 | 预期校准 | 已写入 learnings/decision |
 | 下一步该做什么 | 优先 JobRunner | 已写入 state/backlog/handoff |
 | 二次 devflow-handoff 收尾 + 提交 | 本 handoff 008 | 进行中 |
+
+## 2026-09-27 01:09:39 +08:00 - 本轮用户输入索引
+
+| 来源 | 用途 | 吸收状态 |
+| --- | --- | --- |
+| 用户消息：从 `NEXT-SESSION-PROMPT-video-emotion-transcript-workflow.md` 恢复，并多次确认推荐方案 | 恢复 mission、完成对齐并选择显式演示转写 | 已吸收至本轮对齐、计划与 OpenSpec（开放规格） |
+| 用户消息：直接开始 Plan（计划）并 Apply（实施） | 授权按已确认方案实施 | 已完成演示闭环并验证 |
+| 用户消息：可考虑 LLM 辅助判断、意图识别和基于工具元数据选工具 | 后续候选设计约束 | 已记录为候选项（Candidate）；本轮未批准实现 |
+| 用户消息：先收尾并提交 mission 相关代码，稍后自行手动验证 | 跨会话交接与提交范围 | 本 handoff 009 吸收；手动验收留待下次会话 |
 

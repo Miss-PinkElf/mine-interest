@@ -2,6 +2,19 @@
 
 import { requestJson } from './client'
 import type { SegmentDto } from './jobs'
+import { API_SEGMENTS_PATH, SEGMENT_TEXT_SUFFIX } from '../constants/task'
+
+/** 保存片段人工修订，供确认和导出使用。 */
+export async function editSegmentText(
+  segmentId: string,
+  editedText: string,
+): Promise<SegmentDto> {
+  return requestJson<SegmentDto>(`${API_SEGMENTS_PATH}/${segmentId}/${SEGMENT_TEXT_SUFFIX}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ edited_text: editedText }),
+  })
+}
 
 export async function splitSegment(
   segmentId: string,

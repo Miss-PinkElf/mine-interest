@@ -1,15 +1,24 @@
-import { Layout, Tabs, Typography } from 'antd'
+import { Alert, Layout, Tabs, Typography, message } from 'antd'
 import { useEffect, useState } from 'react'
 
 import {
   APPLICATION_TITLE,
+  DEMO_MODE_NOTICE,
   NAV_JOBS_LABEL,
   NAV_SETTINGS_LABEL,
   REVIEW_WORKSPACE_TITLE,
+  SEGMENT_CONFIRM_FAILED_MESSAGE,
 } from './constants/copy'
 import type { JobDto, SegmentDto } from './api/jobs'
-import { confirmSegment, createJob, listSegments } from './api/jobs'
-import { splitSegment } from './api/review'
+import { confirmSegment, createJob, getJob, listSegments } from './api/jobs'
+import {
+  ACTIVE_JOB_SESSION_KEY,
+  JOB_STATUS_PENDING,
+  JOB_STATUS_PROCESSING,
+  SEGMENT_REVIEW_STATUS_CONFIRMED,
+  TASK_STATUS_POLL_INTERVAL_MS,
+} from './constants/task'
+import { editSegmentText, splitSegment } from './api/review'
 import { UploadTaskForm } from './features/jobs/UploadTaskForm'
 import { TaskProgress } from './features/jobs/TaskProgress'
 import { ExportPanel } from './features/exports/ExportPanel'
@@ -26,14 +35,75 @@ function App() {
   const [segments, setSegments] = useState<SegmentDto[]>([])
 
   useEffect(() => {
-    if (!activeJob) {
+    const savedJobId = window.sessionStorage.getItem(ACTIVE_JOB_SESSION_KEY)
+    if (!savedJobId) return
+
+    let isMounted = true
+    getJob(savedJobId)
+      .then((job) => {
+        // 新上传任务已替换会话 ID 时，旧查询结果不得覆盖当前任务。
+        if (isMounted && window.sessionStorage.getItem(ACTIVE_JOB_SESSION_KEY) === savedJobId) {
+          setActiveJob(job)
+        }
+      })
+      .catch(() => {
+        if (window.sessionStorage.getItem(ACTIVE_JOB_SESSION_KEY) === savedJobId) {
+          window.sessionStorage.removeItem(ACTIVE_JOB_SESSION_KEY)
+        }
+      })
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    const jobId = activeJob?.id
+    if (!jobId) {
       setSegments([])
       return
     }
-    listSegments(activeJob.id)
-      .then(setSegments)
-      .catch(() => setSegments([]))
-  }, [activeJob])
+
+    let isCurrentJob = true
+    let pollTimer: ReturnType<typeof setTimeout> | undefined
+    const stillActive = () =>
+      isCurrentJob && window.sessionStorage.getItem(ACTIVE_JOB_SESSION_KEY) === jobId
+
+    const refreshJob = async () => {
+      try {
+        const latestJob = await getJob(jobId)
+        if (!stillActive()) return
+        setActiveJob(latestJob)
+        const isProcessing =
+          latestJob.status === JOB_STATUS_PENDING || latestJob.status === JOB_STATUS_PROCESSING
+        if (isProcessing) {
+          pollTimer = setTimeout(refreshJob, TASK_STATUS_POLL_INTERVAL_MS)
+          return
+        }
+        const latestSegments = await listSegments(jobId)
+        if (stillActive()) setSegments(latestSegments)
+      } catch {
+        if (stillActive()) {
+          pollTimer = setTimeout(refreshJob, TASK_STATUS_POLL_INTERVAL_MS)
+        }
+      }
+    }
+
+    void refreshJob()
+    return () => {
+      isCurrentJob = false
+      if (pollTimer) clearTimeout(pollTimer)
+    }
+  }, [activeJob?.id])
+
+  const hasConfirmedSegment = segments.some(
+    (segment) => segment.review_status === SEGMENT_REVIEW_STATUS_CONFIRMED,
+  )
+
+  const handleJobCreated = (job: JobDto) => {
+    window.sessionStorage.setItem(ACTIVE_JOB_SESSION_KEY, job.id)
+    setSegments([])
+    setActiveJob(job)
+  }
 
   return (
     <Layout className={styles.applicationLayout}>
@@ -52,10 +122,10 @@ function App() {
                 <div className={styles.tabBody}>
                   <UploadTaskForm
                     createJob={createJob}
-                    onCreated={(job) => setActiveJob(job)}
+                    onCreated={handleJobCreated}
                   />
                   <TaskProgress job={activeJob} />
-                  <ExportPanel jobId={activeJob?.id ?? null} />
+                  <ExportPanel jobId={activeJob?.id ?? null} disabled={!hasConfirmedSegment} />
                 </div>
               ),
             },
@@ -63,25 +133,42 @@ function App() {
               key: TAB_KEY_REVIEW,
               label: REVIEW_WORKSPACE_TITLE,
               children: activeJob ? (
-                <ReviewWorkspace
-                  job={{
-                    id: activeJob.id,
-                    segments,
-                    evidenceBySegment: Object.fromEntries(
-                      segments.map((segment) => [segment.id, []]),
-                    ),
-                  }}
-                  splitSegment={async (segmentId, atSeconds) => {
-                    const next = await splitSegment(segmentId, atSeconds)
-                    const refreshed = await listSegments(activeJob.id)
-                    setSegments(refreshed)
-                    return next
-                  }}
-                  confirmSegment={async (segmentId) => {
-                    await confirmSegment(segmentId)
-                    setSegments(await listSegments(activeJob.id))
-                  }}
-                />
+                <div>
+                  {activeJob.is_demo && <Alert type="warning" showIcon title={DEMO_MODE_NOTICE} />}
+                  <ReviewWorkspace
+                    job={{
+                      id: activeJob.id,
+                      segments,
+                      evidenceBySegment: Object.fromEntries(
+                        segments.map((segment) => [segment.id, []]),
+                      ),
+                    }}
+                    splitSegment={async (segmentId, atSeconds) => {
+                      const next = await splitSegment(segmentId, atSeconds)
+                      const refreshed = await listSegments(activeJob.id)
+                      if (window.sessionStorage.getItem(ACTIVE_JOB_SESSION_KEY) === activeJob.id) {
+                        setSegments(refreshed)
+                      }
+                      return next
+                    }}
+                    confirmSegment={async (segmentId, editedText) => {
+                      try {
+                        if (editedText !== null) {
+                          await editSegmentText(segmentId, editedText)
+                        }
+                        await confirmSegment(segmentId)
+                        const refreshed = await listSegments(activeJob.id)
+                        if (window.sessionStorage.getItem(ACTIVE_JOB_SESSION_KEY) === activeJob.id) {
+                          setSegments(refreshed)
+                        }
+                      } catch (error) {
+                        message.error(
+                          error instanceof Error ? error.message : SEGMENT_CONFIRM_FAILED_MESSAGE,
+                        )
+                      }
+                    }}
+                  />
+                </div>
               ) : (
                 <Typography.Paragraph>请先创建任务</Typography.Paragraph>
               ),

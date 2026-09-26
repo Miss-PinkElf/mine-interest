@@ -33,7 +33,7 @@ class ExportService:
     def export_job(self, job_id: str, export_format: ExportFormat) -> ExportArtifact:
         """导出指定任务；无片段时失败，且不删除既有产物。"""
         # 先确认任务存在。
-        self._job_service.get(job_id)
+        job = self._job_service.get(job_id)
         segments = self._review_service.list_segments(job_id)
         if not segments:
             raise ExportNotReadyError(constants.EXPORT_ERROR_NO_SEGMENTS)
@@ -42,13 +42,13 @@ class ExportService:
             relative_path = (
                 f"{constants.EXPORT_RELATIVE_DIR}/{constants.EXPORT_MARKDOWN_FILENAME}"
             )
-            content = self._render_markdown(segments)
+            content = self._render_markdown(segments, is_demo=job.is_demo)
             self._artifact_store.write_text(job_id, relative_path, content)
         elif export_format is ExportFormat.JSON:
             relative_path = (
                 f"{constants.EXPORT_RELATIVE_DIR}/{constants.EXPORT_JSON_FILENAME}"
             )
-            content = self._render_json(segments)
+            content = self._render_json(segments, is_demo=job.is_demo)
             self._artifact_store.write_text(job_id, relative_path, content)
         else:
             raise ExportNotReadyError(f"UNSUPPORTED_FORMAT:{export_format}")
@@ -63,9 +63,11 @@ class ExportService:
         return artifact
 
     @staticmethod
-    def _render_markdown(segments: list[Segment]) -> str:
+    def _render_markdown(segments: list[Segment], *, is_demo: bool = False) -> str:
         """渲染面向人工阅读的时间轴 Markdown。"""
         lines = ["# 情感化转写导出", ""]
+        if is_demo:
+            lines.extend([f"> {constants.DEMO_TRANSCRIPT_NOTICE}", ""])
         for index, segment in enumerate(segments, start=1):
             speaker = segment.speaker_id or "-"
             lines.append(
@@ -79,7 +81,7 @@ class ExportService:
         return "\n".join(lines)
 
     @staticmethod
-    def _render_json(segments: list[Segment]) -> str:
+    def _render_json(segments: list[Segment], *, is_demo: bool = False) -> str:
         """渲染面向机器消费的片段 JSON。"""
         payload = [
             {
@@ -95,4 +97,7 @@ class ExportService:
             }
             for segment in segments
         ]
+        if is_demo:
+            for item in payload:
+                item["demo_notice"] = constants.DEMO_TRANSCRIPT_NOTICE
         return json.dumps(payload, ensure_ascii=False, indent=2)

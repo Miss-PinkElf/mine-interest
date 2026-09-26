@@ -1,11 +1,12 @@
 /** 任务相关 API 客户端。 */
 
 import { requestJson } from './client'
-import { API_JOBS_PATH } from '../constants/task'
+import { API_JOBS_PATH, DEMO_MODE_ENABLED_VALUE, DEMO_MODE_FORM_FIELD } from '../constants/task'
 
 export type JobDto = {
   id: string
   source_media_path: string
+  is_demo: boolean
   status: string
   created_at: string
   failed_stage?: string | null
@@ -33,9 +34,12 @@ export type ExportArtifactDto = {
   created_at: string
 }
 
-export async function createJob(file: File): Promise<JobDto> {
+export async function createJob(file: File, demoMode: boolean): Promise<JobDto> {
   const formData = new FormData()
   formData.append('file', file)
+  if (demoMode) {
+    formData.append(DEMO_MODE_FORM_FIELD, DEMO_MODE_ENABLED_VALUE)
+  }
   return requestJson<JobDto>(API_JOBS_PATH, {
     method: 'POST',
     body: formData,

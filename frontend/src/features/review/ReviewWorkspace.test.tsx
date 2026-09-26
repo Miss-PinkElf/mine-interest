@@ -49,6 +49,16 @@ const conflictingJob = {
 }
 
 describe('ReviewWorkspace', () => {
+  it('shows segments that arrive after a background job finishes', async () => {
+    const { rerender } = render(
+      <ReviewWorkspace job={{ id: 'job-1', segments: [], evidenceBySegment: {} }} />,
+    )
+
+    rerender(<ReviewWorkspace job={conflictingJob} />)
+
+    expect((await screen.findAllByText('第一段'))[0]).toBeVisible()
+  })
+
   it('shows conflicting evidence and sends a split request', async () => {
     const user = userEvent.setup()
     const splitSegment = vi.fn()
@@ -59,7 +69,7 @@ describe('ReviewWorkspace', () => {
       />,
     )
 
-    await user.click(screen.getByText('第二段'))
+    await user.click(screen.getAllByText('第二段')[0])
     expect(screen.getByText(CONFLICT_REVIEW_COPY)).toBeVisible()
     await user.click(screen.getByRole('button', { name: SPLIT_SEGMENT_LABEL }))
     expect(splitSegment).toHaveBeenCalledWith('seg-2', expect.any(Number))

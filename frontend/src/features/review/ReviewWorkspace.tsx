@@ -1,5 +1,5 @@
 import { Typography } from 'antd'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { REVIEW_WORKSPACE_TITLE } from '../../constants/copy'
 import type { SegmentDto } from '../../api/jobs'
@@ -17,7 +17,7 @@ export type ReviewJobView = {
 export type ReviewWorkspaceProps = {
   job: ReviewJobView
   splitSegment?: (segmentId: string, atSeconds: number) => Promise<unknown> | unknown
-  confirmSegment?: (segmentId: string) => Promise<unknown> | unknown
+  confirmSegment?: (segmentId: string, editedText: string | null) => Promise<unknown> | unknown
   onTextEdit?: (segmentId: string, text: string) => void
 }
 
@@ -31,8 +31,13 @@ export function ReviewWorkspace({
   const [currentTime, setCurrentTime] = useState(0)
   const [segments, setSegments] = useState(job.segments)
 
+  useEffect(() => {
+    // 后台转写完成后，父组件传入的片段会替换创建任务时的空列表。
+    setSegments(job.segments)
+  }, [job.segments])
+
   const active = useMemo(
-    () => segments.find((item) => item.id === activeId) ?? null,
+    () => segments.find((item) => item.id === activeId) ?? segments[0] ?? null,
     [segments, activeId],
   )
   const evidence = active ? job.evidenceBySegment[active.id] || [] : []
@@ -44,7 +49,7 @@ export function ReviewWorkspace({
         <div className={styles.column}>
           <SegmentList
             segments={segments}
-            activeId={activeId}
+            activeId={active?.id}
             onSelect={setActiveId}
           />
         </div>
@@ -53,7 +58,7 @@ export function ReviewWorkspace({
             segment={active}
             currentTime={currentTime}
             onCurrentTimeChange={setCurrentTime}
-            onConfirm={() => active && confirmSegment?.(active.id)}
+            onConfirm={() => active && confirmSegment?.(active.id, active.edited_text)}
             onSplit={(atSeconds) => active && splitSegment?.(active.id, atSeconds)}
             onTextChange={(text) => {
               if (!active) return

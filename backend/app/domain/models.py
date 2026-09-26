@@ -32,6 +32,8 @@ class Job:
     """表示一次本地媒体处理任务。"""
     id: str
     source_media_path: str
+    # 任务是否使用了演示引擎；从产物标记恢复，不写入既有 SQLite 表。
+    is_demo: bool = False
     status: JobStatus = JobStatus.PENDING
     created_at: datetime = field(default_factory=_current_time)
     # 最近一次失败所处的管线阶段；成功任务保持为空。
@@ -71,6 +73,12 @@ class Job:
         """将任务切入处理中，供管线或恢复后继续执行。"""
         now = _current_time()
         self.status = JobStatus.PROCESSING
+        self.updated_at = now
+
+    def mark_review(self) -> None:
+        """片段已持久化后，将任务交给人工审核。"""
+        now = _current_time()
+        self.status = JobStatus.REVIEW
         self.updated_at = now
 
     def mark_exported(self) -> None:

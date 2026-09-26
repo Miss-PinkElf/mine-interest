@@ -3,13 +3,13 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-07-10 15:15:33 +08:00
+- 更新时间（Updated At）：2026-09-26 23:28:12 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：定义视频情感化转写 MVP 的模块边界、数据流、接口和风险控制。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
 - 关联提案（Related Proposal）：`.devflow/video-emotion-transcript-workflow/spec/proposal.md`
-- 关联计划（Related Plan）：`.devflow/video-emotion-transcript-workflow/plans/2026-07-10-video-emotion-transcript-mvp-implementation-plan.md`
+- 关联计划（Related Plan）：`.devflow/video-emotion-transcript-workflow/plans/2026-07-10-video-emotion-transcript-mvp-implementation-plan.md`、`.devflow/video-emotion-transcript-workflow/plans/2026-09-26-upload-auto-demo-transcript-plan.md`
 - 当前状态（Status）：已设计（Designed）
 - 文档边界（Scope / Boundary）：本文件是 OpenSpec 技术设计真相源，解释如何实现；不授权 Apply（实施）。
 
@@ -131,3 +131,11 @@ API 只承担 schema 校验、服务调用和错误映射：
 - 表情/姿态模型只反映有限视觉特征，不等同复杂情绪：结果作为证据，不作为单一结论。
 - 云端模型质量、成本和隐私边界随 Provider 改变：适配器隔离供应商，并在前端显示调用阶段与错误状态。
 - 复杂音频编辑会扩张为剪辑器：MVP 仅支持片段切分、相邻合并、删除和文本/结论修订。
+# 2026-09-26 增量设计：自动演示管线
+
+- 上传 `demo_mode=true`：先保存任务与演示元数据，再由 FastAPI BackgroundTasks 调用应用内 JobRunner；普通上传仍为 pending。
+- JobRunner 顺序：pending → processing → 质量报告/占位预处理 → Fake STT → 片段入库 → review。任何阶段失败写入阶段与稳定错误码；空片段视为失败。
+- 演示来源以任务产物元数据持久保存，由任务查询接口返回；旧任务无标记视为非演示。导出服务据此给 Markdown 和 JSON 增加来源声明。
+- 前端用现有状态查询接口轮询 pending/processing，在 review/failed 停止并刷新片段。演示声明同时在任务页和审核页展示。
+- 任务切换期间，旧异步响应只有与当前会话任务 ID 一致才可写入页面；人工修订在确认前提交到现有片段文本 API，保存失败不得确认。
+- 重启时 processing 任务及尚未启动的 pending 演示任务按“失败且可重试”处理；普通 pending 任务保持原状，不自动重试。
