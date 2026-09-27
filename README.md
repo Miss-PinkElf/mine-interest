@@ -13,6 +13,21 @@
 
 ## 一键启动（推荐）
 
+Windows PowerShell 7：
+
+```powershell
+# 在仓库根目录
+./scripts/start-local-dev.ps1
+```
+
+使用已有的 `backend/.venv/Scripts/python.exe` 和 `frontend/node_modules`。默认后端端口为 `8000`、前端端口为 `5173`；若被占用，自动使用后续空闲端口，不会结束原占用进程。前端保留 Vite 热更新，后端以单进程启动，修改后端代码需重启脚本。启动后以终端显示的地址为准，按 `Ctrl+C` 停止本次启动的服务。日志位于 `.dev-logs/`，也可指定端口：
+
+```powershell
+./scripts/start-local-dev.ps1 -BackendPort 8010 -FrontendPort 5180
+```
+
+macOS / Linux（Bash）：
+
 ```bash
 # 在仓库根目录
 ./scripts/start-local-dev.sh

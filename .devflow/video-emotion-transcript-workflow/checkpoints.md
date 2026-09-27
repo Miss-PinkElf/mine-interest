@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-06-10 11:47:50 +08:00
-- 更新时间（Updated At）：2026-09-27 01:09:39 +08:00
+- 更新时间（Updated At）：2026-09-27 12:26:52 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：最近 checkpoint（最多 3 条）。
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
@@ -11,6 +11,12 @@
 - 文档边界（Scope / Boundary）：最近三条真相源。
 
 ## 最近 checkpoint
+
+### 2026-09-27 12:26:52 +08:00 - Windows PowerShell 一键启动验证
+
+- 完成内容：新增 `scripts/start-local-dev.ps1`，同时启动前后端、自动顺延端口并在 `Ctrl+C` 时清理本次服务；更新 `README.md`。
+- 验证：默认端口与端口占用场景均通过后端健康检查、前端页面和 API 代理检查；停止后端口释放且原占用监听器保留。
+- 下一步：按用户授权提交本轮改动；用户随后手动验收演示上传、审核、导出与刷新恢复。
 
 ### 2026-09-27 01:09:39 +08:00 - 演示闭环第一版收尾交接
 
@@ -24,8 +30,3 @@
 - 验证：后端 28 passed；前端 8 passed；构建通过；本地浏览器完成上传、文本修订、确认、Markdown/JSON 导出与刷新恢复。
 - 延期：真实语音转文字（STT）和真实媒体/情绪证据留待下一阶段对齐；其他延期项仍见 `deferred/`。
 - 下一步：用户已在本轮收尾明确授权，仅提交当前 mission 相关代码和文档。
-
-### 2026-09-26 23:28:12 +08:00 - 自动演示转写方向已对齐
-
-- 完成内容：确定应用内后台 JobRunner、显式 Fake STT 演示模式、持久来源标识和前端状态刷新；对齐文档已落盘，待用户审阅。
-- 下一步：审阅 `.devflow/video-emotion-transcript-workflow/plans/2026-09-26-upload-auto-demo-transcript-align.md`，再写实施计划。

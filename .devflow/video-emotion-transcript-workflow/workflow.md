@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-06-10 11:43:30 +08:00
-- 更新时间（Updated At）：2026-09-27 01:09:39 +08:00
+- 更新时间（Updated At）：2026-09-27 12:26:52 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：当前流程阶段视图。
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
@@ -14,7 +14,7 @@
 
 - 既有重型路径与本轮增量 `spec/tasks.md` 均已完成。
 - 本轮 Mini Align（最小对齐）→ Plan（计划）→ OpenSpec（开放规格）→ Apply（实施）→ Verify（验证）已执行。
-- 下一步是用户手动验收；真实语音转文字（STT）和媒体处理进入下一阶段前需重新对齐范围。
+- Windows PowerShell 一键启动增量已完成轻量计划（Light Plan）、实施（Apply）与验证（Verify）；下一步是用户手动验收。真实语音转文字（STT）和媒体处理进入下一阶段前需重新对齐范围。
 
 ## 阶段
 
