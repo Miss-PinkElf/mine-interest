@@ -4,4 +4,4 @@
 ### 需求2
 先做视频/音频的预处理 + STT，先可以把完整的做STT弄好，最后的界面类似于：![alt text](images_md/image.png)
 1. 可以对音频分段，删除，手动对齐，merge，delete，等
- 
+2. 对于音频的预处理，你可以参考，zzz-prompt-debug/origin/设想/数据集处理.md这个文档
