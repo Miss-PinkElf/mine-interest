@@ -1,7 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-21 18:38:00 +08:00
-- 更新时间（Updated At）：2026-09-21 18:38:00 +08:00
+- 更新时间（Updated At）：2026-09-28 18:55:00 +08:00。
 - 作者（Author）：Grok
 - 目的（Purpose）：沉淀本轮成条切片的踩坑。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub（`.`）。
@@ -16,3 +16,6 @@
 3. 会话标记不要只做「整句等于中文标点」。手机输入常带空格，或打成英文 `, , ,` / `。 。 。`。匹配前去空白并归一化中英文逗号/句号。
 4. 已 complete 的采集档案不会再走 `save()`，新 Vault 必须另做 `export_existing` 回填。
 5. `media/` 是哈希库；给人看的是 `items/<id>/content.md`。会话里的嵌套转发按当时规则是子块，不是第二条。
+6. 改 AstrBot 插件后要做三件事：提高 `metadata.yaml` 和 `PLUGIN_VERSION`，整份覆盖到 `~/.astrbot/data/plugins/<插件名>/`，再重载。只改仓库，运行中的进程不会变。
+7. 插件页的业务脚本必须写在 `/api/plugin/page/bridge-sdk.js` 之后。写在前面时 `AstrBotPluginPage` 还不存在，页面会停在初始文案。登录状态和仓库校验要分开请求，一个挂起不能挡住另一个。
+8. GitHub 匿名接口容易被限流并返回 403。页面上的私有性要用已登录的 `gh` 判断。真正发布资料的闸门如果仍调用匿名检查，日志里的 `remote_private_unverified` 不会因为页面变绿而消失。
