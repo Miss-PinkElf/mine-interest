@@ -35,4 +35,15 @@
 1. 现在的文件夹结构不太对，对于qq：yyyy-mm-dd/forward or session or message，而不是现在forward-id这样的
 2. 对于b站，或者对于所有的下载，都是直连，后期可以添加代理配置，同时添加重试的操作 or 脚本 比如这个/Users/mobius/.astrbot/data/sourcehub/items/bilibili/2026-09-22/article/崩坏3剧情助手正式上线-40034538/content.md里面的图片都下载失败了，但是链接我可以打开；；当下载失败的时候自动重试，最多5次，不要使用系统代理下载
 3. 当我有item或者别的文件更新的时候，自动推送到远程，仓库是：git@github.com:Miss-PinkElf/data-hub.git
-4.
+4. 现在b站没有办法下载视频，修复一下
+### 需求5
+1. bilibili增加一个cookie检查，看看cookie是否过期同时你看看，astrbot_plugin_bilibili_ai_bot，这个文件夹下面，有没有cookie自动刷新的功能，参考一下
+2. 下载压缩？暂定
+
+### 需要6
+1. 采集与发布的运行状态不稳定。 B 站轮询反复报 ClientConnectorDNSError；发布器在最近日志中持续报 remote_private_unverified。这不抹掉 10:34 的成功推送记录，但说明成功推送后又进入了无法通过私有仓库校验的状态，后续自动推送不能视为稳定，这个推送，要不这样，只推送，完整的content.md和我已经下载好的媒体文件，包括图片和视频
+2. 上传文件方面：
+   1. 百度网盘作为冷备份，本地也会存一份，（当你上传的时候，需要自动维护一个索引或者说目录，为了方便的下载和寻找，就是我上传那么多次文件到百度网盘，我怕我不好找，需要有索引，记录上传的文件名，文件路径等内容）
+   2. 语雀文档作为一个展示的手段，让我可以随时看到这些东西，这些东西的接入方式都是 mcp 或者 cli的形式 
+   3. 可以参考这个文档：.devflow/multi-source-hub/plans/2026-09-28-媒体托管与多端归档-候选总结.md
+3. 
