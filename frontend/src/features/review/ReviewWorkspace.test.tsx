@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
+  CONFIRM_SEGMENT_LABEL,
   CONFLICT_REVIEW_COPY,
   SPLIT_SEGMENT_LABEL,
 } from '../../constants/copy'
@@ -73,5 +74,22 @@ describe('ReviewWorkspace', () => {
     expect(screen.getByText(CONFLICT_REVIEW_COPY)).toBeVisible()
     await user.click(screen.getByRole('button', { name: SPLIT_SEGMENT_LABEL }))
     expect(splitSegment).toHaveBeenCalledWith('seg-2', expect.any(Number))
+  })
+
+  it('prevents repeated confirmation until a confirmed segment changes', async () => {
+    const user = userEvent.setup()
+    const confirmed = {
+      ...conflictingJob.segments[0],
+      review_status: 'confirmed',
+    }
+    render(
+      <ReviewWorkspace
+        job={{ id: 'job-1', segments: [confirmed], evidenceBySegment: {} }}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: '已确认' })).toBeDisabled()
+    await user.type(screen.getByRole('textbox'), '补充')
+    expect(screen.getByRole('button', { name: CONFIRM_SEGMENT_LABEL })).toBeEnabled()
   })
 })

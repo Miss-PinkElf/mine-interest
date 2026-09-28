@@ -3,13 +3,13 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-06-10 11:43:30 +08:00
-- 更新时间（Updated At）：2026-07-13 14:28:23 +08:00
+- 更新时间（Updated At）：2026-09-28 11:17:06 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录本 mission 的关键决策与延期项，便于后续追溯。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
 - 关联原始需求（Related Source）：`zzz-prompt-debug/origin/设想/prompt.md`
-- 当前状态（Status）：规格已就绪（Spec Ready）
+- 当前状态（Status）：持续维护中（In Progress）
 - 文档边界（Scope / Boundary）：本文件是关键决策真相源（source of truth），不代表需求已进入代码实现。
 
 ## 决策记录
@@ -124,3 +124,9 @@
 - 后续触发（Trigger）：用户手动验收通过或反馈问题后，再决定真实语音转文字（STT）、媒体处理和证据模型的优先顺序；大语言模型（LLM）辅助工具选择仍需单独对齐。
 - 延期边界（Deferred Scope）：具体对象、原因与触发条件见 `deferred/2026-07-13-v1-adapter-vs-deferred.md`；均非永久放弃。
 
+## 2026-09-28 11:17:06 +08:00 - 全部片段确认后同步任务状态
+
+- 决策（Decision）：全部片段确认后任务进入 `confirmed`（已确认）；导出后进入 `exported`（已导出），前端成功操作后立即查询持久状态。已确认且内容未改变的片段不重复确认；旧任务读取时修复片段与任务状态不一致的记录。
+- 原因（Rationale）：用户手动验收发现片段已经确认而任务仍显示待审核，进度条和按钮缺乏完成反馈；原实现没有把片段与任务状态联动。
+- 关联对齐与计划（Related Align / Plan）：`plans/2026-09-28-review-confirmed-status-align.md`、`plans/2026-09-28-review-confirmed-status-plan.md`。
+- 后续触发（Trigger）：用户复测该状态链路后继续真实 STT（语音转文字）和媒体能力对齐；本决策不改变既有延期边界。

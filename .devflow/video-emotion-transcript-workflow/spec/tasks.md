@@ -3,14 +3,14 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-09-27 00:47:18 +08:00
+- 更新时间（Updated At）：2026-09-28 11:32:32 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：追踪 MVP 从工程骨架到真实样本验证的可验证实施任务。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
 - 关联提案与设计（Related Spec）：`.devflow/video-emotion-transcript-workflow/spec/proposal.md`、`.devflow/video-emotion-transcript-workflow/spec/design.md`
 - 关联计划（Related Plan）：`.devflow/video-emotion-transcript-workflow/plans/2026-07-10-video-emotion-transcript-mvp-implementation-plan.md`、`.devflow/video-emotion-transcript-workflow/plans/2026-09-26-upload-auto-demo-transcript-plan.md`
-- 当前状态（Status）：V1 与自动演示转写增量任务均已完成（Completed）
+- 当前状态（Status）：V1、自动演示转写及状态同步增量任务完成；状态同步已通过用户手动验收
 - 文档边界（Scope / Boundary）：本文件是实施任务追踪真相源；勾选任务前必须获得 Apply（实施）授权。
 
 ## 阶段 1：可运行的本地审核纵向链路
@@ -101,3 +101,11 @@
 - [x] 验证确认与 Markdown/JSON 导出闭环，运行聚焦测试和现有回归。
   - 验收：API/集成测试覆盖上传、人工修订、确认、导出；修订保存失败不确认；前端测试与构建通过；文档状态与验证结果一致。
   - 验证结果：后端 28 passed，前端 8 passed，生产构建通过；本地浏览器完成上传、修订、确认、两种导出及刷新恢复。
+
+## 2026-09-28 增量任务：确认与导出状态同步
+
+- [x] 全部片段确认后，任务持久化为已确认；再次修改已确认文本后恢复待审核。
+- [x] 页面确认成功后立即显示任务已确认与明确反馈；已确认且未修改的片段不重复提交。
+- [x] 导出成功后页面立即显示任务已导出；后端持久状态与前端一致。
+- [x] 后端接口与前端交互测试覆盖以上路径，并完成本轮验证记录：后端 32 passed、前端 11 passed、构建通过；用户 Mac mini 截图与回复确认本轮验收通过。
+- [x] 兼容修复前已经确认的旧任务，刷新查询后显示已确认；部分片段待审核的任务保持原状态。

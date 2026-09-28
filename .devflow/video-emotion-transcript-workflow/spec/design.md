@@ -3,13 +3,13 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-09-26 23:28:12 +08:00
+- 更新时间（Updated At）：2026-09-28 11:17:06 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：定义视频情感化转写 MVP 的模块边界、数据流、接口和风险控制。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
 - 关联提案（Related Proposal）：`.devflow/video-emotion-transcript-workflow/spec/proposal.md`
-- 关联计划（Related Plan）：`.devflow/video-emotion-transcript-workflow/plans/2026-07-10-video-emotion-transcript-mvp-implementation-plan.md`、`.devflow/video-emotion-transcript-workflow/plans/2026-09-26-upload-auto-demo-transcript-plan.md`
+- 关联计划（Related Plan）：`.devflow/video-emotion-transcript-workflow/plans/2026-07-10-video-emotion-transcript-mvp-implementation-plan.md`、`.devflow/video-emotion-transcript-workflow/plans/2026-09-26-upload-auto-demo-transcript-plan.md`、`.devflow/video-emotion-transcript-workflow/plans/2026-09-28-review-confirmed-status-plan.md`
 - 当前状态（Status）：已设计（Designed）
 - 文档边界（Scope / Boundary）：本文件是 OpenSpec 技术设计真相源，解释如何实现；不授权 Apply（实施）。
 
@@ -139,3 +139,11 @@ API 只承担 schema 校验、服务调用和错误映射：
 - 前端用现有状态查询接口轮询 pending/processing，在 review/failed 停止并刷新片段。演示声明同时在任务页和审核页展示。
 - 任务切换期间，旧异步响应只有与当前会话任务 ID 一致才可写入页面；人工修订在确认前提交到现有片段文本 API，保存失败不得确认。
 - 重启时 processing 任务及尚未启动的 pending 演示任务按“失败且可重试”处理；普通 pending 任务保持原状，不自动重试。
+
+## 2026-09-28 增量设计：确认与导出状态同步
+
+- 片段确认在同一数据库事务内查询该任务的全部片段；非空且全部为 `confirmed`（已确认）时，将处于 `review`（待审核）的任务持久化为 `confirmed`。
+- 已确认片段的最终文本发生变化时，该片段回到待审核，已确认或已导出的任务回到待审核；重新确认后可再次进入已确认。
+- 页面确认成功后查询任务和片段，导出成功后查询任务；查询结果仍须核对当前会话任务 ID，防止旧响应覆盖新任务。
+- 已确认且本地文字未改变的片段按钮显示「已确认」并禁用；修改文字后恢复「确认片段」操作。
+- 对修复前已存在的旧任务，读取处于待审核的任务时复核片段状态；若非空且全部已确认，持久化修正为已确认，使用户刷新现有任务即可看到正确状态。

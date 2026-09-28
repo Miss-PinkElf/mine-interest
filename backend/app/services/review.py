@@ -5,8 +5,9 @@ from __future__ import annotations
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.database import session_scope
-from app.domain.enums import AnalysisStatus
+from app.domain.enums import AnalysisStatus, JobStatus, SegmentReviewStatus
 from app.domain.models import Segment
+from app.repositories.jobs import JobRepository
 from app.repositories.segments import SegmentRepository
 from app.repositories.tables import SegmentRow
 
@@ -33,6 +34,15 @@ class ReviewService:
             job_id = self._require_job_id(repository, segment_id)
             segment.confirm()
             repository.save(job_id, segment)
+            segments = repository.list_by_job(job_id)
+            if segments and all(
+                item.review_status == SegmentReviewStatus.CONFIRMED for item in segments
+            ):
+                job_repository = JobRepository(session)
+                job = job_repository.get(job_id)
+                if job is not None and job.status == JobStatus.REVIEW:
+                    job.mark_confirmed()
+                    job_repository.save(job)
             return segment
 
     def list_segments(self, job_id: str) -> list[Segment]:
@@ -52,9 +62,16 @@ class ReviewService:
             repository = SegmentRepository(session)
             segment = self._require_segment(repository, segment_id)
             job_id = self._require_job_id(repository, segment_id)
+            content_changed = segment.final_text != edited_text
             segment.apply_text_edit(edited_text)
             segment.mark_analysis_stale()
             repository.save(job_id, segment)
+            if content_changed:
+                job_repository = JobRepository(session)
+                job = job_repository.get(job_id)
+                if job is not None and job.status in (JobStatus.CONFIRMED, JobStatus.EXPORTED):
+                    job.mark_review()
+                    job_repository.save(job)
             return segment
 
     def apply_speaker_edit(self, segment_id: str, speaker_id: str) -> Segment:

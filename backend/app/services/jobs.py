@@ -6,9 +6,10 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.core import constants
 from app.core.database import create_session_factory, session_scope
-from app.domain.enums import JobStatus
+from app.domain.enums import JobStatus, SegmentReviewStatus
 from app.domain.models import Job
 from app.repositories.jobs import JobRepository
+from app.repositories.segments import SegmentRepository
 from app.services.artifacts import ArtifactStore
 
 
@@ -45,11 +46,19 @@ class JobService:
         return job
 
     def get(self, job_id: str) -> Job:
-        """读取任务；不存在时抛出 JobNotFoundError。"""
+        """读取任务，并修复旧版已确认片段仍显示待审核的记录。"""
         with session_scope(self._session_factory) as session:
-            job = JobRepository(session).get(job_id)
-        if job is None:
-            raise JobNotFoundError(job_id)
+            job_repository = JobRepository(session)
+            job = job_repository.get(job_id)
+            if job is None:
+                raise JobNotFoundError(job_id)
+            if job.status == JobStatus.REVIEW:
+                segments = SegmentRepository(session).list_by_job(job_id)
+                if segments and all(
+                    item.review_status == SegmentReviewStatus.CONFIRMED for item in segments
+                ):
+                    job.mark_confirmed()
+                    job_repository.save(job)
         job.is_demo = self._artifact_store.exists(
             job.id, constants.DEMO_MODE_MARKER_RELATIVE_PATH
         )

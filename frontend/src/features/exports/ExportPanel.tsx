@@ -5,6 +5,7 @@ import {
   EXPORT_JSON_LABEL,
   EXPORT_MARKDOWN_LABEL,
   EXPORT_PANEL_TITLE,
+  TASK_STATUS_REFRESH_FAILED_MESSAGE,
 } from '../../constants/copy'
 import { exportJob } from '../../api/jobs'
 import styles from './index.module.scss'
@@ -12,9 +13,10 @@ import styles from './index.module.scss'
 export type ExportPanelProps = {
   jobId: string | null
   disabled?: boolean
+  onExported?: (jobId: string) => Promise<void>
 }
 
-export function ExportPanel({ jobId, disabled }: ExportPanelProps) {
+export function ExportPanel({ jobId, disabled, onExported }: ExportPanelProps) {
   const [loadingFormat, setLoadingFormat] = useState<string | null>(null)
 
   const handleExport = async (format: 'markdown' | 'json') => {
@@ -23,6 +25,11 @@ export function ExportPanel({ jobId, disabled }: ExportPanelProps) {
     try {
       const artifact = await exportJob(jobId, format)
       message.success(`已导出：${artifact.artifact_path}`)
+      try {
+        await onExported?.(jobId)
+      } catch {
+        message.error(TASK_STATUS_REFRESH_FAILED_MESSAGE)
+      }
     } catch (error) {
       message.error(error instanceof Error ? error.message : String(error))
     } finally {

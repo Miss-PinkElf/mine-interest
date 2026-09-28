@@ -8,6 +8,7 @@ import {
   NAV_SETTINGS_LABEL,
   REVIEW_WORKSPACE_TITLE,
   SEGMENT_CONFIRM_FAILED_MESSAGE,
+  SEGMENT_CONFIRMED_MESSAGE,
 } from './constants/copy'
 import type { JobDto, SegmentDto } from './api/jobs'
 import { confirmSegment, createJob, getJob, listSegments } from './api/jobs'
@@ -105,6 +106,36 @@ function App() {
     setActiveJob(job)
   }
 
+  /** 操作成功后从后端读取持久状态，避免任务进度停留在待审核。 */
+  const refreshActiveJob = async (jobId: string) => {
+    const latestJob = await getJob(jobId)
+    if (window.sessionStorage.getItem(ACTIVE_JOB_SESSION_KEY) === jobId) {
+      setActiveJob(latestJob)
+    }
+  }
+
+  /** 先持久化人工修订，再确认片段并刷新任务与片段状态。 */
+  const handleConfirmSegment = async (segmentId: string, editedText: string | null) => {
+    if (!activeJob) return
+    try {
+      if (editedText !== null) {
+        await editSegmentText(segmentId, editedText)
+      }
+      await confirmSegment(segmentId)
+      const [latestJob, refreshedSegments] = await Promise.all([
+        getJob(activeJob.id),
+        listSegments(activeJob.id),
+      ])
+      if (window.sessionStorage.getItem(ACTIVE_JOB_SESSION_KEY) === activeJob.id) {
+        setActiveJob(latestJob)
+        setSegments(refreshedSegments)
+        message.success(SEGMENT_CONFIRMED_MESSAGE)
+      }
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : SEGMENT_CONFIRM_FAILED_MESSAGE)
+    }
+  }
+
   return (
     <Layout className={styles.applicationLayout}>
       <Layout.Header className={styles.header}>
@@ -125,7 +156,11 @@ function App() {
                     onCreated={handleJobCreated}
                   />
                   <TaskProgress job={activeJob} />
-                  <ExportPanel jobId={activeJob?.id ?? null} disabled={!hasConfirmedSegment} />
+                  <ExportPanel
+                    jobId={activeJob?.id ?? null}
+                    disabled={!hasConfirmedSegment}
+                    onExported={refreshActiveJob}
+                  />
                 </div>
               ),
             },
@@ -151,22 +186,7 @@ function App() {
                       }
                       return next
                     }}
-                    confirmSegment={async (segmentId, editedText) => {
-                      try {
-                        if (editedText !== null) {
-                          await editSegmentText(segmentId, editedText)
-                        }
-                        await confirmSegment(segmentId)
-                        const refreshed = await listSegments(activeJob.id)
-                        if (window.sessionStorage.getItem(ACTIVE_JOB_SESSION_KEY) === activeJob.id) {
-                          setSegments(refreshed)
-                        }
-                      } catch (error) {
-                        message.error(
-                          error instanceof Error ? error.message : SEGMENT_CONFIRM_FAILED_MESSAGE,
-                        )
-                      }
-                    }}
+                    confirmSegment={handleConfirmSegment}
                   />
                 </div>
               ) : (

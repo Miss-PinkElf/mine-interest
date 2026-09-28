@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
-import { CONFIRM_SEGMENT_LABEL, DEMO_MODE_LABEL, DEMO_MODE_NOTICE, EXPORT_MARKDOWN_LABEL, REVIEW_WORKSPACE_TITLE, START_TASK_LABEL } from './constants/copy'
+import { CONFIRM_SEGMENT_LABEL, DEMO_MODE_LABEL, DEMO_MODE_NOTICE, EXPORT_MARKDOWN_LABEL, REVIEW_WORKSPACE_TITLE, SEGMENT_CONFIRMED_MESSAGE, START_TASK_LABEL } from './constants/copy'
 import { ACTIVE_JOB_SESSION_KEY } from './constants/task'
 
 const jobApi = vi.hoisted(() => ({
@@ -171,5 +171,43 @@ describe('App 自动演示任务', () => {
 
     await waitFor(() => expect(reviewApi.editSegmentText).toHaveBeenCalled())
     expect(jobApi.confirmSegment).not.toHaveBeenCalled()
+  })
+
+  it('shows the confirmed job status after the final segment is confirmed', async () => {
+    window.sessionStorage.setItem(ACTIVE_JOB_SESSION_KEY, reviewJob.id)
+    const confirmedSegment = { ...demoSegment, review_status: 'confirmed' }
+    jobApi.getJob.mockImplementation(() =>
+      Promise.resolve(jobApi.confirmSegment.mock.calls.length ? { ...reviewJob, status: 'confirmed' } : reviewJob),
+    )
+    jobApi.listSegments.mockImplementation(() =>
+      Promise.resolve(jobApi.confirmSegment.mock.calls.length ? [confirmedSegment] : [demoSegment]),
+    )
+
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('tab', { name: REVIEW_WORKSPACE_TITLE }))
+    await screen.findByRole('button', { name: CONFIRM_SEGMENT_LABEL })
+    await user.click(screen.getByRole('button', { name: CONFIRM_SEGMENT_LABEL }))
+
+    await user.click(screen.getByRole('tab', { name: '任务' }))
+    expect(await within(screen.getByRole('tabpanel', { name: '任务' })).findByText('已确认')).toBeVisible()
+    expect((await screen.findAllByText(SEGMENT_CONFIRMED_MESSAGE))[0]).toBeVisible()
+  })
+
+  it('shows the exported job status immediately after export', async () => {
+    window.sessionStorage.setItem(ACTIVE_JOB_SESSION_KEY, reviewJob.id)
+    jobApi.getJob.mockImplementation(() =>
+      Promise.resolve({ ...reviewJob, status: jobApi.exportJob.mock.calls.length ? 'exported' : 'confirmed' }),
+    )
+    jobApi.listSegments.mockResolvedValue([{ ...demoSegment, review_status: 'confirmed' }])
+    jobApi.exportJob.mockResolvedValue({ artifact_path: 'artifacts/demo.md' })
+
+    const user = userEvent.setup()
+    render(<App />)
+    const exportButton = await screen.findByRole('button', { name: EXPORT_MARKDOWN_LABEL })
+    await waitFor(() => expect(exportButton).toBeEnabled())
+    await user.click(exportButton)
+
+    expect(await within(screen.getByRole('tabpanel', { name: '任务' })).findByText('已导出')).toBeVisible()
   })
 })

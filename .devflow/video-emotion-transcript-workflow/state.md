@@ -3,51 +3,30 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-06-10 11:43:30 +08:00
-- 更新时间（Updated At）：2026-09-27 12:26:52 +08:00
+- 更新时间（Updated At）：2026-09-28 11:42:20 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：保存当前 mission 的恢复热路径状态。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/video-emotion-transcript-workflow/`
 - 关联原始需求（Related Source）：`zzz-prompt-debug/origin/设想/prompt.md`
-- 当前状态（Status）：演示闭环第一版本地验证通过；Windows PowerShell 一键启动已实测；用户手动验收待进行。
-- 文档边界（Scope / Boundary）：当前快照真相源，不保存完整历史。
+- 当前状态（Status）：演示闭环与状态修复已通过用户手动验收；本轮按用户授权提交并跨会话交接。
+- 文档边界（Scope / Boundary）：当前快照真相源；不代表真实媒体能力已实现或下一阶段已获实施授权。
 
-## 当前目标
+## 当前目标与进度
 
-个人本地「情感化转写」MVP：可上传、可审核、可导出；专用事实 + LLM 解释 + 人工审核。
+- 长期目标：个人本地视频/音频情感化转写与人工审核工作台。
+- 当前第一版：显式演示模式（Demo Mode）上传→应用内任务运行器（JobRunner）→假语音转文字（Fake STT）片段→人工修订/确认→Markdown/JSON 导出，数据持久化到本机。
+- 用户 Mac mini 手动验收：修订文本与片段 `confirmed`（已确认）可见，已确认按钮禁用，任务显示「已导出 100%」；用户回复“可以了”。
+- 状态修复：全部片段确认后任务进入已确认，导出后页面即时显示已导出；旧任务查询可修复历史不一致状态。后端 32 项、前端 11 项测试及构建通过。
+- 本轮用户明确授权收尾时提交 mission 相关代码和文档；`.vscode/controlled-explorer.json` 等无关改动不纳入。
 
-## 本轮完成度
+## 能力边界与后续
 
-- `spec/tasks.md`：既有任务和本轮增量任务全部勾选。
-- 显式演示模式（Demo Mode）：上传后应用内任务运行器（JobRunner）自动生成假语音转文字（Fake STT）片段并进入待审核（review）；普通上传维持原行为。
-- 演示来源跨重启恢复；前端轮询片段、支持同一标签页刷新恢复；人工修订先保存再确认，Markdown/JSON 导出均包含修订文本和演示声明。
-- 验证：后端 pytest 28 passed；前端 vitest 8 passed + build；本地浏览器完成上传、审核、导出和刷新恢复。
-- 先前演示闭环提交已完成；本次 Windows 启动脚本改动已获用户提交（commit）授权。
+- 演示文本不代表媒体真实语音；播放器尚无真实媒体源，证据面板无真实情绪数据；导出文件保存在后端本机目录，浏览器暂无下载入口。
+- 真实 STT（语音转文字）、真实媒体处理/回放、情绪证据与云端 LLM（大语言模型）调用是后续加深；待用户选择真实能力阶段并准备验收样本时重新对齐。TTS（文字转语音）与 LLM 自主选工具均未获实施批准，具体边界见 `deferred/2026-07-13-v1-adapter-vs-deferred.md`。
 
-## 既有能力与本轮边界
+## 恢复与下一步
 
-- 既有一键启动脚本和审核适配层仍可用；本轮新增自动演示转写闭环。
-- 演示内容不代表上传媒体的真实语音。真实语音转文字（STT）、真实媒体预处理和情绪证据仍待后续阶段对齐。
-
-## 后续阶段
-
-- 真实语音转文字（STT）、真实媒体预处理和情绪证据：本轮为先验证产品交互闭环而暂缓；用户决定进入真实能力阶段时重新对齐并写计划（Plan）。
-- Electron、多人云端、n8n、平台下载与训练等：本轮范围外，见 `deferred/`；在用户明确进入相应阶段时重新评估。
-
-## 关键产物
-
-- 最新 handoff：`handoffs/2026-09-27-009-auto-demo-verified.md`
-- 恢复提示：`NEXT-SESSION-PROMPT-video-emotion-transcript-workflow.md`
-- 边界：`deferred/2026-07-13-v1-adapter-vs-deferred.md`
-- 启动：`scripts/start-local-dev.sh`
-
-## 下次建议
-
-1. Windows 用户运行 `./scripts/start-local-dev.ps1`，按 `README.md` 手动验证演示上传、审核、导出与刷新恢复；若发现问题，记录现象并按 bug 路径修复。
-2. 验收反馈后，对齐真实语音转文字（STT）和媒体处理的优先顺序，再写计划（Plan）。
-
-## 2026-09-27 当前恢复点
-
-- 对齐：`plans/2026-09-26-upload-auto-demo-transcript-align.md`；计划：`plans/2026-09-26-upload-auto-demo-transcript-plan.md`；增量任务：`spec/tasks.md`。
-- 自动演示转写已通过本地浏览器冒烟；用户手动验收待进行。第一版和延期边界见 `deferred/2026-07-13-v1-adapter-vs-deferred.md`。
-- Windows 启动入口：`scripts/start-local-dev.ps1`；计划与实测见 `plans/2026-09-27-windows-powershell-local-start-plan.md`。
+1. 先读 `checkpoints.md`，必要时读最新 `handoffs/2026-09-28-010-macmini-demo-accepted.md`；使用说明见仓库根目录 `README.md`。
+2. 如用户要继续产品能力，先讨论真实 STT、媒体处理与片段播放的顺序、代表性样本和验收标准，再按 Align（对齐）→Plan（计划）→Spec/Tasks（规格/任务）→Apply（实施）推进。
+3. 提交与工作区范围以 `git log -1`、`git status --short` 为准；本轮收尾不纳入无关 `.vscode/controlled-explorer.json`。

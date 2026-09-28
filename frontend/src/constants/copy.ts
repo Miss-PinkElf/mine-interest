@@ -40,6 +40,12 @@ export const DEMO_MODE_NOTICE = '演示数据：内容由假转写引擎生成�
 export const SEGMENT_CONFIRM_FAILED_MESSAGE = '保存修订或确认片段失败'
 // 确认片段按钮。
 export const CONFIRM_SEGMENT_LABEL = '确认片段'
+// 已确认且内容未改变时的按钮文案。
+export const SEGMENT_ALREADY_CONFIRMED_LABEL = '已确认'
+// 片段确认成功后的操作反馈。
+export const SEGMENT_CONFIRMED_MESSAGE = '片段已确认'
+// 导出成功但任务状态查询失败时的提示。
+export const TASK_STATUS_REFRESH_FAILED_MESSAGE = '文件已导出，但任务状态刷新失败，请刷新页面'
 // 切分片段按钮。
 export const SPLIT_SEGMENT_LABEL = '切分片段'
 // 合并片段按钮。

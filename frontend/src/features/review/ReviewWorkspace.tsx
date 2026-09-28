@@ -2,6 +2,7 @@ import { Typography } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 
 import { REVIEW_WORKSPACE_TITLE } from '../../constants/copy'
+import { SEGMENT_REVIEW_STATUS_CONFIRMED } from '../../constants/task'
 import type { SegmentDto } from '../../api/jobs'
 import { EvidencePanel, type EvidenceItem } from '../../components/EvidencePanel'
 import { SegmentList } from './SegmentList'
@@ -41,6 +42,13 @@ export function ReviewWorkspace({
     [segments, activeId],
   )
   const evidence = active ? job.evidenceBySegment[active.id] || [] : []
+  const persistedSegment = job.segments.find((item) => item.id === active?.id)
+  // 只有服务端已确认且本地文本未改动时，才阻止重复确认。
+  const isConfirmedUnchanged = Boolean(
+    active &&
+      persistedSegment?.review_status === SEGMENT_REVIEW_STATUS_CONFIRMED &&
+      active.final_text === persistedSegment.final_text,
+  )
 
   return (
     <div className={styles.workspace}>
@@ -56,6 +64,7 @@ export function ReviewWorkspace({
         <div className={styles.column}>
           <SegmentEditor
             segment={active}
+            isConfirmedUnchanged={isConfirmedUnchanged}
             currentTime={currentTime}
             onCurrentTimeChange={setCurrentTime}
             onConfirm={() => active && confirmSegment?.(active.id, active.edited_text)}

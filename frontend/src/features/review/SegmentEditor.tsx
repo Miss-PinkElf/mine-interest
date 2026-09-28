@@ -4,6 +4,7 @@ import {
   CONFIRM_SEGMENT_LABEL,
   EDITED_TEXT_LABEL,
   RAW_TEXT_LABEL,
+  SEGMENT_ALREADY_CONFIRMED_LABEL,
   SPLIT_SEGMENT_LABEL,
 } from '../../constants/copy'
 import type { SegmentDto } from '../../api/jobs'
@@ -17,6 +18,7 @@ export type SegmentEditorProps = {
   onConfirm: () => void
   onSplit: (atSeconds: number) => void
   onTextChange: (text: string) => void
+  isConfirmedUnchanged: boolean
 }
 
 export function SegmentEditor({
@@ -26,6 +28,7 @@ export function SegmentEditor({
   onConfirm,
   onSplit,
   onTextChange,
+  isConfirmedUnchanged,
 }: SegmentEditorProps) {
   if (!segment) {
     return <div className={styles.editorEmpty}>请选择片段</div>
@@ -51,8 +54,8 @@ export function SegmentEditor({
       </div>
       <Space>
         <Button onClick={() => onSplit(currentTime)}>{SPLIT_SEGMENT_LABEL}</Button>
-        <Button type="primary" onClick={onConfirm}>
-          {CONFIRM_SEGMENT_LABEL}
+        <Button type="primary" onClick={onConfirm} disabled={isConfirmedUnchanged}>
+          {isConfirmedUnchanged ? SEGMENT_ALREADY_CONFIRMED_LABEL : CONFIRM_SEGMENT_LABEL}
         </Button>
       </Space>
     </div>

@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-07-10 15:15:33 +08:00
-- 更新时间（Updated At）：2026-09-27 01:27:12 +08:00
+- 更新时间（Updated At）：2026-09-28 11:35:53 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：维护当前 mission 的原始输入索引（Raw Input Source Index）和吸收状态。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -56,3 +56,11 @@
 | --- | --- | --- |
 | `zzz-prompt-debug/origin/prompt-01.md` | 询问音频预处理、干声提取、真实 STT（语音转文字）、情绪和表情识别所需的本地模型及下载方式。 | 已登记为后续讨论输入；尚未选型、批准计划或实施。真实能力边界见 `deferred/2026-07-13-v1-adapter-vs-deferred.md`。 |
 
+## 2026-09-28 11:35:53 +08:00 - Mac mini 手动验收与收尾输入
+
+| 来源 | 用途 | 吸收状态 |
+| --- | --- | --- |
+| 用户引用 `NEXT-SESSION-PROMPT-video-emotion-transcript-workflow.md` 并询问 Mac mini 测试、环境和 Demo 能力 | 恢复 mission、校准演示模式（Demo Mode）与真实 STT（语音转文字）/TTS（文字转语音）边界 | 已吸收至 `README.md`、`state.md` 与 `deferred/2026-07-13-v1-adapter-vs-deferred.md` |
+| 用户截图反馈确认片段后任务仍为待审核，并选择“全部片段确认后已确认、导出后已导出” | 状态同步修复的原始反馈与明确规则 | 已吸收至 `plans/2026-09-28-review-confirmed-status-align.md`、实施计划、规格任务和问题日志 |
+| 用户 Mac mini 截图显示修订片段 `confirmed`、按钮已确认禁用、任务已导出 100%，并回复“可以了” | 手动验收结论 | 已吸收至 `checkpoints.md`、`bug-log.md` 和本次 handoff 010；截图未作为仓库文件保存 |
+| 用户要求阅读根目录 `devflow-handoff.md`、区分第一版与延期项、只提交本 mission 相关代码并跨对话交接 | 本轮收尾范围与提交授权 | 已吸收至本次 handoff 010、延期边界及本轮提交范围；根目录指导文档不修改 |

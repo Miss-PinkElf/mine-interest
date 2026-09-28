@@ -81,6 +81,12 @@ class Job:
         self.status = JobStatus.REVIEW
         self.updated_at = now
 
+    def mark_confirmed(self) -> None:
+        """全部片段完成人工确认后，更新任务状态。"""
+        now = _current_time()
+        self.status = JobStatus.CONFIRMED
+        self.updated_at = now
+
     def mark_exported(self) -> None:
         """标记任务已生成导出产物。"""
         now = _current_time()
@@ -123,7 +129,9 @@ class Segment:
         return self.edited_text if self.edited_text is not None else self.raw_text
 
     def apply_text_edit(self, edited_text: str) -> None:
-        """保存人工文本修订，且绝不覆盖模型原始转写。"""
+        """保留原始转写；人工修订变化后要求重新确认。"""
+        if self.final_text != edited_text:
+            self.review_status = SegmentReviewStatus.PENDING
         self.edited_text = edited_text
 
     def confirm(self) -> None:
