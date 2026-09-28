@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>登录与仓库校验 0.3.1</title>
+  <script src="/api/plugin/page/bridge-sdk.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #1d2433;
+      background: #f6f7f9;
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    section {
+      background: #fff;
+      border: 1px solid #e6e8ee;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    h1, h2 { margin: 0 0 12px; font-size: 18px; }
+    p { margin: 8px 0; line-height: 1.5; }
+    button {
+      border: 0;
+      border-radius: 8px;
+      background: #2f6fed;
+      color: #fff;
+      padding: 8px 14px;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.6; cursor: default; }
+    img { width: 220px; height: 220px; margin-top: 12px; }
+    .ok { color: #137333; }
+    .bad { color: #b3261e; }
+    .row { padding: 10px 0; border-top: 1px solid #eef0f4; }
+  </style>
+</head>
+<body>
+  <main>
+    <section>
+      <h1>B 站扫码登录</h1>
+      <p id="plugin-version">插件版本 0.3.1</p>
+      <p id="login-text">正在读取登录状态。</p>
+      <button id="qr-button" type="button">生成二维码</button>
+      <p id="qr-text"></p>
+      <img id="qr-image" alt="登录二维码" hidden>
+    </section>
+    <section>
+      <h2>仓库推送校验</h2>
+      <p>检查资料仓库和告警仓库是不是私有，以及当前 SSH 能不能推送。结果保存在本机，重新打开这个页面会显示上次校验。</p>
+      <button id="repo-button" type="button">重新校验</button>
+      <p id="repo-time"></p>
+      <div id="repo-result"></div>
+    </section>
+  </main>
+  <script>
+    const QR_TEXT = {
+      idle: "还没有开始扫码。",
+      waiting: "请用哔哩哔哩客户端扫描二维码。",
+      scanned: "已扫码，请在手机上确认。",
+      success: "登录成功，刷新凭据已保存在本机。",
+      expired: "二维码已过期，请重新生成。",
+      unknown: "登录状态暂时无法确认。",
+    };
+    const loginText = document.querySelector("#login-text");
+    const qrButton = document.querySelector("#qr-button");
+    const qrText = document.querySelector("#qr-text");
+    const qrImage = document.querySelector("#qr-image");
+    const repoButton = document.querySelector("#repo-button");
+    const repoResult = document.querySelector("#repo-result");
+    const repoTime = document.querySelector("#repo-time");
+    let polling = false;
+
+    function describeLogin(data) {
+      const account = data.account ? `，账号${data.account}` : "";
+      if (data.refreshable) return `已登录，可以自动刷新${account}。`;
+      if (data.logged_in) return `已有登录凭证，还不能自动刷新${account}。`;
+      return "还没有登录凭证。";
+    }
+
+    const LOGIN_STATUS_TIMEOUT_MS = 8000;
+
+    function withTimeout(work, timeoutMs, message) {
+      let timer;
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+      });
+      return Promise.race([work, timeout]).finally(() => clearTimeout(timer));
+    }
+
+    async function refreshLogin() {
+      const data = await withTimeout(
+        AstrBotPluginPage.apiGet("login/status"),
+        LOGIN_STATUS_TIMEOUT_MS,
+        "登录状态读取超时。",
+      );
+      loginText.textContent = describeLogin(data);
+    }
+
+    async function pollQr() {
+      if (polling) return;
+      polling = true;
+      try {
+        while (polling) {
+          const data = await AstrBotPluginPage.apiGet("login/qr/status");
+          qrText.textContent = QR_TEXT[data.qr] || QR_TEXT.unknown;
+          loginText.textContent = describeLogin(data);
+          if (data.qr === "success" || data.qr === "expired" || data.qr === "idle") {
+            if (data.qr === "success") qrImage.hidden = true;
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        }
+      } finally {
+        polling = false;
+        qrButton.disabled = false;
+      }
+    }
+
+    qrButton.addEventListener("click", async () => {
+      qrButton.disabled = true;
+      qrText.textContent = "正在生成二维码。";
+      try {
+        const data = await AstrBotPluginPage.apiPost("login/qr/start");
+        qrImage.src = data.image;
+        qrImage.hidden = false;
+        qrText.textContent = QR_TEXT.waiting;
+        pollQr();
+      } catch (error) {
+        qrText.textContent = error.message || "二维码生成失败。";
+        qrButton.disabled = false;
+      }
+    });
+
+    function renderRepo(data) {
+      repoResult.replaceChildren();
+      repoTime.textContent = data.checked_at ? `上次校验：${data.checked_at}` : "还没有校验记录。";
+      for (const target of data.targets || []) {
+        const row = document.createElement("div");
+        row.className = "row";
+        const title = document.createElement("strong");
+        title.textContent = `${target.role}：${target.repository || "未填写"}`;
+        const detail = document.createElement("p");
+        detail.className = target.pushable ? "ok" : "bad";
+        const flags = [
+          target.private === true ? "私有" : target.private === false ? "不是私有" : "私有性未确认",
+          target.readable ? "可以读取" : "不能读取",
+          target.pushable ? "可以推送" : "不能推送",
+        ];
+        detail.textContent = `${flags.join("，")}。${target.label}`;
+        row.append(title, detail);
+        repoResult.append(row);
+      }
+    }
+
+    async function refreshRepo() {
+      renderRepo(await AstrBotPluginPage.apiGet("repo/status"));
+    }
+
+    repoButton.addEventListener("click", async () => {
+      repoButton.disabled = true;
+      repoTime.textContent = "正在校验，可能需要半分钟。";
+      try {
+        renderRepo(await AstrBotPluginPage.apiPost("repo/check"));
+      } catch (error) {
+        repoTime.textContent = error.message || "校验失败。";
+      } finally {
+        repoButton.disabled = false;
+      }
+    });
+
+    async function boot() {
+      const loginTask = refreshLogin().catch((error) => {
+        loginText.textContent = error.message || "登录状态读取失败。";
+      });
+      const repoTask = refreshRepo().catch((error) => {
+        repoTime.textContent = error.message || "没有读到上次校验。";
+      });
+      await Promise.all([loginTask, repoTask]);
+    }
+
+    if (!window.AstrBotPluginPage) {
+      loginText.textContent = "插件页面通道没有加载。请重新打开。当前版本 0.3.1。";
+    } else {
+      AstrBotPluginPage.ready().then(boot).catch((error) => {
+        loginText.textContent = error.message || "页面还没有连上 AstrBot。";
+      });
+    }
+  </script>
+</body>
+</html>

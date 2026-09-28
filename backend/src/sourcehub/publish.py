@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import fcntl
+import json
 import os
 import re
 import subprocess
+import tempfile
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -29,6 +31,17 @@ REDACTED_CREDENTIAL = "[鉴权信息已移除]"
 GITHUB_REMOTE = re.compile(r"^git@github\.com:([\w.-]+/[\w.-]+)\.git$")
 GITHUB_API_REPOSITORY = "https://api.github.com/repos/"
 GIT_SSH_READ_ONLY = "ssh -o BatchMode=yes -o ConnectTimeout=5"
+PUSH_CHECK_BRANCH = "refs/heads/main"
+PUSH_CHECK_AUTHOR = "sourcehub-access-check"
+PUSH_CHECK_EMAIL = "sourcehub-access-check@local"
+REMOTE_INVALID = "remote_invalid"
+REMOTE_NOT_PRIVATE = "not_private"
+REMOTE_PRIVATE_UNKNOWN = "private_check_failed"
+REMOTE_UNREADABLE = "ssh_unreadable"
+REMOTE_PUSH_OK = "push_ok"
+REMOTE_PUSH_DENIED = "push_denied"
+REMOTE_PUSH_FAILED = "push_failed"
+PUSH_DENIED_MARKERS = ("permission denied", "denied to", "not authorized", "forbidden")
 
 
 class PublishError(Exception):
@@ -44,32 +57,142 @@ def sanitize_markdown(body: str) -> str:
     return SENSITIVE_TEXT.sub(REDACTED_CREDENTIAL, EXTERNAL_URL.sub(strip_query, body))
 
 
-def verify_private_remote(remote: str) -> bool:
-    """匿名 API 不可见且 SSH 可访问，才认定目标为私有仓库。"""
+def _git_env() -> dict[str, str]:
+    return {**os.environ, "GIT_SSH_COMMAND": GIT_SSH_READ_ONLY, "GIT_TERMINAL_PROMPT": "0"}
+
+
+def _repository_name(remote: str) -> str:
     match = GITHUB_REMOTE.fullmatch(remote)
-    if not match:
-        return False
+    return match.group(1) if match else ""
+
+
+def github_account_access(repository: str) -> dict[str, bool] | None:
+    """用本机已登录的 gh 读取私有性和推送权限。未登录或接口失败时不猜测。"""
+    try:
+        result = subprocess.run(
+            ["gh", "api", f"repos/{repository}", "--jq", "{private:.private,push:.permissions.push}"],
+            capture_output=True, text=True, timeout=PRIVATE_CHECK_TIMEOUT_SECONDS,
+            env={**os.environ, "GH_PROMPT_DISABLED": "1"},
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    try:
+        data = json.loads(result.stdout)
+    except ValueError:
+        return None
+    if not isinstance(data, dict) or not isinstance(data.get("private"), bool):
+        return None
+    return {"private": data["private"], "push": bool(data.get("push"))}
+
+
+def _anonymous_private(remote: str) -> bool | None:
+    """匿名接口返回 404 才是私有。公开仓库返回 False，网络或其它状态返回 None。"""
+    name = _repository_name(remote)
+    if not name:
+        return None
     try:
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         opener.open(
-            urllib.request.Request(GITHUB_API_REPOSITORY + match.group(1)),
+            urllib.request.Request(GITHUB_API_REPOSITORY + name),
             timeout=PRIVATE_CHECK_TIMEOUT_SECONDS,
         )
         return False
     except urllib.error.HTTPError as exc:
-        if exc.code != 404:
-            return False
+        return True if exc.code == 404 else None
     except (OSError, ValueError):
-        return False
+        return None
+
+
+def _ssh_readable(remote: str) -> bool:
     try:
         result = subprocess.run(
             ["git", "ls-remote", remote, "HEAD"],
-            capture_output=True, text=True, timeout=PRIVATE_CHECK_TIMEOUT_SECONDS,
-            env={**os.environ, "GIT_SSH_COMMAND": GIT_SSH_READ_ONLY},
+            capture_output=True, text=True, timeout=GIT_TIMEOUT_SECONDS,
+            env=_git_env(),
         )
     except (OSError, subprocess.TimeoutExpired):
         return False
     return result.returncode == 0
+
+
+def _run_git(workdir: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", str(workdir), *args],
+        capture_output=True, text=True, timeout=GIT_TIMEOUT_SECONDS, env=_git_env(),
+    )
+
+
+def ssh_push_dry_run(remote: str) -> str:
+    """用演练推送确认当前身份能否写入。不更新远端引用。"""
+    with tempfile.TemporaryDirectory(prefix="sourcehub-push-check-") as temporary:
+        workdir = Path(temporary) / "repo"
+        try:
+            cloned = subprocess.run(
+                ["git", "clone", "--depth", "1", "--", remote, str(workdir)],
+                capture_output=True, text=True, timeout=GIT_TIMEOUT_SECONDS, env=_git_env(),
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return REMOTE_UNREADABLE
+        if cloned.returncode != 0:
+            return REMOTE_UNREADABLE
+        has_head = _run_git(workdir, "rev-parse", "--verify", "HEAD").returncode == 0
+        if not has_head:
+            if _run_git(workdir, "checkout", "-B", "main").returncode != 0:
+                return REMOTE_PUSH_FAILED
+            _run_git(workdir, "config", "user.name", PUSH_CHECK_AUTHOR)
+            _run_git(workdir, "config", "user.email", PUSH_CHECK_EMAIL)
+            if _run_git(workdir, "commit", "--allow-empty", "-m", "push permission check").returncode != 0:
+                return REMOTE_PUSH_FAILED
+        try:
+            pushed = _run_git(workdir, "push", "--dry-run", "origin", f"HEAD:{PUSH_CHECK_BRANCH}")
+        except (OSError, subprocess.TimeoutExpired):
+            return REMOTE_PUSH_FAILED
+    if pushed.returncode == 0:
+        return REMOTE_PUSH_OK
+    detail = f"{pushed.stderr}\n{pushed.stdout}".lower()
+    if any(marker in detail for marker in PUSH_DENIED_MARKERS):
+        return REMOTE_PUSH_DENIED
+    return REMOTE_PUSH_FAILED
+
+
+def verify_private_remote(remote: str) -> bool:
+    """匿名 API 不可见且 SSH 可访问，才认定目标为私有仓库。"""
+    return _anonymous_private(remote) is True and _ssh_readable(remote)
+
+
+def verify_remote_access(remote: str) -> dict[str, object]:
+    """检查地址、私有性、SSH 读取和演练推送。失败原因只使用类别码。"""
+    repository = _repository_name(remote)
+    result = {
+        "repository": repository,
+        "private": False,
+        "readable": False,
+        "pushable": False,
+        "reason": REMOTE_INVALID,
+    }
+    if not repository:
+        return result
+    account = github_account_access(repository)
+    if account is None:
+        private = _anonymous_private(remote)
+    else:
+        private = account["private"]
+    result["private"] = private
+    if not _ssh_readable(remote):
+        result["reason"] = REMOTE_UNREADABLE
+        return result
+    result["readable"] = True
+    reason = ssh_push_dry_run(remote)
+    result["pushable"] = reason == REMOTE_PUSH_OK
+    if private is False:
+        result["reason"] = REMOTE_NOT_PRIVATE
+    elif private is None and reason == REMOTE_PUSH_OK:
+        result["reason"] = REMOTE_PRIVATE_UNKNOWN
+    else:
+        result["reason"] = reason
+    return result
 
 
 class Publisher:

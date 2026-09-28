@@ -9,7 +9,10 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 from urllib.error import HTTPError
 
-from sourcehub.publish import Publisher, PublishError, verify_private_remote
+from sourcehub.publish import (
+    Publisher, PublishError, REMOTE_INVALID, REMOTE_PUSH_DENIED, REMOTE_PUSH_OK,
+    github_account_access, ssh_push_dry_run, verify_private_remote, verify_remote_access,
+)
 
 
 class PublisherTests(unittest.TestCase):
@@ -71,3 +74,44 @@ class PublisherTests(unittest.TestCase):
             self.assertEqual(allowed[Path("items/content.md")], "https://example.test/a")
             self.assertIn("rkey=secret", (source / "items/content.md").read_text(encoding="utf-8"))
             self.assertFalse((base / "publish").exists())
+
+    def test_invalid_remote_is_rejected_before_network(self):
+        result = verify_remote_access("https://github.com/owner/repo.git")
+        self.assertEqual(result["reason"], REMOTE_INVALID)
+        self.assertFalse(result["pushable"])
+
+    def test_dry_run_accepts_writable_remote_without_creating_branch(self):
+        with tempfile.TemporaryDirectory() as folder:
+            remote = Path(folder) / "remote.git"
+            subprocess.run(["git", "init", "--bare", str(remote)], check=True, capture_output=True)
+            self.assertEqual(ssh_push_dry_run(str(remote)), REMOTE_PUSH_OK)
+            head = subprocess.run(
+                ["git", "--git-dir", str(remote), "rev-parse", "--verify", "refs/heads/main"],
+                capture_output=True,
+            )
+            self.assertNotEqual(head.returncode, 0)
+
+    def test_denied_dry_run_is_not_pushable(self):
+        def fake_run(args, **kwargs):
+            if "push" in args:
+                return Mock(returncode=1, stdout="", stderr="remote: Permission denied to user")
+            return Mock(returncode=0, stdout="", stderr="")
+
+        with patch("sourcehub.publish.subprocess.run", side_effect=fake_run):
+            self.assertEqual(ssh_push_dry_run("git@github.com:owner/repo.git"), REMOTE_PUSH_DENIED)
+
+    def test_logged_in_github_marks_private_when_anonymous_api_is_unavailable(self):
+        with patch("sourcehub.publish.github_account_access", return_value={"private": True, "push": True}), patch(
+            "sourcehub.publish._anonymous_private", return_value=None,
+        ), patch("sourcehub.publish._ssh_readable", return_value=True), patch(
+            "sourcehub.publish.ssh_push_dry_run", return_value=REMOTE_PUSH_OK,
+        ):
+            result = verify_remote_access("git@github.com:owner/repo.git")
+        self.assertTrue(result["private"])
+        self.assertTrue(result["pushable"])
+        self.assertEqual(result["reason"], REMOTE_PUSH_OK)
+
+    def test_github_account_access_reads_private_and_push(self):
+        completed = Mock(returncode=0, stdout='{"private":true,"push":true}\n')
+        with patch("sourcehub.publish.subprocess.run", return_value=completed):
+            self.assertEqual(github_account_access("owner/repo"), {"private": True, "push": True})

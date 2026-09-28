@@ -1,7 +1,7 @@
 """接口契约和业务常量（Protocol and Business Constants）。"""
 
 PLUGIN_NAME = "astrbot_plugin_sourcehub_bilibili"
-PLUGIN_VERSION = "0.3.0"
+PLUGIN_VERSION = "0.3.1"
 ALERT_POLL_SECONDS = 30
 ALERT_ENABLED_KEY = "alert_enabled"
 ALERT_REMOTE_KEY = "alert_remote"

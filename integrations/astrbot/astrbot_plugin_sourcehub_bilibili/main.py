@@ -23,6 +23,7 @@ from .constants import (
 )
 from .poller import Poller
 from .store import Store
+from .webui import register_webui
 
 
 @register(PLUGIN_NAME, "Codex", "B 站 @ 原文只读采集", PLUGIN_VERSION)
@@ -43,6 +44,9 @@ class SourceHubBilibili(Star):
             vault_dir.with_name(vault_dir.name + ALERT_DIR_SUFFIX), alert_remote,
         ) if self.config.get(ALERT_ENABLED_KEY, False) and alert_remote else None
         self.alert_task = None
+        self._qr_key = ""
+        self._qr_status = "idle"
+        register_webui(self, context)
 
     async def initialize(self):
         if not self.config.get("enabled", False):
