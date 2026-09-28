@@ -2,6 +2,10 @@
   "version": 1,
   "roots": [
     {
+      "type": "folder",
+      "path": ".devflow/video-emotion-transcript-workflow"
+    },
+    {
       "type": "file",
       "path": ".devflow/video-emotion-transcript-workflow/NEXT-SESSION-PROMPT-video-emotion-transcript-workflow.md"
     },
