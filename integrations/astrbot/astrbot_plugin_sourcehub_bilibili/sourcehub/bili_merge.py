@@ -44,7 +44,7 @@ def _comment_node(role: str, payload: dict[str, Any]) -> ContentNode:
     return ContentNode(
         type="text",
         text=str(payload.get("text") or ""),
-        extra={"role": role, "rpid": str(payload.get("rpid") or "")},
+        extra={"role": role, "rpid": str(payload.get("rpid") or ""), "images": list(payload.get("images") or [])},
     )
 
 
@@ -78,6 +78,8 @@ def merge_work_envelope(existing: Envelope | None, fragment: dict[str, Any]) -> 
     object_node = _object_node(fragment)
     trigger = fragment["trigger"]
     trigger_node = _comment_node("trigger", trigger)
+    trigger_node.extra["parent_rpid"] = str((fragment.get("parent") or {}).get("rpid") or "")
+    trigger_node.extra["root_rpid"] = str((fragment.get("root") or {}).get("rpid") or "")
     rpid = str(trigger.get("rpid") or fragment.get("event_id") or "")
     related = _related_nodes(fragment)
 
@@ -117,7 +119,15 @@ def merge_work_envelope(existing: Envelope | None, fragment: dict[str, Any]) -> 
         content.insert(0, object_node)
     if not replaced:
         content.append(trigger_node)
-        content.extend(related)
+    known_ids = {
+        str((node.extra or {}).get("rpid") or "")
+        for node in content if (node.extra or {}).get("role") in {"trigger", "parent", "root"}
+    }
+    for node in related:
+        comment_id = str((node.extra or {}).get("rpid") or "")
+        if comment_id and comment_id not in known_ids:
+            content.append(node)
+            known_ids.add(comment_id)
 
     members = list(existing.grouping.get("member_event_ids") or [])
     if rpid not in members:

@@ -127,6 +127,10 @@ class Collector:
                 if not bvid or "desc" not in data:
                     raise FetchError("video_fields_missing")
                 raw["source_url"] = f"{SITE_BASE}/video/{bvid}"
+                cover_url = str(data.get("pic") or "")
+                if cover_url:
+                    raw["cover_url"] = cover_url
+                    doc.download(cover_url)
                 doc.text += f"\n\n# {data.get('title', bvid)}\n\n{raw['source_url']}\n\n{data['desc']}"
                 first_page = as_list(data.get("pages"))[0] if as_list(data.get("pages")) else {}
                 cid = as_map(first_page).get("cid")

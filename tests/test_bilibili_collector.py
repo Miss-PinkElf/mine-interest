@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.client import BilibiliClient, FetchError, media_url
+from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.client import BilibiliClient, FetchError, local_proxy_url, media_url
 from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.collector import Collector, dynamic_id
 from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.constants import (
     ARTICLE_COMMENT, COMPLETE, EMPTY_BODY_GAP, OBJECT_GAP_PREFIX,
@@ -109,6 +109,15 @@ class ContentTests(unittest.TestCase):
         self.assertEqual(len(doc.images), 1)
         self.assertEqual(doc.gaps, [])
 
+    def test_explicit_heading_marker_only(self):
+        doc = article_document({"opus": {"content": {"paragraphs": [
+            {"text": {"nodes": [{"word": {"words": "【这个网站能做什么】"}}]}},
+            {"text": {"nodes": [{"word": {"words": "已标记的标题", "font_level": "xxLarge"}}]}},
+        ]}}})
+        self.assertIn("【这个网站能做什么】", doc.text)
+        self.assertNotIn("# 【这个网站能做什么】", doc.text)
+        self.assertIn("### 已标记的标题", doc.text)
+
     def test_delta_embedded_unknown_not_silently_dropped(self):
         doc = article_document({"content": json.dumps({"ops": [{"insert": {"unknown": "x"}}]})})
         self.assertIn("unknown_delta_insert", doc.gaps)
@@ -162,6 +171,12 @@ class ContentTests(unittest.TestCase):
             with self.assertRaises(FetchError):
                 media_url(url)
 
+    def test_proxy_only_accepts_local_http_without_credentials(self):
+        self.assertEqual(local_proxy_url("http://127.0.0.1:7897"), "http://127.0.0.1:7897")
+        for url in ("https://127.0.0.1:7897", "http://example.com:7897", "http://user:pass@localhost:7897", "http://localhost:invalid"):
+            with self.assertRaises(FetchError):
+                local_proxy_url(url)
+
 
 class MediaRetryTests(unittest.IsolatedAsyncioTestCase):
     async def test_media_recovers_on_fifth_attempt(self):
@@ -191,6 +206,7 @@ class MediaRetryTests(unittest.IsolatedAsyncioTestCase):
         client = BilibiliClient.__new__(BilibiliClient)
         client.media = Media()
         client.media_limit = 100
+        client.proxy_url = ""
         from unittest.mock import patch
         with patch("integrations.astrbot.astrbot_plugin_sourcehub_bilibili.client.asyncio.sleep"):
             result = await client.image(SYNTHETIC_IMAGE_URL)
@@ -330,7 +346,7 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
         await self.store.save(notification(), {}, Document("重采"), FakeClient())
         self.assertEqual(path.read_text(encoding="utf-8"), "用户修改")
 
-    async def test_export_existing_uses_readable_article_body_for_vault(self):
+    async def test_export_existing_uses_source_article_body_for_vault(self):
         vault = Vault(Path(self.temp.name) / "vault", git_enabled=False)
         store = Store(Path(self.temp.name) / "archive", vault=vault)
         folder = store.item_path("1")
@@ -344,17 +360,112 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
         write_json(folder / "record.json", {
             "notification": {"item": {"source_id": 1, "uri": "https://www.bilibili.com/read/cv99"}},
             "source_url": "https://www.bilibili.com/read/cv99",
-            "objects": [{"title": "专栏标题", "summary": "错误摘要"}],
+            "objects": [{"title": "专栏标题", "summary": "错误摘要", "content": "<p>结构化原文</p><img src='https://i0.hdslb.com/a.jpg'>"}],
             "comments": {"trigger": {"rpid": 1, "content": {"message": "@机器人"}}},
             "media": [{"source_url": SYNTHETIC_IMAGE_URL, "local_path": "media/a.jpg"}],
         })
 
         self.assertEqual(store.export_existing(), 1)
         content = (vault.item_dir("bilibili:article:99") / "content.md").read_text(encoding="utf-8")
-        self.assertIn("第一段正文", content)
+        self.assertIn("结构化原文", content)
+        self.assertNotIn("第一段正文", content)
         self.assertNotIn("错误摘要", content)
         self.assertNotIn("](media/a.jpg)", content)
         self.assertIn("](../../../../../media/", content)
+
+    async def test_missing_source_picture_is_gap_not_remote_link(self):
+        vault = Vault(Path(self.temp.name) / "vault", git_enabled=False)
+        store = Store(Path(self.temp.name) / "archive", vault=vault)
+        folder = store.item_path("1")
+        folder.mkdir(parents=True)
+        store._export_vault({
+            "notification": {"item": {"source_id": 1, "uri": "https://www.bilibili.com/read/cv99"}},
+            "source_url": "https://www.bilibili.com/read/cv99",
+            "objects": [{"title": "专栏", "content": "<p>正文</p><img src='https://i0.hdslb.com/missing.jpg'>"}],
+            "comments": {"trigger": {"rpid": 1, "content": {"message": "@机器人"}}},
+            "media": [],
+        }, folder)
+        content = (vault.item_dir("bilibili:article:99") / "content.md").read_text(encoding="utf-8")
+        self.assertIn("media_missing", content)
+        self.assertNotIn("![图片](https://", content)
+
+    async def test_opus_article_fallback_keeps_full_article_body(self):
+        vault = Vault(Path(self.temp.name) / "vault", git_enabled=False)
+        store = Store(Path(self.temp.name) / "archive", vault=vault)
+        folder = store.item_path("1")
+        folder.mkdir(parents=True)
+        store._export_vault({
+            "notification": {"item": {"source_id": 1, "uri": "https://www.bilibili.com/opus/123"}},
+            "source_url": "https://www.bilibili.com/opus/123",
+            "objects": [
+                {"item": {"modules": {"module_dynamic": {"desc": {"text": "动态引言"}}}}},
+                {"item": {"modules": []}, "fallback": {"type": 2, "id": 99}},
+                {"title": "转入专栏", "content": "<p>完整专栏正文</p><img src='https://i0.hdslb.com/missing.jpg'>"},
+            ],
+            "comments": {"trigger": {"rpid": 1, "content": {"message": "@机器人"}}},
+            "media": [],
+        }, folder)
+        content = (vault.item_dir("bilibili:opus:123") / "content.md").read_text(encoding="utf-8")
+        self.assertIn("完整专栏正文", content)
+        self.assertIn("media_missing", content)
+
+    async def test_forwarded_opus_keeps_current_and_original_text(self):
+        vault = Vault(Path(self.temp.name) / "vault", git_enabled=False)
+        store = Store(Path(self.temp.name) / "archive", vault=vault)
+        folder = store.item_path("1")
+        folder.mkdir(parents=True)
+        store._export_vault({
+            "notification": {"item": {"source_id": 1, "uri": "https://www.bilibili.com/opus/123"}},
+            "source_url": "https://www.bilibili.com/opus/123",
+            "objects": [
+                {"item": {"modules": {"module_dynamic": {"desc": {"text": "我的转发附言"}}}, "orig": {"id_str": "456"}}},
+                {"item": {"modules": {"module_dynamic": {"desc": {"text": "原动态正文"}}}}},
+            ],
+            "comments": {"trigger": {"rpid": 1, "content": {"message": "@机器人"}}},
+            "media": [],
+        }, folder)
+        content = (vault.item_dir("bilibili:opus:123") / "content.md").read_text(encoding="utf-8")
+        self.assertIn("我的转发附言", content)
+        self.assertIn("原动态正文", content)
+        self.assertIn("转发原文", content)
+
+    async def test_opus_preview_used_when_detail_body_missing(self):
+        vault = Vault(Path(self.temp.name) / "vault", git_enabled=False)
+        store = Store(Path(self.temp.name) / "archive", vault=vault)
+        folder = store.item_path("1")
+        folder.mkdir(parents=True)
+        store._export_vault({
+            "notification": {"item": {"source_id": 1, "uri": "https://www.bilibili.com/opus/123"}},
+            "source_url": "https://www.bilibili.com/opus/123",
+            "objects": [
+                {"item": {"modules": {"module_dynamic": {"major": {"opus": {"title": "预览标题", "summary": {"text": "预览正文"}, "pics": [{"url": SYNTHETIC_IMAGE_URL}]}}}}}},
+                {"item": {"modules": [{"module_content": {}, "module_top": {}, "module_title": {}}]}},
+            ],
+            "comments": {"trigger": {"rpid": 1, "content": {"message": "@机器人"}}},
+            "media": [],
+        }, folder)
+        content = (vault.item_dir("bilibili:opus:123") / "content.md").read_text(encoding="utf-8")
+        self.assertIn("预览标题", content)
+        self.assertIn("预览正文", content)
+        self.assertIn("media_missing", content)
+
+    async def test_media_without_source_url_cannot_corrupt_body(self):
+        vault = Vault(Path(self.temp.name) / "vault", git_enabled=False)
+        store = Store(Path(self.temp.name) / "archive", vault=vault)
+        folder = store.item_path("1")
+        (folder / "media").mkdir(parents=True)
+        (folder / "media" / "a.jpg").write_bytes(b"\xff\xd8\xffimage")
+        store._export_vault({
+            "notification": {"item": {"source_id": 1, "uri": "https://www.bilibili.com/read/cv99"}},
+            "source_url": "https://www.bilibili.com/read/cv99",
+            "objects": [{"title": "专栏", "content": "<p>原文完整</p>"}],
+            "comments": {"trigger": {"rpid": 1, "content": {"message": "@机器人"}}},
+            "media": [{"local_path": "media/a.jpg"}],
+        }, folder)
+        content = (vault.item_dir("bilibili:article:99") / "content.md").read_text(encoding="utf-8")
+        self.assertIn("原文完整", content)
+        self.assertIn("media_source_missing", content)
+        self.assertEqual(content.count("原文完整"), 1)
 
     async def test_repair_failed_media_is_idempotent_and_preserves_body(self):
         vault = Vault(Path(self.temp.name) / "vault", git_enabled=False)
@@ -384,8 +495,8 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(record["status"], COMPLETE)
         self.assertTrue((folder / record["media"][0]["local_path"]).exists())
         content = (vault.item_dir("bilibili:article:99") / "content.md").read_text(encoding="utf-8")
-        self.assertIn("正文原文", content)
-        self.assertIn("](../../../../../media/", content)
+        self.assertNotIn("正文原文", content)
+        self.assertIn("## 正文", content)
 
     async def test_scan_paginates_and_persists_before_cursor(self):
         class PagingClient:

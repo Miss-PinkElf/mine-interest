@@ -25,6 +25,11 @@ def _comment_payload(comment: Optional[dict[str, Any]]) -> Optional[dict[str, An
         "rpid": str(rpid),
         "text": str(text or ""),
         "sender_id": str(member.get("mid") or comment.get("mid") or ""),
+        "images": [
+            str(picture.get("img_src"))
+            for picture in (content.get("pictures") or [])
+            if isinstance(picture, dict) and picture.get("img_src")
+        ] if isinstance(content, dict) else [],
     }
 
 

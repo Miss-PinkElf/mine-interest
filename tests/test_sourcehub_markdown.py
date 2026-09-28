@@ -23,7 +23,7 @@ class MarkdownTests(unittest.TestCase):
             content=[
                 ContentNode(type="text", text="视频简介", extra={"role": "object", "url": "https://b23.tv/BV1xx", "title": "标题"}),
                 ContentNode(type="text", text="@机器人 收藏", extra={"role": "trigger", "rpid": "r1"}),
-                ContentNode(type="image", sha256="abc123", extra={"ext": ".jpg"}),
+                ContentNode(type="text", text="上级", extra={"role": "parent", "rpid": "p1", "images": ["../../../../../media/abc123.jpg"]}),
             ],
             attachments=[],
             gaps=["session_end_missing"],
@@ -35,6 +35,9 @@ class MarkdownTests(unittest.TestCase):
         self.assertIn("@机器人 收藏", markdown)
         self.assertIn("session_end_missing", markdown)
         self.assertIn("](../../../../../media/abc123.jpg)", markdown)
+        self.assertEqual(markdown.count("# 标题"), 1)
+        self.assertIn("## 简介", markdown)
+        self.assertNotIn("## 作品", markdown)
 
 
 if __name__ == "__main__":

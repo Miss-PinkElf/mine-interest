@@ -5,18 +5,18 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
 from .sourcehub.bili_ingest import record_to_fragment
 from .sourcehub.bili_merge import merge_work_envelope
-from .sourcehub.constants import NODE_FILE, NODE_IMAGE
-from .sourcehub.envelope import ContentNode
+from .sourcehub.markdown import media_href
 from .sourcehub.media import hash_name, image_extension
 
 from .client import FetchError
 from .collector import numeric_id
-from .content import EXISTING_BODY_GAPS
+from .content import Document, EXISTING_BODY_GAPS, article_document, as_list, as_map, body_incomplete, has_visible_body, opus_document, opus_from_major
 from .constants import (
     COLLECTION_GAP_PREFIX, COMPLETE, CONTENT_FILE, CONTENT_GAPS_HEADING,
     CONTENT_STATUS_PREFIX, CURSOR_FILE, IMAGE_GAP_PREFIX,
@@ -33,6 +33,79 @@ FETCH_FAILURE_GAP_PREFIXES = (
 )
 VIDEO_EXTENSIONS = {".mp4", ".flv"}
 MP4_BRANDS = {b"isom", b"iso2", b"mp41", b"mp42", b"avc1", b"dash"}
+REMOTE_IMAGE = re.compile(r"!\[[^\]]*\]\((https?://[^)]+|//[^)]+)\)")
+
+
+def required_media_urls(record: dict) -> set[str]:
+    """从结构化源记录列出应保存的图片；不依赖旧 Markdown。"""
+    urls: set[str] = set()
+    objects = record.get("objects") or []
+    first = objects[0] if objects and isinstance(objects[0], dict) else {}
+    if first.get("bvid") and first.get("pic"):
+        urls.add(str(first["pic"]))
+    source_url = str(record.get("source_url") or "")
+    if "/read/cv" in source_url and first:
+        urls.update(article_document(first).images)
+    if "/opus/" in source_url:
+        urls.update(opus_record_document(objects).images)
+    for comment in (record.get("comments") or {}).values():
+        for picture in as_list(as_map(as_map(comment).get("content")).get("pictures")):
+            if as_map(picture).get("img_src"):
+                urls.add(str(picture["img_src"]))
+    return urls
+
+
+def opus_record_document(objects: list) -> Document:
+    """按采集时的对象顺序重建动态正文和转发链。"""
+    result = Document()
+    seen_dynamic = False
+    pending_preview = None
+
+    def append_document(doc: Document) -> None:
+        if doc.text.strip():
+            result.text += "\n\n" + doc.text.strip()
+        result.images.extend(doc.images)
+
+    for obj in objects:
+        if not isinstance(obj, dict):
+            continue
+        item = as_map(obj.get("item"))
+        modules = item.get("modules")
+        if isinstance(modules, dict) and "module_dynamic" in modules:
+            if pending_preview is not None:
+                append_document(pending_preview)
+                pending_preview = None
+            if seen_dynamic:
+                result.text += "\n\n### 转发原文"
+            seen_dynamic = True
+            module = as_map(modules.get("module_dynamic"))
+            desc = as_map(module.get("desc")).get("text")
+            if isinstance(desc, str) and desc.strip():
+                result.text += "\n\n" + desc
+            major = as_map(module.get("major"))
+            if "opus" in major:
+                pending_preview = opus_from_major(major)
+            for picture in as_list(as_map(major.get("draw")).get("items")):
+                image_url = str(as_map(picture).get("src") or "")
+                if image_url:
+                    result.picture(image_url)
+            archive = as_map(major.get("archive"))
+            if archive.get("bvid"):
+                result.text += f"\n\n{archive.get('title') or ''}\nhttps://www.bilibili.com/video/{archive['bvid']}"
+        elif isinstance(modules, list):
+            detail = opus_document(obj)
+            if pending_preview is not None and body_incomplete(detail) and has_visible_body(pending_preview):
+                append_document(pending_preview)
+            else:
+                append_document(detail)
+            pending_preview = None
+        elif "item" not in obj and ("content" in obj or "opus" in obj):
+            pending_preview = None
+            article = article_document(obj)
+            append_document(article)
+    if pending_preview is not None:
+        append_document(pending_preview)
+    return result
 
 
 def markdown_body(text: str) -> str:
@@ -307,19 +380,25 @@ class Store:
         fragment = record_to_fragment(merged)
         if not fragment:
             return
-        content_path = folder / CONTENT_FILE
-        if content_path.exists():
-            # 已采集档案的 content.md 是专栏/动态的完整可读正文；优先它而非摘要字段。
-            archived_body = markdown_body(content_path.read_text(encoding="utf-8"))
-            if archived_body:
-                fragment["body"] = archived_body
+        objects = merged.get("objects") or []
+        if fragment["kind"] == "article" and objects:
+            fragment["body"] = article_document(objects[0]).text.strip()
+        elif fragment["kind"] == "opus" and objects:
+            opus_body = opus_record_document(objects).text.strip()
+            title_match = re.search(r"(?m)^# (.+)$", opus_body)
+            if title_match:
+                fragment["title"] = title_match.group(1).strip()
+                opus_body = (opus_body[:title_match.start()] + opus_body[title_match.end():]).strip()
+            opus_body = re.sub(r"(?m)^# (.+)$", r"### \1", opus_body)
+            fragment["body"] = opus_body
         object_id = str(fragment.get("object_id") or "")
         existing_id = self.vault.lookup("bilibili", object_id) if object_id else None
         existing = self.vault.get(existing_id) if existing_id else None
         envelope = merge_work_envelope(existing, fragment)
-        media_prefix = Path(os.path.relpath(
-            self.vault.root / MEDIA_DIR, self.vault.item_dir_for(envelope)
-        )).as_posix()
+        # 旧投影把所有媒体追加为匿名节点；新投影按源 URL 归到封面、正文、评论或附件。
+        envelope.content = [node for node in envelope.content if (node.extra or {}).get("role")]
+        media_links = {}
+        file_links = []
         for media in merged.get("media") or []:
             relative = media.get("local_path")
             if not relative:
@@ -330,23 +409,32 @@ class Store:
             data = source.read_bytes()
             name = hash_name(data)
             self.vault.store_media(data, name)
-            archived_link = f"]({relative})"
-            vault_link = f"]({media_prefix}/{name})"
-            for node in envelope.content:
-                if (node.extra or {}).get("role") == "object" and node.text:
-                    node.text = node.text.replace(archived_link, vault_link)
-            digest = name.rsplit(".", 1)[0]
-            known = {node.sha256 for node in envelope.content if node.sha256}
-            if digest not in known:
-                envelope.attachments.append(
-                    {"sha256": digest, "filename": name, "url": media.get("source_url")}
-                )
-                envelope.content.append(
-                    ContentNode(
-                        type=NODE_FILE if Path(name).suffix in VIDEO_EXTENSIONS else NODE_IMAGE,
-                        url=media.get("source_url"),
-                        sha256=digest,
-                        extra={"ext": image_extension(data)},
-                    )
-                )
+            href = media_href(envelope, name)
+            source_url = str(media.get("source_url") or "")
+            if source_url:
+                media_links[source_url] = href
+            if Path(name).suffix in VIDEO_EXTENSIONS and href not in file_links:
+                file_links.append(href)
+        for node in envelope.content:
+            if (node.extra or {}).get("role") == "object":
+                for source_url, href in media_links.items():
+                    node.text = (node.text or "").replace(source_url, href)
+                node.text = REMOTE_IMAGE.sub("（图片未保存：采集缺口）", node.text or "")
+            elif (node.extra or {}).get("role") in {"trigger", "parent", "root"}:
+                node.extra["images"] = [
+                    media_links[url] for url in (node.extra.get("images") or []) if url in media_links
+                ]
+        first_object = objects[0] if objects and isinstance(objects[0], dict) else {}
+        cover_url = str(merged.get("cover_url") or first_object.get("pic") or "")
+        envelope.extra["cover"] = media_links.get(cover_url, "")
+        envelope.extra["files"] = file_links
+        missing_urls = required_media_urls(merged) - set(media_links)
+        envelope.gaps = list(dict.fromkeys([
+            *(merged.get("gaps") or []),
+            *("media_missing" for _ in missing_urls),
+            *("media_source_missing" for media in merged.get("media") or [] if not media.get("source_url")),
+        ]))
+        envelope.attachments = [
+            {"filename": Path(href).name, "href": href} for href in file_links
+        ]
         self.vault.upsert(envelope, object_key=object_id)

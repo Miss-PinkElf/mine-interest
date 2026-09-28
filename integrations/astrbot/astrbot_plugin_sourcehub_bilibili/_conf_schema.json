@@ -20,6 +20,36 @@
     "type": "string",
     "default": ""
   },
+  "bili_jct": {
+    "description": "旧登录的 CSRF 凭据（bili_jct）；新扫码登录自动写入本地凭据文件",
+    "type": "string",
+    "default": ""
+  },
+  "refresh_token": {
+    "description": "旧登录的刷新凭据；新扫码登录自动写入本地凭据文件",
+    "type": "string",
+    "default": ""
+  },
+  "account_id": {
+    "description": "账号数字 UID；登录成功后自动记入本地凭据文件",
+    "type": "string",
+    "default": ""
+  },
+  "alert_enabled": {
+    "description": "启用 GitHub 私有仓库告警（Private GitHub Alerts）",
+    "type": "bool",
+    "default": false
+  },
+  "alert_remote": {
+    "description": "专用私有告警仓库 SSH remote（与资料仓库不同）",
+    "type": "string",
+    "default": ""
+  },
+  "network_proxy": {
+    "description": "可选本机 HTTP 代理（Local HTTP Proxy），仅允许 localhost/127.0.0.1/::1",
+    "type": "string",
+    "default": ""
+  },
   "poll_seconds": {
     "description": "轮询间隔秒数（Polling Interval），最小 60 秒",
     "type": "int",

@@ -30,8 +30,28 @@ def media_url(url: str) -> str:
     return url
 
 
+def local_proxy_url(url: str) -> str:
+    """仅允许无凭据的本机 HTTP 代理，避免把账号 Cookie 交给远端代理。"""
+    if not url:
+        return ""
+    parts = urlsplit(url)
+    try:
+        port = parts.port
+    except ValueError:
+        raise FetchError("local_proxy_invalid") from None
+    if (
+        parts.scheme != "http"
+        or parts.hostname not in {"127.0.0.1", "localhost", "::1"}
+        or not port
+        or parts.username or parts.password
+        or parts.path not in {"", "/"} or parts.query or parts.fragment
+    ):
+        raise FetchError("local_proxy_invalid")
+    return url
+
+
 class BilibiliClient:
-    def __init__(self, sessdata: str, buvid3: str = "", media_limit: int = MEDIA_MAX_BYTES):
+    def __init__(self, sessdata: str, buvid3: str = "", media_limit: int = MEDIA_MAX_BYTES, proxy_url: str = ""):
         headers = {"User-Agent": USER_AGENT, "Referer": SITE_BASE + "/"}
         timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT_SECONDS)
         self.api = aiohttp.ClientSession(
@@ -44,11 +64,13 @@ class BilibiliClient:
             cookie_jar=aiohttp.DummyCookieJar(),
         )
         self.media_limit = media_limit
+        self.proxy_url = local_proxy_url(proxy_url)
 
     async def get(self, endpoint: str, **params) -> dict:
         try:
             async with self.api.get(
                 API_BASE + ENDPOINTS[endpoint], params=params, allow_redirects=False,
+                proxy=self.proxy_url or None,
             ) as response:
                 if response.status != 200:
                     raise FetchError(f"http_{response.status}")
@@ -67,7 +89,7 @@ class BilibiliClient:
         last_error = FetchError("media_download_failed")
         for attempt in range(MAX_MEDIA_ATTEMPTS):
             try:
-                async with self.media.get(checked_url, allow_redirects=False) as response:
+                async with self.media.get(checked_url, allow_redirects=False, proxy=self.proxy_url or None) as response:
                     if response.status != 200:
                         error = FetchError(f"media_http_{response.status}")
                         if response.status not in RETRYABLE_MEDIA_STATUSES and not 500 <= response.status < 600:

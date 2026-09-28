@@ -1,12 +1,12 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-09-21 17:40:00 +08:00。
+- 更新时间（Updated At）：2026-09-28 16:38:00 +08:00。
 - 作者（Author）：rin（Claude 协助）。
 - 目的（Purpose）：说明诊断插件的安装、配置、测试方式、展开能力与已知限制。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
 - 关联计划（Related Plan）：`.devflow/multi-source-hub/plans/2026-09-20-检查插件嵌套转发展开-plan.md`、`.devflow/multi-source-hub/plans/2026-09-20-检查插件群级启用范围-plan.md`。
-- 当前状态（Status）：快照 + 成条入库（0.5.4）。
+- 当前状态（Status）：快照 + 成条入库；需求 7 状态提醒实施中（In Progress）。
 - 文档边界（Scope / Boundary）：使用说明；问题真相源为 `.devflow/multi-source-hub/bug-log.md`。
 
 # SourceHub 消息检查器（Message Inspector）
@@ -54,6 +54,10 @@ NapCat 对个别转发会返回 `status=ok` 但内容为空，这类会在文本
 插件只对配置的群生效。配置入口：AstrBot WebUI → 插件 → 本插件 → 配置，字段 `enabled_group_ids`（群号白名单，可填多个，纯数字）。
 
 `publish_enabled` 默认开启私有仓库安全自动发布（Automatic Publication）；发布器只同步统一资料目录（Vault）内的 Markdown，不上传图片、视频、Cookie 或原始快照。目标仓库私有性核验失败时会跳过发布，不影响本地采集。
+
+QQ 状态监测（QQ Status Probe）需显式启用 `qq_status_enabled`，并填写 AstrBot 的 `qq_platform_id` 与数字 `qq_account_id`。探针调用 OneBot `get_status`；连续返回 `online=false` 达到 `qq_disconnect_grace_seconds`（默认 300 秒）才报告连接中断，恢复在线后报告恢复。接口不可达或没有消息均不推断需扫码。若以后取得 NapCat 明确的登录失效信号，再增加对应分类。
+
+GitHub 提醒与资料发布分离：`alert_enabled` 默认关闭，`alert_remote` 填专用私有仓库 SSH remote，并与 B 站插件保持一致。提醒内容只含平台、账号尾号、状态与时间；私有性校验失败时保留待送事件，不推送。
 
 | 配置 | 行为 |
 | --- | --- |

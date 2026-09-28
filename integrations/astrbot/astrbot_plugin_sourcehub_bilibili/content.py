@@ -11,6 +11,7 @@ from markdownify import markdownify
 from .constants import EMPTY_BODY_GAP
 
 EXISTING_BODY_GAPS = {"body_missing", "article_body_missing", "opus_body_missing", EMPTY_BODY_GAP}
+FONT_LEVEL_HEADINGS = {"xxLarge": "### "}
 
 
 def as_map(value) -> dict:
@@ -87,6 +88,16 @@ def nodes_text(nodes: list, doc: Document) -> str:
     return "".join(parts)
 
 
+def paragraph_heading(nodes: list) -> str:
+    """仅使用源 JSON 的明确字号标记；普通文本不推断标题。"""
+    levels = {
+        as_map(as_map(node).get("word")).get("font_level")
+        for node in as_list(nodes)
+        if as_map(node).get("word")
+    }
+    return FONT_LEVEL_HEADINGS.get(next(iter(levels)), "") if len(levels) == 1 else ""
+
+
 def paragraphs_document(paragraphs: list) -> Document:
     doc = Document()
     for paragraph in as_list(paragraphs):
@@ -95,7 +106,8 @@ def paragraphs_document(paragraphs: list) -> Document:
             for pic in as_list(pics):
                 doc.picture(as_map(pic).get("url", ""))
         elif "text" in paragraph:
-            doc.text += "\n\n" + nodes_text(as_map(paragraph.get("text")).get("nodes", []), doc)
+            nodes = as_map(paragraph.get("text")).get("nodes", [])
+            doc.text += "\n\n" + paragraph_heading(nodes) + nodes_text(nodes, doc)
         elif "code" in paragraph:
             code = as_map(paragraph.get("code"))
             text = code.get("content") or code.get("code")
@@ -130,7 +142,9 @@ def article_document(data: dict) -> Document:
             for op in json.loads(content)["ops"]:
                 insert = op.get("insert")
                 if isinstance(insert, str):
-                    doc.text += insert
+                    header = as_map(op.get("attributes")).get("header")
+                    prefix = "#" * int(header) + " " if isinstance(header, int) and 1 <= header <= 6 else ""
+                    doc.text += prefix + insert
                 elif isinstance(insert, dict) and isinstance(insert.get("image"), str):
                     doc.picture(insert["image"])
                 else:

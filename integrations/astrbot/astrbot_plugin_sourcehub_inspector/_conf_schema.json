@@ -17,6 +17,36 @@
     "hint": "仅在目标远端私有性核验通过后，推送独立发布目录中的 Markdown。",
     "default": true
   },
+  "alert_enabled": {
+    "description": "启用 GitHub 私有仓库告警（Private GitHub Alerts）",
+    "type": "bool",
+    "default": false
+  },
+  "alert_remote": {
+    "description": "专用私有告警仓库 SSH remote（与资料仓库不同）",
+    "type": "string",
+    "default": ""
+  },
+  "qq_status_enabled": {
+    "description": "启用 QQ OneBot 状态监测（QQ Status Probe）",
+    "type": "bool",
+    "default": false
+  },
+  "qq_platform_id": {
+    "description": "AstrBot 中的 QQ 平台 ID（Platform ID）",
+    "type": "string",
+    "default": ""
+  },
+  "qq_account_id": {
+    "description": "用于告警去重的 QQ 数字账号（Account ID）",
+    "type": "string",
+    "default": ""
+  },
+  "qq_disconnect_grace_seconds": {
+    "description": "QQ 连续断线确认等待秒数（Disconnect Grace）",
+    "type": "int",
+    "default": 300
+  },
   "vault_dir": {
     "description": "资料目录（Vault Directory）",
     "type": "string",

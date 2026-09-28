@@ -17,6 +17,8 @@ from .collect import build_pack, collect_event, load_engine
 from .collect import finalize_daily_collection
 from .constants import (
     ALL_GROUPS_SCOPE_LABEL,
+    ALERT_ENABLED_KEY,
+    ALERT_REMOTE_KEY,
     COLLECT_ENABLED_KEY,
     PUBLISH_ENABLED_KEY,
     DEFAULT_VAULT_DIR,
@@ -27,6 +29,10 @@ from .constants import (
     DEFAULT_ORGANIZE_COMMAND,
     DEFAULT_TIMEZONE,
     ORGANIZE_COMMAND_KEY,
+    QQ_ACCOUNT_ID_KEY,
+    QQ_DISCONNECT_GRACE_KEY,
+    QQ_PLATFORM_ID_KEY,
+    QQ_STATUS_ENABLED_KEY,
     SNAPSHOT_DIR_NAME,
     VAULT_DIR_KEY,
     TIMEZONE_KEY,
@@ -35,6 +41,9 @@ from .sourcehub.daily import DailyLedger
 from .sourcehub.constants import DEFAULT_MEDIA_MAX_BYTES, SPOOL_DIR
 from .sourcehub.vault import Vault
 from .sourcehub.publish import Publisher, PublishError, PUBLISH_INTERVAL_SECONDS
+from .sourcehub.alerts import AlertLedger, UNKNOWN
+from .sourcehub.alert_publish import ALERT_DIR_SUFFIX, AlertPublisher, AlertPublishError
+from .qq_status import QQDisconnectGrace, probe_qq_status, DEFAULT_STATUS_INTERVAL_SECONDS, DEFAULT_DISCONNECT_GRACE_SECONDS
 from .forward_expander import (
     expand_forward_tree,
     fetch_forward_messages,
@@ -79,7 +88,7 @@ def _describe_group(event: AstrMessageEvent) -> str:
     return group_name or group_id or "非群聊"
 
 
-@register("astrbot_plugin_sourcehub_inspector", "Codex", "保存消息事件快照并成条入库", "0.5.5")
+@register("astrbot_plugin_sourcehub_inspector", "Codex", "保存消息事件快照并成条入库", "0.6.0")
 class SourceHubInspector(Star):
     def __init__(self, context: Context, config: dict | None = None):
         super().__init__(context, config)
@@ -96,6 +105,13 @@ class SourceHubInspector(Star):
         self._vault = Vault(vault_dir, git_enabled=True) if self._collect_enabled else None
         self._publisher = Publisher(vault_dir) if self._collect_enabled and self.config.get(PUBLISH_ENABLED_KEY, True) else None
         self._publish_task = None
+        self._qq_status_task = None
+        self._alert_task = None
+        self._alert_ledger = AlertLedger(vault_dir / SPOOL_DIR / "alerts.json")
+        alert_remote = str(self.config.get(ALERT_REMOTE_KEY) or "").strip()
+        self._alert_publisher = AlertPublisher(
+            vault_dir.with_name(vault_dir.name + ALERT_DIR_SUFFIX), alert_remote,
+        ) if self.config.get(ALERT_ENABLED_KEY, False) and alert_remote else None
         self._pack = build_pack(self.config)
         self._spool_path = vault_dir / SPOOL_DIR / "qq_sessions.json"
         self._daily_ledger = DailyLedger(
@@ -124,6 +140,32 @@ class SourceHubInspector(Star):
             self._daily_task = asyncio.create_task(self._finalize_previous_days())
         if self._publisher is not None:
             self._publish_task = asyncio.create_task(self._publish_loop())
+        if self._alert_publisher is not None:
+            self._alert_task = asyncio.create_task(self._alert_loop())
+        if self.config.get(QQ_STATUS_ENABLED_KEY, False):
+            self._qq_status_task = asyncio.create_task(self._qq_status_loop())
+
+    async def _alert_loop(self):
+        while True:
+            for event in self._alert_ledger.pending():
+                try:
+                    await asyncio.to_thread(self._alert_publisher.publish, event)
+                    self._alert_ledger.mark_delivered(event["id"])
+                except AlertPublishError as exc:
+                    self.logger.warning("%s 告警待推送：%s", LOG_PREFIX, exc)
+                    break
+            await asyncio.sleep(DEFAULT_STATUS_INTERVAL_SECONDS)
+
+    async def _qq_status_loop(self):
+        platform_id = str(self.config.get(QQ_PLATFORM_ID_KEY) or "").strip()
+        account_id = str(self.config.get(QQ_ACCOUNT_ID_KEY) or "").strip()
+        grace = QQDisconnectGrace(int(self.config.get(QQ_DISCONNECT_GRACE_KEY) or DEFAULT_DISCONNECT_GRACE_SECONDS))
+        while True:
+            status = await probe_qq_status(self.context, platform_id)
+            confirmed = grace.observe(status)
+            if account_id.isdecimal() and confirmed != UNKNOWN:
+                self._alert_ledger.observe("qq", account_id, confirmed)
+            await asyncio.sleep(DEFAULT_STATUS_INTERVAL_SECONDS)
 
     async def _publish_loop(self):
         while True:
@@ -294,6 +336,14 @@ class SourceHubInspector(Star):
         return messages
 
     async def terminate(self):
+        if self._qq_status_task:
+            self._qq_status_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._qq_status_task
+        if self._alert_task:
+            self._alert_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._alert_task
         if self._publish_task:
             self._publish_task.cancel()
             with suppress(asyncio.CancelledError):

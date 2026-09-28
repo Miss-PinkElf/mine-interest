@@ -1,7 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-09 15:19:34 +08:00
-- 更新时间（Updated At）：2026-09-21 18:38:00 +08:00
+- 更新时间（Updated At）：2026-09-28 17:06:00 +08:00
 - 作者（Author）：rin（Claude 协助）
 - 目的（Purpose）：保留首期 QQ 闭环之外尚需对齐的用户需求，避免丢失。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub（`.`）。
@@ -13,9 +13,9 @@
 
 # 后续范围待办
 
-## 2026-09-23：新出现但未对齐的需求 5
+## 2026-09-23：需求 5 已被需求 7 的对齐吸收
 
-- `zzz-prompt-debug/prompt-1.md` 新增 B 站 Cookie 有效性检查与参考 `astrbot_plugin_bilibili_ai_bot` 的自动刷新能力。它不属于已批准的需求 4，也没有在本轮实施；下次需先检查插件现状与凭据安全边界，再走 Align / Plan。此处是待对齐意图（Pending Alignment），不是永久放弃，也不是批准实施。
+- `zzz-prompt-debug/prompt-1.md` 早先新增的 B 站 Cookie 有效性检查与自动刷新意图，已由同文件第 50–58 行的需求 7 扩展；已完成 Align、Plan、Spec 和首版代码，不再作为独立需求 5 排队。真实验收仍待续，见 `spec/2026-09-28-需求7/tasks.md` 与 `deferred/需求7首版边界与真实验收.md`。
 
 ## 2026-09-21 18:38:00 +08:00：成条首版之后
 

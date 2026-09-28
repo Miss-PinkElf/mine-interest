@@ -55,6 +55,15 @@ class WorkMergeTests(unittest.TestCase):
         self.assertEqual(len(comment_nodes), 1)
         self.assertEqual(comment_nodes[0].text, "新文")
 
+    def test_same_parent_and_root_kept_once_across_mentions(self):
+        first = mention(WORK_VIDEO, "BV1xx", "r1", "同文", parent="p1", root="p1")
+        second = mention(WORK_VIDEO, "BV1xx", "r2", "同文", parent="p1", root="p1")
+        envelope = merge_work_envelope(merge_work_envelope(None, first), second)
+        rpids = [node.extra.get("rpid") for node in envelope.content if node.extra.get("role") != "object"]
+        self.assertEqual(rpids.count("p1"), 1)
+        self.assertIn("r1", rpids)
+        self.assertIn("r2", rpids)
+
 
 if __name__ == "__main__":
     unittest.main()
