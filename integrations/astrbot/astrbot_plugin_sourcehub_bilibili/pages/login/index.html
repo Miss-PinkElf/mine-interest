@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>登录与仓库校验 0.3.1</title>
+  <title>登录与仓库校验 0.3.2</title>
   <script src="/api/plugin/page/bridge-sdk.js"></script>
   <style>
     body {
@@ -44,7 +44,7 @@
   <main>
     <section>
       <h1>B 站扫码登录</h1>
-      <p id="plugin-version">插件版本 0.3.1</p>
+      <p id="plugin-version">插件版本 0.3.2</p>
       <p id="login-text">正在读取登录状态。</p>
       <button id="qr-button" type="button">生成二维码</button>
       <p id="qr-text"></p>
@@ -185,7 +185,7 @@
     }
 
     if (!window.AstrBotPluginPage) {
-      loginText.textContent = "插件页面通道没有加载。请重新打开。当前版本 0.3.1。";
+      loginText.textContent = "插件页面通道没有加载。请重新打开。当前版本 0.3.2。";
     } else {
       AstrBotPluginPage.ready().then(boot).catch((error) => {
         loginText.textContent = error.message || "页面还没有连上 AstrBot。";

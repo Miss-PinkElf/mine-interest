@@ -8,7 +8,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.client import BilibiliClient, FetchError, local_proxy_url, media_url
+from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.client import (
+    BilibiliClient, FetchError, choose_play_url, local_proxy_url, media_url,
+)
 from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.collector import Collector, dynamic_id
 from integrations.astrbot.astrbot_plugin_sourcehub_bilibili.constants import (
     ARTICLE_COMMENT, COMPLETE, EMPTY_BODY_GAP, OBJECT_GAP_PREFIX,
@@ -81,6 +83,23 @@ class ContentTests(unittest.TestCase):
         }}]}})
         self.assertIn("不能丢", doc.text)
         self.assertIn("unknown_paragraph", doc.gaps)
+
+    def test_link_card_becomes_markdown_link(self):
+        doc = article_document({"opus": {"content": {"paragraphs": [
+            {"link_card": {"card": {"link_type": 1, "biz_id": "710849124"}}},
+            {"link_card": {"card": {"link_type": 15, "biz_id": "11284495"}}},
+            {"link_card": {"card": {
+                "link_type": 39,
+                "biz_id": "961372414302748677",
+                "show_text": "素材合集",
+                "link": "https://www.bilibili.com/opus/961372414302748677",
+            }}},
+            {"link_card": {"card": {"link_type": 99, "biz_id": "1"}}},
+        ]}}})
+        self.assertIn("[av710849124](https://www.bilibili.com/video/av710849124)", doc.text)
+        self.assertIn("[cv11284495](https://www.bilibili.com/read/cv11284495)", doc.text)
+        self.assertIn("[素材合集](https://www.bilibili.com/opus/961372414302748677)", doc.text)
+        self.assertEqual(doc.gaps, ["unknown_paragraph"])
 
     def test_opus_skips_protobuf_empty_modules(self):
         empty = {
@@ -170,6 +189,18 @@ class ContentTests(unittest.TestCase):
         for url in ["https://evil.example/a.jpg", "http://127.0.0.1/a.jpg", "https://i0.hdslb.com.evil/a", "https://u:p@i0.hdslb.com/a"]:
             with self.assertRaises(FetchError):
                 media_url(url)
+
+    def test_play_url_keeps_official_and_rewrites_only_pcdn(self):
+        official = "https://upos-sz-mirrorcoso1.bilivideo.com/upgcxcode/1/2/3/3-1-64.mp4"
+        pcdn = "https://edge.mountaintoys.cn:4483/upgcxcode/1/2/3/3-1-64.mp4?os=mcdn&og=ali"
+        backup = "https://upos-sz-mirrorhw.bilivideo.com/upgcxcode/1/2/3/3-1-64.mp4"
+        self.assertEqual(choose_play_url({"durl": [{"url": official, "backup_url": [pcdn]}]}), official)
+        self.assertEqual(choose_play_url({"durl": [{"url": pcdn, "backup_url": [backup]}]}), backup)
+        self.assertEqual(
+            choose_play_url({"durl": [{"url": pcdn}]}),
+            "https://upos-sz-mirrorali.bilivideo.com/upgcxcode/1/2/3/3-1-64.mp4?os=mcdn&og=ali",
+        )
+        self.assertEqual(choose_play_url({"durl": [{"url": "https://evil.example/upgcxcode/a.mp4"}]}), "")
 
     def test_proxy_only_accepts_local_http_without_credentials(self):
         self.assertEqual(local_proxy_url("http://127.0.0.1:7897"), "http://127.0.0.1:7897")

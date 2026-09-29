@@ -5,10 +5,11 @@ from __future__ import annotations
 import re
 from urllib.parse import urlsplit
 
-from .client import FetchError
+from .client import FetchError, choose_play_url
 from .constants import (
     ARTICLE_COMMENT, DYNAMIC_COMMENTS, MAX_COMMENT_PAGES, MAX_FORWARD_DEPTH,
     NO_PARENT_ID, OPUS_FEATURES, PAGE_SIZE, PARENT_ID_KEYS, PARENT_MISSING_GAP,
+    PLAYURL_FNVAL_MP4, PLAYURL_FNVER, PLAYURL_QUALITY_QN,
     ROOT_ID_KEYS, ROOT_MISSING_GAP, SITE_BASE, VIDEO_COMMENT,
 )
 from .content import (
@@ -136,12 +137,12 @@ class Collector:
                 cid = as_map(first_page).get("cid")
                 if cid:
                     stream = await self.client.get(
-                        "playurl", bvid=bvid, cid=cid, qn=64, fnval=0, fnver=0,
+                        "playurl", bvid=bvid, cid=cid,
+                        qn=PLAYURL_QUALITY_QN, fnval=PLAYURL_FNVAL_MP4, fnver=PLAYURL_FNVER,
                     )
-                    durl = as_list(stream.get("durl"))
-                    stream_url = as_map(durl[0]).get("url") if durl else ""
+                    stream_url = choose_play_url(stream)
                     if stream_url:
-                        doc.download(str(stream_url))
+                        doc.download(stream_url)
                     else:
                         doc.gaps.append("video_stream_missing")
             elif kind == ARTICLE_COMMENT:

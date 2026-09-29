@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import asyncio
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit, urlunsplit
 
 import aiohttp
 
 from .constants import (
     API_BASE, ENDPOINTS, MAX_MEDIA_ATTEMPTS, MEDIA_CHUNK_BYTES,
     MEDIA_HOST_SUFFIXES, MEDIA_MAX_BYTES, MEDIA_RETRY_BASE_DELAY_SECONDS,
+    PCDN_FALLBACK_HOST, PCDN_HOST_SUFFIXES, PCDN_ORIGIN_HOSTS, PCDN_QUERY_OS,
+    PCDN_UPGCX_PREFIX,
     REQUEST_TIMEOUT_SECONDS, RETRYABLE_MEDIA_STATUSES, SITE_BASE, USER_AGENT,
 )
 
@@ -28,6 +30,67 @@ def media_url(url: str) -> str:
     ):
         raise FetchError("media_host_not_allowed")
     return url
+
+
+def _text_urls(value) -> list[str]:
+    if isinstance(value, str) and value:
+        return [value]
+    if isinstance(value, list):
+        return [item for item in value if isinstance(item, str) and item]
+    return []
+
+
+def _allowed_media_url(url: str) -> str:
+    try:
+        return media_url(url)
+    except FetchError:
+        return ""
+
+
+def rewrite_pcdn_play_url(url: str) -> str:
+    """把 PCDN 播放地址换成官方镜像，保留路径和签名。非 PCDN 返回空字符串。"""
+    raw = "https:" + url if url.startswith("//") else url
+    parts = urlsplit(raw)
+    host = (parts.hostname or "").lower()
+    if not host or not parts.path.startswith(PCDN_UPGCX_PREFIX):
+        return ""
+    query = parse_qs(parts.query, keep_blank_values=True)
+    origin = (query.get("og") or [""])[0].lower()
+    delivery = (query.get("os") or [""])[0]
+    pcdn = (
+        any(host.endswith(suffix) for suffix in PCDN_HOST_SUFFIXES)
+        or "mcdn" in host
+        or parts.port not in {None, 80, 443}
+        or delivery == PCDN_QUERY_OS
+    )
+    if not pcdn:
+        return ""
+    target = next(
+        (mirror for prefix, mirror in PCDN_ORIGIN_HOSTS.items() if origin.startswith(prefix)),
+        PCDN_FALLBACK_HOST,
+    )
+    return urlunsplit(("https", target, parts.path, parts.query, ""))
+
+
+def choose_play_url(stream: dict) -> str:
+    """优先使用已允许的地址；只有主地址和备用地址都被拒绝时才改写 PCDN。"""
+    if not isinstance(stream, dict) or not isinstance(stream.get("durl"), list):
+        return ""
+    candidates: list[str] = []
+    for item in stream["durl"]:
+        if not isinstance(item, dict):
+            continue
+        candidates.extend(_text_urls(item.get("url")))
+        candidates.extend(_text_urls(item.get("backup_url")))
+    for url in candidates:
+        allowed = _allowed_media_url(url)
+        if allowed:
+            return allowed
+    for url in candidates:
+        allowed = _allowed_media_url(rewrite_pcdn_play_url(url))
+        if allowed:
+            return allowed
+    return ""
 
 
 def local_proxy_url(url: str) -> str:

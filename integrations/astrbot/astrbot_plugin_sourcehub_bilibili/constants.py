@@ -1,7 +1,7 @@
 """接口契约和业务常量（Protocol and Business Constants）。"""
 
 PLUGIN_NAME = "astrbot_plugin_sourcehub_bilibili"
-PLUGIN_VERSION = "0.3.1"
+PLUGIN_VERSION = "0.3.2"
 ALERT_POLL_SECONDS = 30
 ALERT_ENABLED_KEY = "alert_enabled"
 ALERT_REMOTE_KEY = "alert_remote"
@@ -51,6 +51,29 @@ MAX_FORWARD_DEPTH = 8
 MEDIA_MAX_BYTES = 100 * 1024 * 1024
 MEDIA_CHUNK_BYTES = 64 * 1024
 MEDIA_HOST_SUFFIXES = (".hdslb.com", ".bilivideo.com")
+PLAYURL_QUALITY_QN = 64
+PLAYURL_FNVAL_MP4 = 0
+PLAYURL_FNVER = 0
+PCDN_QUERY_OS = "mcdn"
+PCDN_UPGCX_PREFIX = "/upgcxcode"
+PCDN_HOST_SUFFIXES = (
+    ".mountaintoys.cn",
+    ".szbdyd.com",
+    ".mcdn.bilivideo.cn",
+    ".mcdn.bilivideo.com",
+    ".nexusedgeio.com",
+    ".ahdohpiechei.com",
+)
+PCDN_ORIGIN_HOSTS = {
+    "ali": "upos-sz-mirrorali.bilivideo.com",
+    "cos": "upos-sz-mirrorcos.bilivideo.com",
+    "hw": "upos-sz-mirrorhw.bilivideo.com",
+    "08": "upos-sz-mirror08c.bilivideo.com",
+    "bd": "upos-sz-mirrorbd.bilivideo.com",
+}
+PCDN_FALLBACK_HOST = "upos-sz-mirrorcos.bilivideo.com"
+LINK_CARD_VIDEO = 1
+LINK_CARD_ARTICLE = 15
 MAX_MEDIA_ATTEMPTS = 5
 MEDIA_RETRY_BASE_DELAY_SECONDS = 0.25
 RETRYABLE_MEDIA_STATUSES = {429}

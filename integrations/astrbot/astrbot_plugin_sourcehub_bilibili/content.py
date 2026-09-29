@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from bs4 import BeautifulSoup
 from markdownify import markdownify
 
-from .constants import EMPTY_BODY_GAP
+from .constants import EMPTY_BODY_GAP, LINK_CARD_ARTICLE, LINK_CARD_VIDEO, SITE_BASE
 
 EXISTING_BODY_GAPS = {"body_missing", "article_body_missing", "opus_body_missing", EMPTY_BODY_GAP}
 FONT_LEVEL_HEADINGS = {"xxLarge": "### "}
@@ -98,6 +98,25 @@ def paragraph_heading(nodes: list) -> str:
     return FONT_LEVEL_HEADINGS.get(next(iter(levels)), "") if len(levels) == 1 else ""
 
 
+def link_card_line(card: dict) -> str:
+    """把已知链接卡片写成 Markdown 链接。没有可用地址时返回空字符串。"""
+    link = str(card.get("link") or "").strip()
+    label = str(card.get("show_text") or card.get("default_text") or "").strip()
+    biz_id = str(card.get("biz_id") or "").strip()
+    link_type = card.get("link_type")
+    if not link and biz_id.isdecimal():
+        if link_type == LINK_CARD_VIDEO:
+            link = f"{SITE_BASE}/video/av{biz_id}"
+            label = label or f"av{biz_id}"
+        elif link_type == LINK_CARD_ARTICLE:
+            link = f"{SITE_BASE}/read/cv{biz_id}"
+            label = label or f"cv{biz_id}"
+    if not link.startswith(("http://", "https://")):
+        return ""
+    safe_label = (label or link).replace("[", "［").replace("]", "］")
+    return f"[{safe_label}]({link})"
+
+
 def paragraphs_document(paragraphs: list) -> Document:
     doc = Document()
     for paragraph in as_list(paragraphs):
@@ -121,6 +140,13 @@ def paragraphs_document(paragraphs: list) -> Document:
                 doc.picture(as_map(pic).get("url", ""))
             else:
                 doc.text += "\n\n---"
+        elif "link_card" in paragraph:
+            line = link_card_line(as_map(as_map(paragraph.get("link_card")).get("card")))
+            if line:
+                doc.text += "\n\n" + line
+            else:
+                doc.gaps.append("unknown_paragraph")
+                doc.text += "\n\n```json\n" + json.dumps(paragraph, ensure_ascii=False) + "\n```"
         else:
             doc.gaps.append("unknown_paragraph")
             doc.text += "\n\n```json\n" + json.dumps(paragraph, ensure_ascii=False) + "\n```"
