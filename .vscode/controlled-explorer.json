@@ -3,6 +3,10 @@
   "roots": [
     {
       "type": "folder",
+      "path": ".devflow/cc-qq-full-migration"
+    },
+    {
+      "type": "folder",
       "path": ".devflow/multi-source-hub"
     }
   ]
