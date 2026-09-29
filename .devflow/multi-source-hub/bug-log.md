@@ -1,6 +1,6 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-09-28 18:55:00 +08:00。
+- 更新时间（Updated At）：2026-09-29 10:51:00 +08:00。
 - 作者（Author）：rin（Claude 协助）。
 - 目的（Purpose）：恢复插件诊断上下文。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
@@ -10,6 +10,13 @@
 - 文档边界（Scope / Boundary）：本任务记录；诊断插件不代表完整信息中心已获准实施。
 
 # 问题清单（Bug Log）
+
+## 2026-09-29：播放地址与专栏链接卡片
+
+| 问题现象 | 问题原因 | 解决方案与状态 |
+| --- | --- | --- |
+| 视频正文出现 `image:media_host_not_allowed`，封面已保存 | 播放地址主链接落在 PCDN（如 `mountaintoys.cn:4483`，`os=mcdn`）。采集器只取 `durl[0].url`，允许名单只有 `.hdslb.com` 和 `.bilivideo.com` | 代码已改：先用主地址或备用地址里已允许的链接；都不是时，仅对 `/upgcxcode` 的 PCDN 按 `og` 换成官方镜像。已成功的官方地址不改。插件 `0.3.2`。旧文档要重新采集才会变 |
+| 专栏正文出现 `unknown_paragraph` 和一段 `link_card` JSON | 段落只有文字、图片、代码、分隔线四种；视频卡（`link_type` 1）和专栏卡（`link_type` 15）被原样留下 | 代码已改：视频卡写成 `av` 链接，专栏卡写成 `cv` 链接，自带 `link` 的卡片用原文链接。不认识的卡片仍保留 JSON 和缺口。旧文档要重新采集才会变 |
 
 ## 2026-09-28：运行核查新发现
 

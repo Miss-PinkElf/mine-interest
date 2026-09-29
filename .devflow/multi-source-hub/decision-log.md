@@ -1,7 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-09 11:14:50 +08:00
-- 更新时间（Updated At）：2026-09-28 18:10:00 +08:00。
+- 更新时间（Updated At）：2026-09-29 10:55:00 +08:00。
 - 作者（Author）：Codex
 - 目的（Purpose）：区分已确认流程与待确认产品取舍。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub（`.`）
@@ -11,6 +11,12 @@
 - 文档边界（Scope / Boundary）：决策记录真相源（Source of Truth）；只有明确确认的条目可作为约束。
 
 # 决策记录
+
+## 2026-09-29 10:45:00 +08:00：播放地址不外挂下载器
+
+- 用户确认用通用下载器的做法解决 `image:media_host_not_allowed`，并要求专栏链接卡片一起处理。
+- 不调用 yt-dlp 或 BBDown，也不放行 `mountaintoys.cn`。采集器已经请求播放地址。选择顺序是：主地址或备用地址里已经允许的官方域名优先；都是 PCDN 时，只把 `/upgcxcode` 按 `og` 换成官方镜像。清晰度保持 720P 单文件，不引入 DASH 和 ffmpeg。已经成功的图片和官方 CDN 视频保持原样。
+- 专栏只把视频卡（`link_type` 1）、专栏卡（`link_type` 15）和自带 `link` 的卡片写成链接。不认识的卡片继续留 JSON 和 `unknown_paragraph`。
 
 ## 2026-09-28 18:10:00 +08:00：本轮只做登录告警
 
