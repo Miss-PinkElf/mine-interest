@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 /Users/mobius/.codex-probe/check.py",
+            "timeout": 30,
+            "statusMessage": "检查 Codex 模型与额度状态"
+          }
+        ]
+      }
+    ]
+  }
+}
