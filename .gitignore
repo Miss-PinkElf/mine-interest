@@ -91,6 +91,7 @@ coverage/
 # ===== Temporary =====
 tmp/
 temp/
+/data/
 .tmp-motion-lifecycle-smoke/
 .npm-cache/
 backend/.uv-cache/
