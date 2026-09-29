@@ -3,6 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 11:00:28 +08:00
+- 更新时间（Updated At）：2026-09-29 17:04:38 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：提供可直接复制到新对话的 mission 恢复指令。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -13,10 +14,10 @@
 
 ## 可复制提示词
 
-继续 `.devflow/cc-qq-full-migration/` mission。先按恢复热路径读 `state.md` 与 `checkpoints.md`，再读 `handoffs/index.md` 指向的最新 handoff；需要完整脉络时再读 `development-overview.md`（若存在），追溯输入、旧状态和延期项时再读 `origin.md`、`state-history.md`、`deferred/阶段二至四功能.md`。请遵守仓库 `AGENTS.md` 与 devflow 的 Align → Plan → Spec/Tasks → Apply 门禁。
+继续 `.devflow/cc-qq-full-migration/` mission。先读 `state.md` 与 `checkpoints.md`，再读 `handoffs/index.md` 指向的 `handoffs/2026-09-29-002-独立模型待运行验收.md`；详细任务见 `spec/tasks.md`。需要完整过程时再读 `development-overview.md`（若存在），追溯原始输入、旧状态和延期项时再读 `origin.md`、`state-history.md`、`deferred/阶段二至四功能.md`。遵守仓库 `AGENTS.md` 与 devflow 的 Align → Plan → Spec/Tasks → Apply 门禁。
 
-当前插件源码在 `integrations/astrbot/astrbot_plugin_cc_qq/`，版本 `0.1.2`。它已有 QQ 入口、准入、回复、SQLite 建表和两种 CLI 适配器，但 `main.py` 仍只回复“代理会话功能正在接入”，**现在不能对话**；T01–T03 未核验完成，T04 尚未实现。先不要把骨架误报为可用。
+仓库插件源码 `integrations/astrbot/astrbot_plugin_cc_qq/` 已升至 `0.1.13`，新包 `integrations/astrbot/astrbot_plugin_cc_qq-v0.1.13-upload.zip` 根层含元数据。用户明确选择自行在 AstrBot 上传和填写配置，当前 AstrBot 运行的仍是旧版 `0.1.12`。`0.1.13` 新增 `default_claude_model` 和 `default_codex_model`，旧共享 `default_model` 停用，群规则 `model` 非空时优先，已有会话按持久化代理类型选模型。本轮代码与相关文档已提交为 `eb462ec`；交接文档另有后续提交。
 
-本轮用户新增“群聊白名单、群聊必须 @ 才能对话”。`enabled_group_ids` 已提供群号白名单入口，`group_rules_json.allowed_user_ids` 是群成员白名单，但缺少真实 QQ 验收；@ 门禁尚未设计确认或实现。下一步先做 Mini Align，明确普通文本和命令的 @ 要求、机器人 QQ 身份识别、@ 段处理及未 @ 时的行为；确认后更新第一阶段计划和开放规格（OpenSpec）任务，再实施。第一版目标是 QQ 群／私聊与 Claude Code、Codex 的可恢复文本对话；阶段 2–4 的延期范围见 `deferred/阶段二至四功能.md`，均须后续继续。
+旧版 `0.1.12` 在 16:51–16:54 已通过 Codex 在群聊和私聊返回非空文本；此前未回复的问题由全局 `plugin_set`、群规则 JSON 和 CLI 短命令 PATH 引起，已记录于 `bug-log.md`。**Claude Code、`0.1.13` 独立模型、两代理恢复／中断和白名单组合仍未完成运行验收，不能宣布第一阶段通过。**当前旧会话均为 Codex；若要验证私聊 Claude Code，先在升级后使用 `/new` 建立新会话。
 
-工作区含其他 mission、B 站插件、测试文件、ZIP 和原始提示词目录的改动；不要覆盖或提交无关文件。用户在上一轮明确要求只写收尾文档，先不提交。后续若修改插件代码，要同步提升版本并覆盖本机 AstrBot 插件副本；未经用户明确允许不得提交。
+下一步：让用户上传 `0.1.13` 包，在插件 UI 分别填写两个默认模型或留空；取得真实 QQ 证据并回填 T03-M.4b、T04.4、T04.5。`/model` 动态切换、任务、媒体、管理控制台和 A2A 是后续阶段必做能力，进入条件见 `deferred/阶段二至四功能.md`。工作区另有无关 `.vscode`、B 站资料 ZIP、`data/`、旧插件 ZIP 和原始提示词目录，未纳入本 mission 提交；不要擅自改动。后续代码变更继续提升版本，用户没有再次授权前不要提交。

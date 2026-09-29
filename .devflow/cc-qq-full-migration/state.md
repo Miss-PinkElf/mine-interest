@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:10:32 +08:00
-- 更新时间（Updated At）：2026-09-29 17:01:30 +08:00
+- 更新时间（Updated At）：2026-09-29 17:04:38 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：提供本 mission 的短当前快照。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -18,7 +18,7 @@
 - 仓库源码版本为 `0.1.13`，新增 `default_claude_model`、`default_codex_model`，旧共享 `default_model` 不再读取；群规则 `model` 非空时优先，已存在会话按持久化代理类型选模型。新安装包是 `integrations/astrbot/astrbot_plugin_cc_qq-v0.1.13-upload.zip`，根层含 `metadata.yaml`。用户选择自行在 AstrBot 上传，当前运行的仍是 `0.1.12`。
 - 旧版 `0.1.12` 的真实 QQ 证据：16:51–16:54，QQ `2844973553` 在群 `836229427` 和私聊均由 Codex 返回非空文本；SQLite 两条会话的代理类型均为 `codex`，多条轮次状态为 `done`。早期不回复问题分别由 AstrBot 全局 `plugin_set`、非法群规则 JSON 和桌面进程找不到短命令 `codex` 引起；用户已修正配置，详情见 `bug-log.md`。
 - **第一阶段仍未通过**：Claude Code 真实 QQ 回复、两代理恢复／中断／结束及白名单组合行为未完成验收；`0.1.13` 的独立模型选择尚未安装实测。未讨论完的 `/model` 动态切换在第一阶段验收后进入阶段 2，其他延期能力见 `deferred/阶段二至四功能.md`。
-- 下一步：用户上传 `0.1.13` ZIP，分别填写两个默认模型或留空，验证 Claude Code、Codex、群覆盖与旧会话代理选择；然后继续 `spec/tasks.md` T03-M.4b、T04.4、T04.5。最新交接将写入 `handoffs/`。
+- 下一步：用户上传 `0.1.13` ZIP，分别填写两个默认模型或留空，验证 Claude Code、Codex、群覆盖与旧会话代理选择；然后继续 `spec/tasks.md` T03-M.4b、T04.4、T04.5。最新交接是 `handoffs/2026-09-29-002-独立模型待运行验收.md`。
 
 ## 本轮不做 / 后续阶段（Deferred Scope）
 
