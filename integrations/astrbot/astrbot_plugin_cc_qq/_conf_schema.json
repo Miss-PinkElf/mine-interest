@@ -1,0 +1,67 @@
+{
+  "qq_platform_id": {
+    "description": "QQ 平台实例 ID（Platform ID）",
+    "type": "string",
+    "hint": "填写 AstrBot 中的 aiocqhttp 平台 ID；留空时不处理消息。",
+    "default": ""
+  },
+  "enabled_group_ids": {
+    "description": "启用的 QQ 群号（Enabled Groups）",
+    "type": "list",
+    "hint": "只有列表中的群才进入插件；留空时不处理任何群。",
+    "default": [],
+    "items": { "type": "string" }
+  },
+  "group_rules_json": {
+    "description": "各群配置 JSON（Group Rules）",
+    "type": "string",
+    "hint": "以群号为键，每项可填写 work_dir、agent、model、allowed_user_ids；示例见 README。",
+    "default": "{}"
+  },
+  "private_enabled": {
+    "description": "启用 QQ 私聊（Private Chat）",
+    "type": "bool",
+    "default": false
+  },
+  "private_user_ids": {
+    "description": "允许私聊的 QQ 号（Private User IDs）",
+    "type": "list",
+    "hint": "留空时仅 owner 和管理员可使用私聊。",
+    "default": [],
+    "items": { "type": "string" }
+  },
+  "private_work_dir": {
+    "description": "私聊工作目录（Private Work Directory）",
+    "type": "string",
+    "hint": "私聊代理使用的工作目录；私聊启用前必须配置。",
+    "default": ""
+  },
+  "owner_qq_id": {
+    "description": "插件所有者 QQ 号（Owner QQ ID）",
+    "type": "string",
+    "default": ""
+  },
+  "admin_qq_ids": {
+    "description": "管理员 QQ 号（Admin QQ IDs）",
+    "type": "list",
+    "default": [],
+    "items": { "type": "string" }
+  },
+  "global_allowed_user_ids": {
+    "description": "全局允许用户 QQ 号（Global Allowed User IDs）",
+    "type": "list",
+    "default": [],
+    "items": { "type": "string" }
+  },
+  "default_agent": {
+    "description": "默认代理（Default Agent）",
+    "type": "string",
+    "options": ["claude", "codex"],
+    "default": "claude"
+  },
+  "default_model": {
+    "description": "默认模型（Default Model）",
+    "type": "string",
+    "default": ""
+  }
+}
