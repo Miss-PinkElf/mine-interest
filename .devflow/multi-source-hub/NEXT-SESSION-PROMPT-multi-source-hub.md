@@ -1,23 +1,23 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-09-29 11:03:00 +08:00。
+- 更新时间（Updated At）：2026-09-29 13:56:00 +08:00。
 - 作者（Author）：Grok。
 - 目的（Purpose）：给新对话的可复制恢复提示。
 - 关联仓库（Related Repository / Project）：`.`。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
 - 当前状态（Status）：恢复入口（Resume Prompt）。
-- 文档边界（Scope / Boundary）：提示词，不是任务真相源。以 `state.md` 和 012 交接为准。
+- 文档边界（Scope / Boundary）：提示词，不是任务真相源。以 `state.md` 和 013 交接为准。
 
 # 下次对话提示
 
-先读 `.devflow/multi-source-hub/state.md` 和 `checkpoints.md`，再读 `handoffs/2026-09-29-012-告警邮件验收与播放地址.md`。需要完整过程时再读 `development-overview.md`。需要追溯原始输入、旧状态或延期时再读 `origin.md`、`state-history.md`、`backlog.md` 或 `deferred/`。011 只在要核对存量迁移时补读。
+先读 `.devflow/multi-source-hub/state.md` 和 `checkpoints.md`，再读 `handoffs/2026-09-29-013-运行版本核对与等待点名.md`。需要邮件验收或播放地址第一版时再读 012。需要完整过程时再读 `development-overview.md`。需要追溯原始输入、旧状态或延期时再读 `origin.md`、`state-history.md`、`backlog.md` 或 `deferred/`。011 只在要核对存量迁移时补读。
 
-不要重做对齐。不要重跑已经完成的 29 条 B 站重排和 184 个 QQ 链接修复。不要再推告警演练。代码 `0fb5a79` 和本轮文档都已提交。
+不要重做对齐。不要重跑已经完成的 29 条 B 站重排和 184 个 QQ 链接修复。不要再推告警演练。不要再重载插件，也不要再核对版本，除非用户说页面仍是旧版本。代码 `0fb5a79` 已提交。
 
 ## 先做
 
-1. 重载 AstrBot 里的 **SourceHub B站只读采集**。确认插件卡片和页面标题下都是「插件版本 0.3.2」。目录已经覆盖过，进程还没重载，所以现在打开仍可能看到 `0.3.1`。
-2. 登录区应离开「正在读取登录状态」。两个仓库应仍是私有、可读、可推：`Miss-PinkElf/data-hub`、`Miss-PinkElf/sourcehub-alerts`。这三项在 `0.3.1` 上已经由用户确认过，重载后顺手再看一眼即可。
+1. 等用户点名一篇旧视频或旧专栏，再重采并看播放地址和链接卡片。不要自行重扫资料库。可点名的两篇：视频 `BV1Jqav62EVW`，专栏《B站最详细内网穿透原理…-6189209》。
+2. 运行中的 **SourceHub B站只读采集** 在 2026-09-29 13:56 仍是插件版本 `0.3.2`。登录状态立即返回已登录、可刷新，账号「尾号 4836」。两个仓库的上次校验是 10:24，都是私有、可读、可推：`Miss-PinkElf/data-hub`、`Miss-PinkElf/sourcehub-alerts`。
 
 ## 已验收
 
@@ -25,7 +25,7 @@
 
 ## 还没验收
 
-- `0.3.2` 还没有在运行中的插件里看过。T7 因此不勾选。
+- 运行中的插件已是 `0.3.2`，但还没有用一篇真实作品验收新采集。T7 因此不勾选。
 - 本轮没有新的扫码。QQ 仍无可靠「需扫码」信号。T5 因此不勾选。
 - 需求 7 未 Close。需求 4 的验证（Verify）未关。
 
