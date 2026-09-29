@@ -19,10 +19,12 @@ async def send_text(context, origin: str, content: str, logger) -> bool:
         return False
     try:
         for part in split_text(content):
-            await context.send_message(
+            delivered = await context.send_message(
                 session=origin,
                 message_chain=MessageChain([Plain(part)]),
             )
+            if not delivered:
+                return False
     except Exception as exc:
         logger.warning("%s QQ 文本回复失败：%s", LOG_PREFIX, type(exc).__name__)
         return False

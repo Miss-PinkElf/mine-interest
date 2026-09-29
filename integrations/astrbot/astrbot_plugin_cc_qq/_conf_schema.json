@@ -8,14 +8,14 @@
   "enabled_group_ids": {
     "description": "启用的 QQ 群号（Enabled Groups）",
     "type": "list",
-    "hint": "只有列表中的群才进入插件；留空时不处理任何群。",
+    "hint": "只有列表中的群才进入插件；群聊文本和命令均须 @ 当前机器人，未 @ 静默。留空时不处理任何群。",
     "default": [],
     "items": { "type": "string" }
   },
   "group_rules_json": {
     "description": "各群配置 JSON（Group Rules）",
     "type": "string",
-    "hint": "以群号为键，每项可填写 work_dir、agent、model、allowed_user_ids；示例见 README。",
+    "hint": "以群号为键，每项填写 work_dir，可选 agent、model、allowed_user_ids；群 model 高于该代理默认模型，示例见 README。",
     "default": "{}"
   },
   "private_enabled": {
@@ -59,9 +59,28 @@
     "options": ["claude", "codex"],
     "default": "claude"
   },
-  "default_model": {
-    "description": "默认模型（Default Model）",
+  "default_claude_model": {
+    "description": "Claude Code 默认模型（Default Claude Model）",
     "type": "string",
+    "hint": "留空时使用 Claude Code CLI 自身默认模型。",
     "default": ""
+  },
+  "default_codex_model": {
+    "description": "Codex 默认模型（Default Codex Model）",
+    "type": "string",
+    "hint": "留空时使用 Codex CLI 自身默认模型。",
+    "default": ""
+  },
+  "claude_command": {
+    "description": "Claude Code 可执行文件（Claude Command）",
+    "type": "string",
+    "hint": "桌面版 AstrBot 找不到 claude 时，填写其可执行文件绝对路径。",
+    "default": "claude"
+  },
+  "codex_command": {
+    "description": "Codex 可执行文件（Codex Command）",
+    "type": "string",
+    "hint": "桌面版 AstrBot 找不到 codex 时，填写其可执行文件绝对路径。",
+    "default": "codex"
   }
 }

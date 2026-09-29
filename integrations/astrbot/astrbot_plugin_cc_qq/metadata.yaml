@@ -1,7 +1,7 @@
 name: astrbot_plugin_cc_qq
 display_name: cc-qq
 desc: 通过 QQ 使用本机 Claude Code 与 Codex。
-version: 0.1.2
+version: 0.1.13
 author: Codex
 support_platforms:
   - aiocqhttp

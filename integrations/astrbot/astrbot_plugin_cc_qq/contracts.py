@@ -46,6 +46,7 @@ class IncomingMessage:
     text: str
     origin: str
     has_unsupported_segments: bool = False
+    mentions_bot: bool = False
 
 
 @dataclass(frozen=True)

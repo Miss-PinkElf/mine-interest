@@ -10,7 +10,7 @@ from .constants import (
     DEFAULT_AGENT,
     DEFAULT_AGENT_KEY,
     DEFAULT_GROUP_RULES_JSON,
-    DEFAULT_MODEL_KEY,
+    DEFAULT_MODEL_KEY_BY_AGENT,
     ENABLED_GROUP_IDS_KEY,
     GLOBAL_ALLOWED_USER_IDS_KEY,
     GROUP_RULES_JSON_KEY,
@@ -44,6 +44,14 @@ def _group_rules(config: dict) -> dict:
     return parsed
 
 
+def default_model_for_agent(config: dict, agent_type: str) -> str:
+    """读取指定代理自己的默认模型；空值交给该代理 CLI 决定。"""
+    model_key = DEFAULT_MODEL_KEY_BY_AGENT.get(agent_type)
+    if model_key is None:
+        raise ValueError("不支持的代理类型")
+    return str(config.get(model_key) or "").strip()
+
+
 def _session_settings(rule: dict, config: dict) -> SessionSettings | None:
     work_dir = str(rule.get("work_dir") or "").strip()
     if not work_dir:
@@ -51,7 +59,8 @@ def _session_settings(rule: dict, config: dict) -> SessionSettings | None:
     agent_type = str(rule.get("agent") or config.get(DEFAULT_AGENT_KEY) or DEFAULT_AGENT).strip()
     if agent_type not in SUPPORTED_AGENTS:
         raise ValueError("不支持的代理类型")
-    model = str(rule.get("model") or config.get(DEFAULT_MODEL_KEY) or "").strip()
+    group_model = str(rule.get("model") or "").strip()
+    model = group_model or default_model_for_agent(config, agent_type)
     return SessionSettings(work_dir=str(Path(work_dir).expanduser()), agent_type=agent_type, model=model)
 
 
@@ -75,7 +84,7 @@ def authorize(message: IncomingMessage, config: dict) -> AuthorizationDecision:
             return AuthorizationDecision(False, role, REASON_CONFIGURATION_INVALID)
         if not isinstance(rule, dict):
             return AuthorizationDecision(False, role, REASON_CONFIGURATION_INVALID)
-        allowed_ids = _id_set(rule.get("allowed_user_ids")) or _id_set(
+        allowed_ids = _id_set(rule.get("allowed_user_ids")) | _id_set(
             config.get(GLOBAL_ALLOWED_USER_IDS_KEY)
         )
     else:

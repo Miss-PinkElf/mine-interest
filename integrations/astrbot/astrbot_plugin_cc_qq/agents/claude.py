@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import aclosing
 from typing import AsyncIterator, Optional
 from uuid import uuid4
 
@@ -54,8 +55,9 @@ def parse_claude_event(line: str) -> Optional[AgentEvent]:
 class ClaudeAdapter:
     agent_type = "claude"
 
-    def __init__(self, process_runner: ProcessRunner):
+    def __init__(self, process_runner: ProcessRunner, command: str = CLAUDE_COMMAND):
         self._process_runner = process_runner
+        self._command = command
 
     async def execute(self, request: AgentRequest) -> AsyncIterator[AgentEvent]:
         args = list(CLAUDE_BASE_ARGS)
@@ -67,12 +69,13 @@ class ClaudeAdapter:
             args.extend(("--session-id", str(uuid4())))
 
         try:
-            async for line in self._process_runner.run(
-                request.conversation.storage_key(), CLAUDE_COMMAND, args,
+            async with aclosing(self._process_runner.run(
+                request.conversation.storage_key(), self._command, args,
                 request.work_dir, request.message,
-            ):
-                event = parse_claude_event(line)
-                if event is not None:
-                    yield event
+            )) as lines:
+                async for line in lines:
+                    event = parse_claude_event(line)
+                    if event is not None:
+                        yield event
         except AgentProcessError as exc:
             yield AgentEvent(AgentEventKind.ERROR, str(exc))

@@ -3,6 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:33:00 +08:00
+- 更新时间（Updated At）：2026-09-29 16:55:23 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：约定第一阶段的模块边界、数据契约、调用顺序与异常处理。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -10,7 +11,8 @@
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`
 - 总体计划（Master Plan）：`.devflow/cc-qq-full-migration/plans/2026-09-29-cc-ding原生python完整迁移qq插件-总体实施计划.md`
 - 阶段计划（Stage Plan）：`.devflow/cc-qq-full-migration/plans/2026-09-29-cc-qq原生python插件第一阶段实施计划.md`
-- 当前状态（Status）：待实施（Planned）
+- 群聊对齐（Group Admission Alignment）：`.devflow/cc-qq-full-migration/plans/2026-09-29-cc-qq群聊白名单与必须@对齐.md`
+- 当前状态（Status）：代码已实施、待运行验收（Implemented / Runtime Verification Pending）
 - 文档边界（Scope / Boundary）：本 mission 第一阶段设计真相源（source of truth）；只规定 QQ 与双代理闭环，后续阶段依总体计划继续。
 
 ## 总体思路
@@ -19,7 +21,8 @@
 QQ／AstrBot 事件
   → main.py 生命周期与事件入口
   → platform/qq_events.py 输入归一
-  → policy.py 身份准入
+  → policy.py 群号／身份准入
+  → 群聊 @ 当前机器人门禁
   → service.py 命令与会话编排
   → sessions.py 持久会话和同会话队列
   → agents/claude.py 或 agents/codex.py
@@ -45,14 +48,22 @@ QQ／AstrBot 事件
 
 配置使用 AstrBot 的 `_conf_schema.json` 和插件配置；阶段 1 包含平台 ID、已启用群、私聊开关、owner、管理员、全局／群白名单、会话工作目录、代理类型和模型。默认启用范围为空。数据使用 `StarTools.get_data_dir(PLUGIN_NAME)` 下的 SQLite；会话表包含复合会话键、代理类型、代理会话 ID、工作目录和状态，已处理消息表以平台实例加消息 ID 去重。配置与状态键集中在 `constants.py`。
 
+模型配置增量：`default_claude_model` 与 `default_codex_model` 分别对应 Claude Code、Codex。`policy.py` 先确定代理类型，再按“群规则 `model` → 对应代理默认模型 → CLI 默认模型”取值；旧 `default_model` 停止读取。`sessions.py` 执行已有会话时以持久化的 `agent_type` 为准；如果当前群规则改用了另一代理，该旧会话只使用原代理的独立默认模型，避免跨代理传参。私聊按 `default_agent` 决定代理。增量对齐及计划见 `plans/2026-09-29-cc-qq双代理独立默认模型对齐.md`、`plans/2026-09-29-cc-qq双代理独立默认模型实施计划.md`。
+
 ## 数据流与接口
 
-1. `qq_events.py` 从 AstrBot 事件取得平台 ID、群／私聊类型、会话 ID、发送者 QQ ID、消息 ID 和文本；复合会话键为“平台实例 + 群／私聊 + 对应 ID”。阶段 1 的非文本段给出明确提示，阶段 2 再提取附件。
-2. `policy.py` 先检查平台与群／私聊启用范围，再检查 owner／管理员或白名单。拒绝结果不会调用 `SessionService` 或 CLI。消息准入和代理执行权限分别保存；不能把白名单说成文件系统限制。
+1. `qq_events.py` 从 AstrBot 事件取得平台 ID、群／私聊类型、会话 ID、发送者 QQ ID、消息 ID 和文本；复合会话键为“平台实例 + 群／私聊 + 对应 ID”。群聊还需读取当前机器人 QQ ID 和 `At` 段目标，以精确匹配判断是否 @ 当前机器人；无法可靠读取时不通过门禁。只移除当前机器人 @ 段，保留其他文本；私聊不要求 @。阶段 1 的非文本段在通过准入后给出明确提示，阶段 2 再提取附件。
+2. `policy.py` 先检查平台与群／私聊启用范围，再检查 owner／管理员或白名单。群号白名单使用 `enabled_group_ids`，群成员名单使用 `group_rules_json.allowed_user_ids`。群聊 @ 门禁在命令和代理分派前统一执行，未命中时静默；拒绝结果不会调用 `ConversationService` 或 CLI。消息准入和代理执行权限分别保存；不能把白名单说成文件系统限制。
 3. `service.py` 用消息 ID 做去重，匹配显式命令。普通文本进入当前会话的异步锁和队列；同一会话按到达顺序执行，不同会话独立。会话及消息处理状态在 SQLite 事务中更新。
-4. `AgentRunner` 用 `asyncio.create_subprocess_exec` 启动 CLI，参数以数组传递、消息通过标准输入（stdin）传递。Claude 使用 `--print --output-format stream-json --verbose` 与 `--resume`；Codex 使用 `exec --json` 与 `exec resume`。普通会话保留源代码的 `bypassPermissions`、`danger-full-access` 默认值。代理输出映射为统一事件，服务仅识别统一事件。
+4. `ProcessRunner` 用 `asyncio.create_subprocess_exec` 启动 CLI，参数以数组传递、消息通过标准输入（stdin）传递。Claude 使用 `--print --output-format stream-json --verbose` 与 `--resume`；Codex 使用 `exec --json` 与 `exec resume`。普通会话保留源代码的 `bypassPermissions`、`danger-full-access` 默认值。代理输出映射为统一事件，服务仅识别统一事件。
 5. CLI 发出的会话 ID／线程 ID 持久化；`/new` 创建新历史，`/resume` 限当前复合会话键，`/end` 标为结束，`/goon` 用当前 ID 重新执行，`/!` 中断当前进程并恢复队列推进。插件重载时终止进程，但保留可恢复的会话 ID。
-6. 回复模块对长文本顺序分段。即时回复使用 AstrBot 消息事件，延迟和后台回复使用 AstrBot 的消息来源标识。发送失败写入状态并返回明确错误；不在群中回显密钥或完整环境变量。
+6. 回复模块对长文本顺序分段，并通过 AstrBot 的消息来源标识发送。发送失败写入回执状态并记录脱敏错误类型；不在群中回显密钥或完整环境变量。即时确认和进度提示进入第二阶段。
+
+## 关闭与恢复细节
+
+- `SessionManager` 关闭时先设置门禁；已经排队并等待会话锁的请求在改为 `processing` 前退出，保留 `queued` 回执供新实例重新核验授权后处理。
+- 已开始执行的请求在关闭时中断；旧实例等待任务和子进程结束后保留 `processing` 回执，新实例标为 `interrupted` 并通知用户，不自动重复执行。
+- 关闭门禁之后才到达旧插件入口的全新消息是否会由 AstrBot 重投，取决于平台重载时序；该边缘窗口需在真实加载与重载验收中观察，不能用静态审查替代。
 
 ## 复用点
 

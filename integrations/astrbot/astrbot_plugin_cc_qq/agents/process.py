@@ -10,6 +10,8 @@ from typing import AsyncIterator
 
 from ..constants import (
     DEFAULT_AGENT_TIMEOUT_SECONDS,
+    MAX_AGENT_OUTPUT_LINE_BYTES,
+    NO_WORK_DIR_REPLY,
     PROCESS_TERMINATE_GRACE_SECONDS,
     STDERR_TAIL_LINES,
 )
@@ -35,7 +37,7 @@ class ProcessRunner:
         if conversation_key in self._active:
             raise AgentProcessError("当前会话已有代理进程在运行")
         if not Path(work_dir).is_dir():
-            raise AgentProcessError("工作目录不存在")
+            raise AgentProcessError(NO_WORK_DIR_REPLY)
 
         try:
             process = await asyncio.create_subprocess_exec(
@@ -45,6 +47,7 @@ class ProcessRunner:
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                limit=MAX_AGENT_OUTPUT_LINE_BYTES,
             )
         except FileNotFoundError as exc:
             raise AgentProcessError("代理命令未安装或不可访问") from exc
