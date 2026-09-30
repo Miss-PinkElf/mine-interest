@@ -95,6 +95,8 @@ def authorize(message: IncomingMessage, config: dict) -> AuthorizationDecision:
         rule = {"work_dir": str(Path(private_root).expanduser() / sender_id)} if private_root else {}
 
     if role == "member" and sender_id not in allowed_ids:
+        if message.conversation.kind is ConversationKind.PRIVATE:
+            return AuthorizationDecision(False, role, REASON_OUT_OF_SCOPE)
         return AuthorizationDecision(False, role, REASON_NOT_ALLOWED)
 
     try:

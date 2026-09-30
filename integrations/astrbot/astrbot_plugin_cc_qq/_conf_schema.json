@@ -26,7 +26,7 @@
   "private_user_ids": {
     "description": "允许私聊的 QQ 号（Private User IDs）",
     "type": "list",
-    "hint": "留空时仅 owner 和管理员可使用私聊。",
+    "hint": "留空时仅 owner 和管理员可使用私聊。不在名单中的私聊不回复。",
     "default": [],
     "items": { "type": "string" }
   },

@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:40:00 +08:00
-- 更新时间（Updated At）：2026-09-29 16:55:23 +08:00
+- 更新时间（Updated At）：2026-09-30 15:57:00 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：说明 cc-qq 插件的当前能力、配置方式与后续迁移范围。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -14,7 +14,7 @@
 
 ## 当前状态
 
-当前版本 `0.1.14` 已接通 QQ 文本准入、Claude Code／Codex 异步进程、SQLite 会话和基础命令。群聊只处理白名单内群号中明确 @ 当前机器人的消息；自然语言和命令均须 @，未 @ 时插件静默。私聊无需 @。`0.1.14` 含有 `0.1.13` 的独立默认模型字段，并忽略过期消息、私聊空文本和代理标准输入早退。旧版 `0.1.12` 已有 Codex 群聊与私聊真实回复；Claude Code、新版独立模型及恢复／中断等仍待验收，第一阶段尚未通过。
+当前版本 `0.1.16` 已接通 QQ 文本准入、Claude Code／Codex 异步进程、SQLite 会话和基础命令。群聊只处理白名单内群号中明确 @ 当前机器人的消息；自然语言和命令均须 @，未 @ 时插件静默。私聊无需 @。不在 `private_user_ids` 且不是 owner／管理员的私聊不回复。同一私聊会话、同一发送者、同一正文在 10 秒内重复出现时只处理一次。`0.1.16` 含有独立默认模型字段，并忽略过期消息、私聊空文本和代理标准输入早退。旧版 `0.1.12` 已有 Codex 群聊与私聊真实回复；Claude Code、新版独立模型及恢复／中断等仍待验收，第一阶段尚未通过。
 
 ## 配置准备
 
@@ -32,13 +32,13 @@
 
 群号白名单使用 `enabled_group_ids`；`group_rules_json.allowed_user_ids` 是该群成员白名单，全局成员名单使用 `global_allowed_user_ids`。owner 和管理员也必须处于已启用的群内。群聊 @ 目标由 AstrBot 消息中的机器人 QQ ID 与 `At.qq` 精确比对；身份缺失或 @ 他人时静默。
 
-私聊需要启用 `private_enabled` 并填写 `private_work_dir`；普通私聊用户另填 `private_user_ids`。插件为每位私聊用户建立独立子目录。空配置默认不处理任何 QQ 群或私聊。
+私聊需要启用 `private_enabled` 并填写 `private_work_dir`；普通私聊用户另填 `private_user_ids`。不在名单中的私聊与关闭私聊一样静默，不回复未授权提示。插件为每位私聊用户建立独立子目录。空配置默认不处理任何 QQ 群或私聊。群聊 @ 后不在白名单时仍提示未获授权。
 
 Claude Code 和 Codex 分别使用 `default_claude_model`、`default_codex_model`。群规则中的 `model` 非空时优先；对应默认模型留空时，插件不传 `--model`，由该代理 CLI 自行选择默认模型。旧共享字段 `default_model` 已停用，升级后需将原值手动填入适用代理的新字段。已有会话继续使用其原代理；若群规则改用另一代理，旧会话仍取原代理的独立默认模型，新代理需用 `/new` 开始新会话。
 
 使用代理功能需要在 AstrBot 进程的命令搜索路径（PATH）中安装并可调用 `claude` 或 `codex`；桌面进程找不到命令时，在插件配置页填写 `claude_command` 或 `codex_command` 的可执行文件绝对路径。普通会话沿用源项目 `cc-ding` 的默认执行权限：Claude Code 使用 `bypassPermissions`，Codex 使用 `danger-full-access`；消息白名单只限制谁能发起请求，不限制代理进程对宿主机文件的访问。问答模式（`/qa`）将在第二阶段实现两种代理可验证的只读行为。
 
-私聊没有正文时插件不回复。群聊 @ 机器人但没有文字时，仍提示在 @ 后输入文本或命令。`stale_message_max_age_seconds` 默认 180：OneBot 原始发送时间比插件收到时间更早、且超过这个秒数的消息会被忽略，不进入代理；填 0 则不按时间忽略。插件重载时尚未完成的排队消息仍会继续处理。代理若在读完输入前退出，QQ 会收到带退出码的短句，详细输出留在插件日志。
+私聊没有正文时插件不回复。同一私聊在 10 秒内出现相同正文（含空白）时只处理一次，相同回复也不会连发。群聊 @ 机器人但没有文字时，仍提示在 @ 后输入文本或命令。`stale_message_max_age_seconds` 默认 180：OneBot 原始发送时间比插件收到时间更早、且超过这个秒数的消息会被忽略，不进入代理；填 0 则不按时间忽略。插件重载时尚未完成的排队消息仍会继续处理。代理若在读完输入前退出，QQ 会收到带退出码的短句，详细输出留在插件日志。
 
 ## 第一阶段基础命令
 
@@ -50,7 +50,7 @@ Claude Code 和 Codex 分别使用 `default_claude_model`、`default_codex_model
 
 ## 版本与手动安装
 
-仓库源码位置：`integrations/astrbot/astrbot_plugin_cc_qq/`。用户选择自行在 AstrBot 中上传 ZIP；ZIP 根层必须直接包含 `metadata.yaml`、`_conf_schema.json`、`main.py`，并保留各 Python 包的相对结构；不要把整个 `astrbot_plugin_cc_qq/` 文件夹连同 macOS 的 `__MACOSX/` 一起压入 ZIP。当前版本的安装包是 `integrations/astrbot/astrbot_plugin_cc_qq-v0.1.14-upload.zip`。它包含尚未单独安装过的 `0.1.13` 独立模型字段，上传这一包即可，不必先装 `0.1.13`。安装由用户自行操作。旧包 `integrations/astrbot/astrbot_plugin_cc_qq-v0.1.13-upload.zip` 仍保留。
+仓库源码位置：`integrations/astrbot/astrbot_plugin_cc_qq/`。用户选择自行在 AstrBot 中上传 ZIP；ZIP 根层必须直接包含 `metadata.yaml`、`_conf_schema.json`、`main.py`，并保留各 Python 包的相对结构；不要把整个 `astrbot_plugin_cc_qq/` 文件夹连同 macOS 的 `__MACOSX/` 一起压入 ZIP。当前版本的安装包是 `integrations/astrbot/astrbot_plugin_cc_qq-v0.1.16-upload.zip`。旧包 `integrations/astrbot/astrbot_plugin_cc_qq-v0.1.15-upload.zip` 与 `v0.1.14` 仍保留。
 
 ## 后续阶段
 

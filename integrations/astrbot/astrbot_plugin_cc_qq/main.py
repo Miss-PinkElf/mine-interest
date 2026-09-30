@@ -17,6 +17,7 @@ from .constants import (
     PLUGIN_DESCRIPTION,
     PLUGIN_NAME,
     PLUGIN_VERSION,
+    PRIVATE_DUPLICATE_WINDOW_SECONDS,
     PRIVATE_ENABLED_KEY,
     RECEIPT_CANCELLED,
     RECEIPT_DELIVERY_FAILED,
@@ -32,6 +33,7 @@ from .constants import (
     WORK_DIR_MISSING_REPLY,
 )
 from .contracts import ConversationKind, IncomingMessage
+from .platform.duplicates import is_recent_duplicate
 from .platform.qq_events import empty_text_reply, parse_qq_event, should_ignore_as_stale, stale_max_age_from_config
 from .platform.replies import send_text
 from .policy import authorize
@@ -51,6 +53,8 @@ class CcQqPlugin(Star):
         self.sessions = SessionManager(self.store, self.config)
         self.service = ConversationService(self.store, self.sessions)
         self._background_tasks: set[asyncio.Task] = set()
+        self._recent_private_incoming: dict[tuple[str, ...], int] = {}
+        self._recent_outgoing: dict[tuple[str, ...], int] = {}
 
     async def initialize(self):
         group_count = len(self.config.get(ENABLED_GROUP_IDS_KEY) or [])
@@ -137,7 +141,26 @@ class CcQqPlugin(Star):
         decision = authorize(message, self.config)
         if not decision.allowed:
             if decision.reason == REASON_OUT_OF_SCOPE:
+                if message.conversation.kind is ConversationKind.PRIVATE:
+                    event.stop_event()
                 return
+        if (
+            message.conversation.kind is ConversationKind.PRIVATE
+            and not message.has_unsupported_segments
+            and is_recent_duplicate(
+                self._recent_private_incoming,
+                (message.conversation.storage_key(), message.sender_id, message.text),
+                int(time.time()),
+                PRIVATE_DUPLICATE_WINDOW_SECONDS,
+            )
+        ):
+            event.stop_event()
+            self.logger.info(
+                "%s 忽略重复私聊 message_id=%s",
+                LOG_PREFIX,
+                message.message_id,
+            )
+            return
         if should_ignore_as_stale(
             message.event_time,
             int(time.time()),
@@ -171,7 +194,23 @@ class CcQqPlugin(Star):
                 reply = SERVICE_ERROR_REPLY
 
         if reply:
+            outgoing_key = (message.origin, reply)
+            now = int(time.time())
+            last_sent = self._recent_outgoing.get(outgoing_key)
+            if (
+                last_sent is not None
+                and 0 <= now - last_sent <= PRIVATE_DUPLICATE_WINDOW_SECONDS
+            ):
+                self.logger.info("%s 忽略重复回复 origin=%s", LOG_PREFIX, message.origin)
+                return
             delivered = await send_text(self.context, message.origin, reply, self.logger)
+            if delivered:
+                is_recent_duplicate(
+                    self._recent_outgoing,
+                    outgoing_key,
+                    now,
+                    PRIVATE_DUPLICATE_WINDOW_SECONDS,
+                )
             if not delivered and decision.allowed:
                 self.store.mark_message(
                     message.conversation, message.message_id, RECEIPT_DELIVERY_FAILED
