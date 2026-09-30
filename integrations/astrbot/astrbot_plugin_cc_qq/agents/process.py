@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections import deque
 from contextlib import suppress
 from pathlib import Path
@@ -10,15 +11,42 @@ from typing import AsyncIterator
 
 from ..constants import (
     DEFAULT_AGENT_TIMEOUT_SECONDS,
+    LOG_PREFIX,
     MAX_AGENT_OUTPUT_LINE_BYTES,
     NO_WORK_DIR_REPLY,
     PROCESS_TERMINATE_GRACE_SECONDS,
+    STDERR_LOG_LINE_CHARS,
+    STDERR_LOG_LINE_COUNT,
     STDERR_TAIL_LINES,
 )
+
+logger = logging.getLogger("astrbot_plugin_cc_qq.agents.process")
 
 
 class AgentProcessError(Exception):
     """只暴露可安全展示的失败类型，不携带可能含密钥的原始 stderr。"""
+
+
+async def deliver_prompt(stdin, prompt: str, process) -> None:
+    """把用户文本写入标准输入。对端已关闭时转成代理错误。"""
+    try:
+        stdin.write((prompt + "\n").encode("utf-8"))
+        await stdin.drain()
+        stdin.close()
+    except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError) as exc:
+        code = process.returncode
+        if code is None:
+            with suppress(asyncio.TimeoutError):
+                await asyncio.wait_for(process.wait(), timeout=PROCESS_TERMINATE_GRACE_SECONDS)
+            code = process.returncode
+        shown = "未知" if code is None else str(code)
+        raise AgentProcessError(f"代理进程在接收消息前退出，退出码 {shown}") from exc
+
+
+def _stderr_for_log(tail: deque[str]) -> str:
+    lines = list(tail)[-STDERR_LOG_LINE_COUNT:]
+    clipped = [line[:STDERR_LOG_LINE_CHARS] for line in lines]
+    return " | ".join(clipped) if clipped else "无"
 
 
 class ProcessRunner:
@@ -60,9 +88,15 @@ class ProcessRunner:
         try:
             assert process.stdin is not None
             assert process.stdout is not None
-            process.stdin.write((prompt + "\n").encode("utf-8"))
-            await process.stdin.drain()
-            process.stdin.close()
+            try:
+                await deliver_prompt(process.stdin, prompt, process)
+            except AgentProcessError:
+                logger.error(
+                    "%s 代理标准输入已关闭，stderr 尾部：%s",
+                    LOG_PREFIX,
+                    _stderr_for_log(stderr_tail),
+                )
+                raise
 
             while True:
                 try:

@@ -47,6 +47,7 @@ class IncomingMessage:
     origin: str
     has_unsupported_segments: bool = False
     mentions_bot: bool = False
+    event_time: int | None = None
 
 
 @dataclass(frozen=True)

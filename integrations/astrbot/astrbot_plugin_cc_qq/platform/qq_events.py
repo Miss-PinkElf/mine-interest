@@ -4,11 +4,53 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ..constants import QQ_PLATFORM_NAME
+from ..constants import (
+    DEFAULT_STALE_MESSAGE_MAX_AGE_SECONDS,
+    EMPTY_MESSAGE_REPLY,
+    ONEBOT_MILLISECOND_TIMESTAMP_THRESHOLD,
+    QQ_PLATFORM_NAME,
+    STALE_MESSAGE_MAX_AGE_SECONDS_KEY,
+)
 from ..contracts import ConversationKey, ConversationKind, IncomingMessage
 
 
 SUPPORTED_TEXT_SEGMENTS = frozenset(("Plain", "At"))
+
+
+def onebot_event_time(event) -> int | None:
+    """只读 OneBot 原始 time。AstrBot 的 message_obj.timestamp 是收到时刻，不能用来判断过期。"""
+    message_obj = getattr(event, "message_obj", None)
+    raw = getattr(message_obj, "raw_message", None)
+    if not isinstance(raw, dict):
+        return None
+    value = raw.get("time")
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+        return None
+    return int(value)
+
+
+def stale_max_age_from_config(config: dict) -> int:
+    raw = config.get(STALE_MESSAGE_MAX_AGE_SECONDS_KEY, DEFAULT_STALE_MESSAGE_MAX_AGE_SECONDS)
+    if isinstance(raw, bool) or not isinstance(raw, int) or raw < 0:
+        return DEFAULT_STALE_MESSAGE_MAX_AGE_SECONDS
+    return raw
+
+
+def should_ignore_as_stale(event_time: int | None, now: int, max_age_seconds: int) -> bool:
+    if max_age_seconds == 0 or event_time is None:
+        return False
+    if event_time > ONEBOT_MILLISECOND_TIMESTAMP_THRESHOLD:
+        event_time //= 1000
+    age = now - event_time
+    if age < 0:
+        return False
+    return age > max_age_seconds
+
+
+def empty_text_reply(kind: ConversationKind) -> str | None:
+    if kind is ConversationKind.PRIVATE:
+        return None
+    return EMPTY_MESSAGE_REPLY
 
 
 def _segment_text(segments: list, self_id: str) -> str:
@@ -72,4 +114,5 @@ def parse_qq_event(event) -> Optional[IncomingMessage]:
         origin=str(getattr(event, "unified_msg_origin", "") or ""),
         has_unsupported_segments=has_unsupported_segments,
         mentions_bot=not is_private and _mentions_bot(segments, self_id),
+        event_time=onebot_event_time(event),
     )

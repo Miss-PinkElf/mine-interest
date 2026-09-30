@@ -82,5 +82,11 @@
     "type": "string",
     "hint": "桌面版 AstrBot 找不到 codex 时，填写其可执行文件绝对路径。",
     "default": "codex"
+  },
+  "stale_message_max_age_seconds": {
+    "description": "过期消息秒数（Stale Message Max Age）",
+    "type": "int",
+    "hint": "默认 180。消息原始发送时间早于这个秒数则忽略，不进入代理。填 0 表示不按时间忽略。",
+    "default": 180
   }
 }

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, StarTools, register
@@ -10,7 +11,6 @@ from astrbot.api.star import Context, Star, StarTools, register
 from .constants import (
     ENABLED_GROUP_IDS_KEY,
     CONFIGURATION_INVALID_REPLY,
-    EMPTY_MESSAGE_REPLY,
     INTERRUPTED_ON_RESTART_REPLY,
     LOG_PREFIX,
     NOT_ALLOWED_REPLY,
@@ -32,7 +32,7 @@ from .constants import (
     WORK_DIR_MISSING_REPLY,
 )
 from .contracts import ConversationKind, IncomingMessage
-from .platform.qq_events import parse_qq_event
+from .platform.qq_events import empty_text_reply, parse_qq_event, should_ignore_as_stale, stale_max_age_from_config
 from .platform.replies import send_text
 from .policy import authorize
 from .service import ConversationService
@@ -138,6 +138,19 @@ class CcQqPlugin(Star):
         if not decision.allowed:
             if decision.reason == REASON_OUT_OF_SCOPE:
                 return
+        if should_ignore_as_stale(
+            message.event_time,
+            int(time.time()),
+            stale_max_age_from_config(self.config),
+        ):
+            event.stop_event()
+            self.logger.info(
+                "%s 忽略过期消息 message_id=%s event_time=%s",
+                LOG_PREFIX,
+                message.message_id,
+                message.event_time,
+            )
+            return
         event.stop_event()
         if not decision.allowed:
             reason_replies = {
@@ -149,7 +162,7 @@ class CcQqPlugin(Star):
         elif message.has_unsupported_segments:
             reply = UNSUPPORTED_SEGMENT_REPLY
         elif not message.text:
-            reply = EMPTY_MESSAGE_REPLY
+            reply = empty_text_reply(message.conversation.kind)
         else:
             try:
                 reply = await self.service.handle(message, decision)
