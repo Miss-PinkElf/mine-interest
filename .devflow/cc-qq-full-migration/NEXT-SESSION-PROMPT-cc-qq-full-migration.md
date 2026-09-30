@@ -3,8 +3,8 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 11:00:28 +08:00
-- 更新时间（Updated At）：2026-09-29 17:04:38 +08:00
-- 作者（Author）：Codex
+- 更新时间（Updated At）：2026-09-30 15:38:00 +08:00
+- 作者（Author）：Grok
 - 目的（Purpose）：提供可直接复制到新对话的 mission 恢复指令。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
@@ -14,10 +14,10 @@
 
 ## 可复制提示词
 
-继续 `.devflow/cc-qq-full-migration/` mission。先读 `state.md` 与 `checkpoints.md`，再读 `handoffs/index.md` 指向的 `handoffs/2026-09-29-002-独立模型待运行验收.md`；详细任务见 `spec/tasks.md`。需要完整过程时再读 `development-overview.md`（若存在），追溯原始输入、旧状态和延期项时再读 `origin.md`、`state-history.md`、`deferred/阶段二至四功能.md`。遵守仓库 `AGENTS.md` 与 devflow 的 Align → Plan → Spec/Tasks → Apply 门禁。
+继续 `.devflow/cc-qq-full-migration/` mission。先读 `state.md` 与 `checkpoints.md`，再读 `handoffs/index.md` 指向的 `handoffs/2026-09-30-003-三项修复待真实验收.md`。任务勾选看 `spec/tasks.md`。需要完整过程时再读 `development-overview.md`（当前 mission 下没有这份文件）。追溯原始输入、旧状态或延期项时再读 `origin.md`、`state-history.md`、`backlog.md`、`deferred/`。遵守仓库 `AGENTS.md` 与 devflow 的 Align → Plan → Spec/Tasks → Apply 门禁。
 
-仓库插件源码 `integrations/astrbot/astrbot_plugin_cc_qq/` 已升至 `0.1.13`，新包 `integrations/astrbot/astrbot_plugin_cc_qq-v0.1.13-upload.zip` 根层含元数据。用户明确选择自行在 AstrBot 上传和填写配置，当前 AstrBot 运行的仍是旧版 `0.1.12`。`0.1.13` 新增 `default_claude_model` 和 `default_codex_model`，旧共享 `default_model` 停用，群规则 `model` 非空时优先，已有会话按持久化代理类型选模型。本轮代码与相关文档已提交为 `eb462ec`；交接文档另有后续提交。
+仓库和安装目录 `~/.astrbot/data/plugins/astrbot_plugin_cc_qq/` 都是 `0.1.14`。代码提交是 `7a714ac`，未推送。这一版包含 `0.1.13` 的 `default_claude_model` / `default_codex_model`，并加上三项第一版修复：私聊空文本静默、群聊空 @ 仍提示；`stale_message_max_age_seconds` 默认 180，填 0 关闭，非法值回落 180；标准输入 `ConnectionResetError` 收成带退出码的代理错误。`queued` 重放不按秒数过滤。配置 JSON 本轮没改，新键没保存时走默认 180。11 个单元测试在实现时通过。
 
-旧版 `0.1.12` 在 16:51–16:54 已通过 Codex 在群聊和私聊返回非空文本；此前未回复的问题由全局 `plugin_set`、群规则 JSON 和 CLI 短命令 PATH 引起，已记录于 `bug-log.md`。**Claude Code、`0.1.13` 独立模型、两代理恢复／中断和白名单组合仍未完成运行验收，不能宣布第一阶段通过。**当前旧会话均为 Codex；若要验证私聊 Claude Code，先在升级后使用 `/new` 建立新会话。
+用户已经说插件重载过了。上一会话按用户要求先收尾，没有读重载后的 `~/.astrbot/logs/backend.log`。下一步先确认日志里的版本是 `0.1.14`，再验证过期消息、空白私聊和代理早退。日志若仍是旧版，先说明，不要擅自再覆盖或重载。三条有证据之后，再做 Claude Code、双代理恢复／中断、白名单组合和 T03-M.4b、T04.4、T04.5。旧版 Codex 回复不能代替这些验收。
 
-下一步：让用户上传 `0.1.13` 包，在插件 UI 分别填写两个默认模型或留空；取得真实 QQ 证据并回填 T03-M.4b、T04.4、T04.5。`/model` 动态切换、任务、媒体、管理控制台和 A2A 是后续阶段必做能力，进入条件见 `deferred/阶段二至四功能.md`。工作区另有无关 `.vscode`、B 站资料 ZIP、`data/`、旧插件 ZIP 和原始提示词目录，未纳入本 mission 提交；不要擅自改动。后续代码变更继续提升版本，用户没有再次授权前不要提交。
+不要改 NapCat，不要改 AstrBot 核心，不要在没有原始补推事件时再加第二套过期启发式。`/model`、任务、媒体、`/qa`、管理页和 A2A 仍在阶段 2 之后，见 `deferred/阶段二至四功能.md`。`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md` 工作区有一条未提交、未讨论的私聊短时聚合，不要实现，也不要把它算进 cc-qq 提交；边界见 `deferred/第一版边界与未讨论项.md`。不要推送。不要动 B 站插件。根目录 `devflow-handoff.md` 只读。
