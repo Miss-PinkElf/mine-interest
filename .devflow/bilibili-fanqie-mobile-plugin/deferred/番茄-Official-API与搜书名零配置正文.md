@@ -5,6 +5,7 @@
 | 字段 | 内容 |
 |------|------|
 | 创建时间（Created At） | 2026-08-07 18:30:00 CST |
+| 更新时间（Updated At） | 2026-10-11 12:03:00 +08:00；补充本轮源码调查边界 |
 | 作者（Author） | Grok |
 | 目的（Purpose） | 结构化记录「Tomato 完整版式体验（搜书名、零配置正文）」为何本轮不做、与闭源 Official-API 的边界，以及后续触发条件 |
 | 关联仓库或项目（Related Repository / Project） | mine-interest-bilibili-fanqie |
@@ -13,7 +14,7 @@
 | 文档边界（Scope / Boundary） | 延期项真相源；**不**触发本轮实现；**不**把未开源 token/Official-API 写进产品代码 |
 | 关联 Align / Plan | `plans/2026-08-07-bilibili-fanqie-mobile-align.md`、`plans/2026-08-07-bilibili-fanqie-mobile-plan.md` Task 8–9 |
 | 关联分析 | `references/Tomato-Novel-Downloader-分析笔记.md` |
-| 关联上游 | `references/Tomato-Novel-Downloader/`（开源壳）；闭源 crate `tomato-novel-official-api` **不在本仓库** |
+| 关联上游 | 原参考 `references/Tomato-Novel-Downloader/`；新核验 `references/Tomato-Novel-Downloader-upstream/`，公开下载编排；其官方正文模式外部 crate 未包含在本轮克隆 |
 | 优先级说明 | 用户确认：**先推进 B站**；本项番茄增强整体延后 |
 
 ---
@@ -55,7 +56,7 @@
 | 误解 | 澄清 |
 |------|------|
 | 「Official-API = 番茄公司开放平台」 | **否**。是 Tomato 项目 feature/crate **命名**，封装对接番茄体系的 **闭源实现** |
-| 「开源仓库里有完整正文实现」 | **否**。`tomato-novel-official-api` 为 path 依赖，**浅克隆中不可见**；另有 Network-Core 等闭源组件 |
+| 「开源仓库里有完整正文实现」 | 公开了目录、请求、缓存、恢复、导出编排；官方模式关键取文调用位于外部路径依赖，本轮克隆不包含该源码。第三方客户端公开，但需实际明文服务 |
 | 「第三方地址池可直接抄进我们 App」 | **否**。README 写明地址与 token **不开源** |
 | 「个人用 Tomato 软件 = 可嵌入我们产品」 | **否**。个人跑二进制 ≠ 获得闭源再分发/嵌入授权 |
 
@@ -71,7 +72,7 @@ Tomato 完整版：闭源 Official-API（搜索+正文）± 内置第三方池
 ## 3. 本轮暂不做的原因
 
 1. **合规与授权**  
-   - 闭源 Official-API / 动态库 / 未开源 token **不能**合法干净地嵌进本仓库产品。  
+   - 本轮没有取得外部 Official-API 的源码和嵌入 / 分发许可；不能仅凭主仓库许可推定外部依赖授权。该事实不等于对所有未来方案作法律结论。
    - Align 已禁止「仓库硬编码闭源 token」。
 
 2. **架构决策已锁定（D012 等）**  
@@ -162,3 +163,10 @@ Tomato 完整版：闭源 Official-API（搜索+正文）± 内置第三方池
 | 时间 | 说明 |
 |------|------|
 | 2026-08-07 | 初建；用户确认 Official-API/搜书名/零配置正文单独延期，**优先 B站** |
+| 2026-10-11 | 补查当前公开下载编排，修正“开源壳 / 无思路”的过度概括；本轮只探索，原延期未自动恢复实施 |
+
+## 10. 2026-10-11 新探索与原延期的关系
+
+用户已重新要求探索番茄下载思路并考虑命令行工具（CLI）；可以继续调查，不受旧“先 B站”描述限制。当前 Tomato 编排公开，POf-L 历史也有 Python 下载器和批量 CLI。详见 `references/两个指定项目下载源码追踪-2026-10-11.md`。
+
+这修正了证据范围，没有批准新实现。新首版是否搜索 / 登录书架、是否必须全文、是否接受第三方等仍待讨论；见 `deferred/番茄下载探索待讨论与后续阶段-2026-10-11.md`。确认方向后重新对齐（Align）和计划（Plan）；原延期不是永久放弃，也不能把原 App 范围直接视为新 CLI 的最终限制。
