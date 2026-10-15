@@ -1,13 +1,14 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-21 15:25:25 +08:00
-- 更新时间（Updated At）：2026-09-21 18:38:00 +08:00
+- 更新时间（Updated At）：2026-10-15 22:35:00 +08:00
 - 作者（Author）：Codex。
 - 目的（Purpose）：说明 QQ 与 B 站当前「能拿到什么、拿不到什么」，以及还可以请用户帮忙测的样本。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
 - 关联规格（Related Spec）：`.devflow/multi-source-hub/spec/bilibili-readonly/`。
 - 关联延期（Related Deferred）：`.devflow/multi-source-hub/deferred/媒体落盘与机器人自身消息.md`、`.devflow/multi-source-hub/deferred/QQ指定群持续收集与规则筛选.md`。
+- 关联链路说明（Related Pipeline Doc）：`.devflow/multi-source-hub/qq-message-pipeline.md`。
 - 当前状态（Status）：能力说明（Capability Note）；根据已安装插件与 2026-09-21 实测整理，不是产品承诺。
 - 文档边界（Scope / Boundary）：说明文档。不批准新功能，不触发实现。凭证、真实快照、Cookie 不要写进仓库或聊天。
 
@@ -24,6 +25,8 @@
 | 数据目录 | 快照 `data/sourcehub-inspector/`；条目 `data/sourcehub/` | 旧档案 `plugin_data/...`；统一条目 `data/sourcehub/` |
 
 平台前提：QQ 走 **个人号 NapCat**，官方 QQ 机器人没有 `get_forward_msg`。B 站必须在本插件配置里填本地 `SESSDATA` 并打开 **启用只读采集**。
+
+**文档分工（2026-10-15 补注）**：本文讲「**能拿到什么**」，停留在 2026-09-21 的采集视角，早于日账本与按天归档。消息拿到之后的流转链路（配置 → 成条 → 按天落盘 → 媒体 → 整理 → 发布）见 `qq-message-pipeline.md`。
 
 ---
 

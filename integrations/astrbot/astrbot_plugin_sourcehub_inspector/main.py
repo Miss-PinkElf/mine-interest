@@ -88,7 +88,7 @@ def _describe_group(event: AstrMessageEvent) -> str:
     return group_name or group_id or "非群聊"
 
 
-@register("astrbot_plugin_sourcehub_inspector", "Codex", "保存消息事件快照并成条入库", "0.6.0")
+@register("astrbot_plugin_sourcehub_inspector", "Codex", "保存消息事件快照并成条入库", "0.6.1")
 class SourceHubInspector(Star):
     def __init__(self, context: Context, config: dict | None = None):
         super().__init__(context, config)

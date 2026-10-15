@@ -1,7 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-21 18:38:00 +08:00
-- 更新时间（Updated At）：2026-09-29 13:56:00 +08:00。
+- 更新时间（Updated At）：2026-10-15 22:50:00 +08:00。
 - 作者（Author）：Grok
 - 目的（Purpose）：沉淀本轮成条切片的踩坑。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub（`.`）。
@@ -21,3 +21,8 @@
 8. 交接写「还没重载」时，先看后端日志里的最后一次 `Plugin astrbot_plugin_sourcehub_bilibili (版本)`，再用插件列表接口核对。磁盘文件已经是新版本，不代表进程没加载；2026-09-29 10:52 已经加载 `0.3.2`，11:03 的交接仍写成未重载。
 8. GitHub 匿名接口容易被限流并返回 403。页面上的私有性要用已登录的 `gh` 判断。真正发布资料的闸门如果仍调用匿名检查，日志里的 `remote_private_unverified` 不会因为页面变绿而消失。
 9. B 站播放地址的主链接经常是 PCDN。`mountaintoys.cn` 是 2025 年的调度域名，非 443 端口和 `os=mcdn` 都是信号。先用备用地址里的 `.bilivideo.com`；没有时只改写 `/upgcxcode` 的主机，按 `og` 选官方镜像。`/v1/resource` 不要改写。专栏 `link_type` 1 是视频 `av`，15 是专栏 `cv`。自带 `link` 的卡片直接用原文链接。
+10. **不要从「整篇渲染结果」里抠一行当摘要。** 2026-10-15 的日文档多行截断就是这么来的：`render_content_md(envelope).splitlines()[-1]` 在单行消息下偶然等于正文，多行消息下必然只剩最后一行。需要「正文」就问渲染层要正文（本轮加了 `render_message_body_md`），不要用 `[-1]`、固定行号、或「跳过以 `- ` 开头的行」这类启发式——后者会误伤以列表开头的消息，固定行号会在带缺口小节时错位。
+11. **同一段代码被两种数据形态共用时，缺陷会只在一种形态下暴露。** 这个截断在 2026-09-22 到 09-30 一直没被发现，只因为那几天的群消息恰好都是单行（`hihi`/`泥嚎`）。写回归测试时要显式覆盖「多行」这一形态，别只测一行。
+12. **改共享库时要连历史数据一起想。** 修好代码只解决「以后」；已经写坏的记录不会自己变好，而且 `_write_daily_index` 会原样保留摘要块。修历史要用**与修复后同一个函数**重投影（本轮一次性命令按日账本重建），不要手工敲一遍——那样格式会与代码漂移，且不可复现。改真实 Vault 前先备份。
+13. **`unittest discover` 必须带 `-t .`。** `tests/__init__.py` 用相对导入做引导，`discover -s tests` 会把 `tests` 当顶层目录，导致 `test_sourcehub_vendoring` 报 `attempted relative import with no known parent package`。正确命令：`PYTHONPATH=backend/src backend/.venv/bin/python -m unittest discover -s tests -t . -p 'test_*.py'`。
+14. **验证「纯重构」要比对输出，不能只看测试绿。** 本轮把改动前的 `markdown.py` 从 `HEAD` 取出，对 8 类封套（QQ 单行/多行/带缺口/图片/转发树/未知节点/文件节点 + B 站作品）逐字比对 `render_content_md`。既有测试绿只能说明没测到差异，不能说明没有差异。

@@ -62,6 +62,32 @@ class VaultTests(unittest.TestCase):
             vault.upsert(item, object_key="BV1xx")
             self.assertEqual(vault.lookup("bilibili", "BV1xx"), "bilibili:video:BV1xx")
 
+    def test_daily_message_single_line_output_unchanged(self):
+        """单行消息的摘要行与修复前逐字一致，作为回归保护。"""
+        with tempfile.TemporaryDirectory() as folder:
+            vault = Vault(Path(folder), git_enabled=False)
+            vault.append_daily_message(envelope(text="单独一条"))
+            text = (Path(folder) / "items" / "qq" / "2026-09-21" / CONTENT_FILE).read_text(encoding="utf-8")
+            self.assertIn("- `5` 单独一条\n", text)
+
+    def test_daily_message_keeps_multiline_body(self):
+        """多行消息不能只留最后一行；续行按两空格缩进，空行保持为空行。"""
+        with tempfile.TemporaryDirectory() as folder:
+            vault = Vault(Path(folder), git_enabled=False)
+            vault.append_daily_message(envelope(text="第一行\n第二行\n\n第四行"))
+            text = (Path(folder) / "items" / "qq" / "2026-09-21" / CONTENT_FILE).read_text(encoding="utf-8")
+            self.assertIn("- `5` 第一行\n  第二行\n\n  第四行\n", text)
+
+    def test_daily_message_omits_envelope_header(self):
+        """摘要行是消息正文，不得把封套头部元信息带进 bullets。"""
+        with tempfile.TemporaryDirectory() as folder:
+            vault = Vault(Path(folder), git_enabled=False)
+            vault.append_daily_message(envelope(text="正文"))
+            text = (Path(folder) / "items" / "qq" / "2026-09-21" / CONTENT_FILE).read_text(encoding="utf-8")
+            messages = text[text.index("## 实时消息（Live Messages）"):]
+            self.assertNotIn("平台（Platform）", messages)
+            self.assertNotIn("接收时间（Received At）", messages)
+
     def test_git_commit_includes_item_id_and_skips_private(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

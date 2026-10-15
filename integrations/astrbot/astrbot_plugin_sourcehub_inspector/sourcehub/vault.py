@@ -12,10 +12,24 @@ from typing import Optional
 from .constants import CATALOG_FILE, CONTENT_FILE, ENVELOPE_FILE, ITEM_DIR, MEDIA_DIR, SPOOL_DIR
 from .envelope import Envelope, item_relpath
 from .gitstore import commit_item
-from .markdown import render_content_md
+from .markdown import render_content_md, render_message_body_md
 from .paths import item_storage_path
 
 DAILY_MESSAGES_HEADING = "## 实时消息（Live Messages）"
+DAILY_MESSAGE_CONTINUATION_INDENT = "  "
+
+
+def format_daily_message_entry(event_id: str, body: str) -> str:
+    """把一条普通消息投影成日文档 bullet。
+
+    首行跟随事件 ID，其余行按固定缩进续写，空行保持为空行；
+    多行正文因此不会被截成一行。
+    """
+    lines = body.splitlines() or [""]
+    entry = [f"- `{event_id}` {lines[0]}"]
+    for line in lines[1:]:
+        entry.append(f"{DAILY_MESSAGE_CONTINUATION_INDENT}{line}" if line.strip() else "")
+    return "\n".join(entry)
 
 
 def atomic_write(path: Path, data: bytes) -> None:
@@ -103,7 +117,8 @@ class Vault:
         current = index_path.read_text(encoding="utf-8") if index_path.exists() else f"# qq {path_parts[1]}\n\n"
         if DAILY_MESSAGES_HEADING not in current:
             current = current.rstrip() + f"\n\n{DAILY_MESSAGES_HEADING}\n"
-        current += f"\n- `{envelope.event_id}` {render_content_md(envelope).splitlines()[-1]}\n"
+        body = render_message_body_md(envelope)
+        current += f"\n{format_daily_message_entry(envelope.event_id, body)}\n"
         atomic_write(index_path, current.encode("utf-8"))
 
     def _init_catalog(self) -> None:

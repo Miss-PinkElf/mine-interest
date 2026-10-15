@@ -1,6 +1,6 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-09-29 10:51:00 +08:00。
+- 更新时间（Updated At）：2026-10-15 22:28:11 +08:00。
 - 作者（Author）：rin（Claude 协助）。
 - 目的（Purpose）：恢复插件诊断上下文。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
@@ -10,6 +10,21 @@
 - 文档边界（Scope / Boundary）：本任务记录；诊断插件不代表完整信息中心已获准实施。
 
 # 问题清单（Bug Log）
+
+## 2026-10-15：QQ 日文档摘要多行截断
+
+| 问题现象 | 问题原因 | 解决方案与状态 |
+| --- | --- | --- |
+| 群里发一条多行普通消息后，`items/qq/<日期>/content.md` 的「实时消息（Live Messages）」区只出现正文的**最后一行**，前面几行全部丢失。样本：2026-10-15 群 `836229427` 的消息 `1441885612`（204 字，7 行），日文档只留下了第二段 | `sourcehub/vault.py` 的 `append_daily_message` 用 `render_content_md(envelope).splitlines()[-1]` 取摘要。`render_content_md` 返回的是「封套头部元信息 + 正文」整篇 Markdown，取最后一行在**单行消息**下偶然等于正文，**多行消息**下必然只剩最后一行 | **已修复（2026-10-15）**。渲染层拆出 `markdown.py` 的 `_envelope_header_lines` / `_envelope_body_lines`，新增 `render_message_body_md`（`render_content_md` 输出保持字节级不变）；`vault.py` 新增 `format_daily_message_entry` 与 `DAILY_MESSAGE_CONTINUATION_INDENT`，多行正文按续行 2 空格缩进。已加回归测试（单行输出逐字不变 + 多行全保留）。历史条目已按日账本重投影。插件升版 inspector `0.6.1` / B 站 `0.3.3` 并覆盖插件目录，**待重载后真实消息复现验收**。计划见 `plans/2026-10-15-QQ日文档摘要多行截断修复与链路说明-plan.md` |
+| 排查时误以为「日文档只有 1 条消息 = 采集漏了」 | 普通消息走日账本分支时不 `upsert`，当日目录下没有 `message/` 子目录。这是 2026-09-22 的既定设计（延迟成条），不是缺陷 | **不是 Bug**。`@机器人 整理` 或午夜调度成条后即出现 `message/` 目录。已记入链路说明文档 |
+
+补充证据：
+
+- 日志侧无异常。`backend.log` 22:10:15 有 `[Core] [Test-01(aiocqhttp)] C#/1961618848:` 原样消息与 `[SourceHub Inspector] 已保存消息快照`，没有 `成条入库失败`。
+- 完整原文没有丢：日账本 `spool/qq_daily/836229427/2026-10-15.json` 存有 204 字全文；成条后 Item 的 `content.md` 也是全文。
+- 在 Vault 副本上用真实代码复现 `render_content_md(env).splitlines()[-1]`，输出与日文档中那一行逐字一致，根因坐实。
+- 影响面复扫「日文档摘要行 vs 日账本原文」全部日期：**仅 2026-10-15 这 1 条**。此前的日子恰好都是单行消息（`hihi`/`泥嚎`），缺陷被掩盖。
+- 注：日文档是索引加摘要，不是真相源，因此本缺陷不构成数据丢失，但它会长期留在日文档里且不会被 `_write_daily_index` 自动覆盖（该函数会原样保留「实时消息」块）。
 
 ## 2026-09-29：播放地址与专栏链接卡片
 

@@ -27,6 +27,20 @@ def media_href(envelope: Envelope, filename: str) -> str:
 def render_content_md(envelope: Envelope) -> str:
     if envelope.platform == "bilibili" and (envelope.grouping or {}).get("type") == "work_object":
         return _render_bilibili(envelope)
+    return "\n".join(_envelope_header_lines(envelope) + _envelope_body_lines(envelope)).rstrip() + "\n"
+
+
+def render_message_body_md(envelope: Envelope) -> str:
+    """只取消息正文，不含封套头部元信息，供需要「纯正文」的调用方复用。
+
+    日文档摘要（`Vault.append_daily_message`）用它，避免再从整篇 Markdown 里
+    靠行数或行首特征去猜正文起点。
+    """
+    return "\n".join(_envelope_body_lines(envelope)).rstrip()
+
+
+def _envelope_header_lines(envelope: Envelope) -> list[str]:
+    """封套头部：身份、来源与缺口，属于元信息，不是消息正文。"""
     lines = [
         f"# {envelope.item_id}",
         "",
@@ -43,9 +57,15 @@ def render_content_md(envelope: Envelope) -> str:
         for gap in envelope.gaps:
             lines.append(f"- {gap}")
         lines.append("")
+    return lines
+
+
+def _envelope_body_lines(envelope: Envelope) -> list[str]:
+    """消息正文：按顺序渲染内容节点。"""
+    lines: list[str] = []
     for node in envelope.content:
         lines.extend(_render_node(envelope, node))
-    return "\n".join(lines).rstrip() + "\n"
+    return lines
 
 
 def _render_bilibili(envelope: Envelope) -> str:
