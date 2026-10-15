@@ -7,13 +7,16 @@
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
 - 原始需求（Original Requirement）：`zzz-prompt-debug/prompt-1.md` 第 34–38、50–58 行；本轮追加见当日会话。
 - 最新计划（Latest Plan）：`plans/2026-10-15-QQ日文档摘要多行截断修复与链路说明-plan.md`。
-- 最新交接（Latest Handoff）：`handoffs/2026-09-29-013-运行版本核对与等待点名.md`（早于本轮）。
+- 最新交接（Latest Handoff）：`handoffs/2026-10-15-014-QQ日文档摘要修复与收尾.md`。
+- 关联延期（Related Deferred）：`deferred/QQ日文档摘要首版边界与待验收.md`。
+- 关联说明（Related Doc）：`qq-message-pipeline.md`。
 - 当前状态（Status）：QQ 日文档摘要多行截断已修复（代码 + 历史 + 部署），**待重载后验收**。需求 4 Verify、需求 7 Close 仍开。
 - 文档边界（Scope / Boundary）：本任务记录；不代表整体信息中心 14 项已获准实施。
 
 # 当前状态（2026-10-15 轮）
 
-- 路径：轻量路径（Light Path）。任务 1–5 已完成，任务 6 只剩「重载插件 + 真实消息复现」与「是否提交」。
+- 路径：轻量路径（Light Path）。任务 1–5 已完成；任务 6 的部署、重载与真实多行消息验证已完成，**只剩 `@机器人 整理` 的端到端确认**。
+- 代码提交：`930e4d5`「修复 QQ 日文档摘要多行截断并补充采集链路说明」（26 个文件）。
 - 本轮缺陷：日文档「实时消息（Live Messages）」区只保留正文最后一行。根因 `vault.py` 用 `render_content_md(envelope).splitlines()[-1]`；全库复扫仅 2026-10-15 的 `1441885612` 1 条受影响。详见 `bug-log.md`。
 - 代码改动：`sourcehub/markdown.py`（新增 `render_message_body_md`，`render_content_md` 输出不变）、`sourcehub/vault.py`（`format_daily_message_entry` + 续行缩进常量）。各 3 份副本已同步并复核一致。**未 commit。**
 - 插件版本：inspector `0.6.0 → 0.6.1`，B 站 `0.3.2 → 0.3.3`（B 站行为未变，仅同步共享库，以保持两副本一致）。
