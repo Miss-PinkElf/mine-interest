@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 16:39:25 +08:00
-- 更新时间（Updated At）：2026-09-30 15:52:00 +08:00
+- 更新时间（Updated At）：2026-10-23 00:00:00 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录第一阶段真实 QQ 验收时发现的问题、原因和解决方案。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -56,3 +56,20 @@
 - 问题现象：机器人号 `1961618848` 与真人 `1968401530`（风刀霜剑）的私聊里，反复出现「当前 QQ 账号未获此会话授权，请联系插件管理员。」用户口述成「未获得对话授权」，是同一句。`send_text` 不走 `Prepare to send` 的正文，所以 `backend.log` 里搜不到这句原文。
 - 问题原因：15:29 第一次加载 `0.1.14` 时私聊仍启用，`1968401530` 的 Claude 私聊到 15:42:30 都有 `done` 回执。15:42:38 再次重载后日志仍写「私聊 启用」，但之后的「唉」「没意思」以及大量 `1968401530/1968401530` 空白事件都没有写入 SQLite 回执，说明没有进 `ConversationService.handle`。`authorize()` 对私聊普通成员只认 `private_user_ids`；不在名单就返回 `REASON_NOT_ALLOWED`，而且这条判断在空文本静默之前。同一机器人号双端登录产生的空白私聊因此每条都会回未授权。15:44:34 保存插件配置后重载为「私聊 关闭」。当前磁盘配置是 `private_enabled: false`、`private_user_ids: []`，同时多了 `stale_message_max_age_seconds: 180`。原先的 `["1968401530"]` 被这次保存清掉。15:44 之后空白事件不再 `Prepare to send`，因为私聊关闭走的是范围外静默，不再回未授权。
 - 解决方案：用户确认非白名单私聊也不回复，并且不要连发同一句。`0.1.16` 把私聊未在名单且不是 owner／管理员的情况改成范围外静默并停止事件；同一私聊同一正文 10 秒内只处理一次，相同回复不连发。群聊 @ 后未授权仍提示。现场配置仍是私聊关闭、名单为空。需要重载 `0.1.16` 后生效。
+
+## 2026-10-23 — 权限分级实现中发现的三个绕过与一个可用性缺口
+
+- 问题现象：
+  1. Claude Code 2.1.202 的 `bypassPermissions` 实测不执行 `permissions.deny`：`Write` 可写入 `/etc` 与 `~/.ssh`，完全权限档的“关键路径保护”形同虚设。
+  2. Codex 传统 `read-only` 只限制写入，不限制读取；guest 可以读取工作目录外的文件。
+  3. workspace 档的 Bash 沙箱只限制写，不限制读；`cat ~/Documents/other/.env` 既不需要审批也不会被沙箱拦截。
+  4. 只读档只靠 `--tools` 与 deny 规则，`Read` 仍可读取工作目录外文件；最低信任角色反而比 workspace 更宽。
+  5. 审批卡片只发来源会话，私聊成员触发审批时管理员收不到。
+- 问题原因：把 CLI 文档中的“deny 优先”当成所有模式都成立；没有区分 Claude 内置文件工具与 shell 沙箱的边界；Codex `read-only` 的读取范围没有被租户配置收紧；只读档没有 PreToolUse hook；审批通知没有管理员来源。
+- 解决方案：
+  - 完全权限档改为 `dontAsk + guard_hook`：默认放行，拦截凭据目录、系统目录与 `sudo`／关机／格式化／`rm -rf /` 等；不再使用 `bypassPermissions`。
+  - 只读档增加 `readonly_hook`，`Read/Grep/Glob` 越界直接拒绝，`--tools` 继续限制工具面。
+  - workspace 档 Bash 增加“工作目录外路径引用”审批；硬拒绝命令（`sudo` 等）不再进入审批。
+  - Codex 改用权限档案 `ccqq-readonly`、`ccqq-workspace`，实测能限制工作区外读写与 `/tmp`。
+  - 审批卡片尽力发往 owner／管理员最近一次交互来源；仍要求管理员本次加载后发言过。
+  - 83 个单元测试通过；真机 AstrBot/QQ 验收仍未做。

@@ -1,0 +1,8 @@
+# cc-qq 基础配置（由 /initbase 生成）
+# 是否生效取决于 Codex 是否读取项目级配置；插件运行时以命令行参数为准。
+
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+network_access = false

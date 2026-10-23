@@ -3,24 +3,38 @@
 from __future__ import annotations
 
 import asyncio
-from contextlib import aclosing
 from pathlib import Path
 
 from .agents.claude import ClaudeAdapter
 from .agents.codex import CodexAdapter
 from .agents.process import ProcessRunner
+from .agents.profiles import claude_setting_sources, ensure_claude_settings
+from .async_utils import aclosing
 from .constants import (
+    AGENT_ENV_CONVERSATION_KEY,
+    AGENT_ENV_ORIGIN,
+    AGENT_ENV_PROFILE,
+    AGENT_ENV_ROLE,
+    AGENT_ENV_SENDER_ID,
+    AGENT_ENV_WORK_DIR,
     AGENT_NO_TEXT_REPLY,
+    APPROVAL_HOOK_DIR_NAME,
+    APPROVAL_HOOK_SCRIPT_NAME,
     CLAUDE_COMMAND,
     CLAUDE_COMMAND_KEY,
     CODEX_COMMAND,
     CODEX_COMMAND_KEY,
+    DANGER_APPROVAL_TIMEOUT_SECONDS_KEY,
+    DEFAULT_DANGER_APPROVAL_TIMEOUT_SECONDS,
+    MAX_DANGER_APPROVAL_TIMEOUT_SECONDS,
+    MIN_DANGER_APPROVAL_TIMEOUT_SECONDS,
     NO_ACTIVE_SESSION_REPLY,
     RECEIPT_CANCELLED,
     RECEIPT_DONE,
     RECEIPT_ERROR,
     RECEIPT_PROCESSING,
 )
+from .permissions import PROFILE_WORKSPACE, clamp_approval_timeout
 from .contracts import (
     AgentEventKind,
     AgentRequest,
@@ -34,9 +48,10 @@ from .storage import SessionStore
 
 
 class SessionManager:
-    def __init__(self, store: SessionStore, config: dict):
+    def __init__(self, store: SessionStore, config: dict, data_dir: Path | None = None):
         self.store = store
         self.config = config
+        self.data_dir = Path(data_dir) if data_dir else Path(store.data_dir)
         self.processes = ProcessRunner()
         claude_command = str(config.get(CLAUDE_COMMAND_KEY) or CLAUDE_COMMAND).strip()
         codex_command = str(config.get(CODEX_COMMAND_KEY) or CODEX_COMMAND).strip()
@@ -47,6 +62,24 @@ class SessionManager:
         self._locks: dict[str, asyncio.Lock] = {}
         self._running: dict[str, asyncio.Task] = {}
         self._closing = False
+        self._approval_env: dict[str, str] = {}
+        self._approval_timeout_seconds = clamp_approval_timeout(
+            config.get(DANGER_APPROVAL_TIMEOUT_SECONDS_KEY),
+            DEFAULT_DANGER_APPROVAL_TIMEOUT_SECONDS,
+            MIN_DANGER_APPROVAL_TIMEOUT_SECONDS,
+            MAX_DANGER_APPROVAL_TIMEOUT_SECONDS,
+        )
+        self._approval_hook_script = (
+            Path(__file__).resolve().parent / APPROVAL_HOOK_DIR_NAME / APPROVAL_HOOK_SCRIPT_NAME
+        )
+
+    def set_approval_env(self, env: dict[str, str]) -> None:
+        """审批服务启动后注入 hook 需要的本机地址与 token。"""
+        self._approval_env = dict(env)
+
+    def is_running(self, conversation: ConversationKey) -> bool:
+        task = self._running.get(conversation.storage_key())
+        return task is not None and not task.done()
 
     @property
     def is_closing(self) -> bool:
@@ -75,7 +108,7 @@ class SessionManager:
             self.store.mark_message(conversation, message_id, RECEIPT_PROCESSING)
             record = self.store.active(conversation) or self.store.create(conversation, settings)
             return await self._execute(
-                record, self._model_for_record(record, settings), prompt, message_id
+                record, self._model_for_record(record, settings), prompt, message_id, settings
             )
 
     async def new(
@@ -85,7 +118,11 @@ class SessionManager:
             self._ensure_open()
             self.store.mark_message(conversation, message_id, RECEIPT_PROCESSING)
             record = self.store.create(conversation, settings)
-            reply = await self._execute(record, settings.model, prompt, message_id) if prompt else None
+            reply = (
+                await self._execute(record, settings.model, prompt, message_id, settings)
+                if prompt
+                else None
+            )
             return record, reply
 
     async def resume(self, conversation: ConversationKey, identifier: str) -> SessionRecord | None:
@@ -110,7 +147,7 @@ class SessionManager:
             if record is None or not record.agent_session_id:
                 return NO_ACTIVE_SESSION_REPLY
             return await self._execute(
-                record, self._model_for_record(record, settings), prompt, message_id
+                record, self._model_for_record(record, settings), prompt, message_id, settings
             ) or ""
 
     async def interrupt(self, conversation: ConversationKey) -> bool:
@@ -132,18 +169,48 @@ class SessionManager:
             await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _execute(
-        self, record: SessionRecord, model: str, prompt: str, message_id: str
+        self,
+        record: SessionRecord,
+        model: str,
+        prompt: str,
+        message_id: str,
+        settings: SessionSettings,
     ) -> str | None:
         key = record.conversation.storage_key()
         task = asyncio.current_task()
         if task is not None:
             self._running[key] = task
+        profile = settings.permission_profile
+        claude_settings_path = ""
+        if record.agent_type == "claude":
+            claude_settings_path = ensure_claude_settings(
+                self.data_dir,
+                profile,
+                self._approval_hook_script,
+                self._approval_timeout_seconds,
+            )
+        process_env = {
+            AGENT_ENV_PROFILE: profile,
+            AGENT_ENV_ROLE: settings.role,
+            AGENT_ENV_WORK_DIR: record.work_dir,
+            AGENT_ENV_CONVERSATION_KEY: key,
+            AGENT_ENV_SENDER_ID: settings.sender_id,
+            AGENT_ENV_ORIGIN: settings.origin,
+        }
+        if profile == PROFILE_WORKSPACE:
+            process_env.update(self._approval_env)
         request = AgentRequest(
             conversation=record.conversation,
             work_dir=record.work_dir,
             message=prompt,
             model=model,
             agent_session_id=record.agent_session_id,
+            permission_profile=profile,
+            sender_id=settings.sender_id,
+            origin=settings.origin,
+            claude_settings_path=claude_settings_path,
+            claude_setting_sources=claude_setting_sources(self.config),
+            process_env=process_env,
         )
         parts: list[str] = []
         final_text = ""

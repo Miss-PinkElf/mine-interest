@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:33:00 +08:00
-- 更新时间（Updated At）：2026-09-29 16:55:23 +08:00
+- 更新时间（Updated At）：2026-10-23 00:00:00 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：约定第一阶段的模块边界、数据契约、调用顺序与异常处理。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -55,9 +55,30 @@ QQ／AstrBot 事件
 1. `qq_events.py` 从 AstrBot 事件取得平台 ID、群／私聊类型、会话 ID、发送者 QQ ID、消息 ID 和文本；复合会话键为“平台实例 + 群／私聊 + 对应 ID”。群聊还需读取当前机器人 QQ ID 和 `At` 段目标，以精确匹配判断是否 @ 当前机器人；无法可靠读取时不通过门禁。只移除当前机器人 @ 段，保留其他文本；私聊不要求 @。阶段 1 的非文本段在通过准入后给出明确提示，阶段 2 再提取附件。
 2. `policy.py` 先检查平台与群／私聊启用范围，再检查 owner／管理员或白名单。群号白名单使用 `enabled_group_ids`，群成员名单使用 `group_rules_json.allowed_user_ids`。群聊 @ 门禁在命令和代理分派前统一执行，未命中时静默；拒绝结果不会调用 `ConversationService` 或 CLI。消息准入和代理执行权限分别保存；不能把白名单说成文件系统限制。
 3. `service.py` 用消息 ID 做去重，匹配显式命令。普通文本进入当前会话的异步锁和队列；同一会话按到达顺序执行，不同会话独立。会话及消息处理状态在 SQLite 事务中更新。
-4. `ProcessRunner` 用 `asyncio.create_subprocess_exec` 启动 CLI，参数以数组传递、消息通过标准输入（stdin）传递。Claude 使用 `--print --output-format stream-json --verbose` 与 `--resume`；Codex 使用 `exec --json` 与 `exec resume`。普通会话保留源代码的 `bypassPermissions`、`danger-full-access` 默认值。代理输出映射为统一事件，服务仅识别统一事件。
+4. `ProcessRunner` 用 `asyncio.create_subprocess_exec` 启动 CLI，参数以数组传递、消息通过标准输入（stdin）传递。Claude 使用 `--print --output-format stream-json --verbose` 与 `--resume`；Codex 使用 `exec --json` 与 `exec resume`。代理参数按每轮权限档位生成：只读、工作目录读写、完全权限。代理输出映射为统一事件，服务仅识别统一事件。
 5. CLI 发出的会话 ID／线程 ID 持久化；`/new` 创建新历史，`/resume` 限当前复合会话键，`/end` 标为结束，`/goon` 用当前 ID 重新执行，`/!` 中断当前进程并恢复队列推进。插件重载时终止进程，但保留可恢复的会话 ID。
 6. 回复模块对长文本顺序分段，并通过 AstrBot 的消息来源标识发送。发送失败写入回执状态并记录脱敏错误类型；不在群中回显密钥或完整环境变量。即时确认和进度提示进入第二阶段。
+
+## 权限分级与审批（Permission Profiles & Approval）
+
+```
+QQ 消息
+  → policy.py 判定角色（owner/admin/member/guest）与每轮档位
+  → sessions.py 将档位、发送者、来源写入 AgentRequest
+  → agents/profiles.py 生成 CLI 参数与 Claude settings
+  → Claude：dontAsk / acceptEdits + 沙箱 / dontAsk + 守护 hook
+  → Codex：read-only / workspace-write / danger-full-access
+```
+
+- 角色与档位：guest=`readonly`，member=`workspace`，owner／管理员=`full`；群规则可覆盖 guest／member 档位。档位按每轮发言者计算，不写入会话记录，避免同群用户继承权限。
+- Claude 只读：`--permission-mode dontAsk` + `--tools "Read,Grep,Glob,TodoWrite"`；默认 `--setting-sources ""`，不让工作区自带 settings 参与。
+- Claude 工作区读写：`--permission-mode acceptEdits` + `--settings` 注入 Seatbelt/bubblewrap 沙箱、`autoAllowBashIfSandboxed`、`allowUnsandboxedCommands`、关键路径 deny 与 PreToolUse 审批 hook。
+- Claude 完全权限：`--permission-mode dontAsk` + 全量守护 hook。2.1.202 实测 `bypassPermissions` 不执行 deny 规则，因此改为「默认放行、只拦凭据/系统目录与系统级危险命令」，hook 异常时拒绝。
+- Codex：`readonly`/`workspace` 使用权限档案（`ccqq-readonly`、`ccqq-workspace`）收紧读写范围并排除 `/tmp`；`full` 使用 `sandbox_mode="danger-full-access"`；统一 `approval_policy="never"`。
+- 审批：PreToolUse hook 读取 stdin 工具调用，经本机 127.0.0.1 JSON 行协议请求 `ApprovalBroker`；broker 在来源会话发送审批号，owner／管理员用 `/approve`、`/deny` 回复。审批命令在 `main.py` 队列前处理，避免与会话锁死锁；超时、异常、broker 不可达一律拒绝。
+- 工作目录：管理员 `/cd` 仅能进入 `allowed_work_dirs` 的 `realpath` 子目录；覆盖值按复合会话键存入 SQLite；下次新会话生效。
+- 审计：`permission_audit` 表记录审批和拒绝事件；摘要截断，不记录密钥。
+- 已知边界：Codex `exec` 的非交互审批仍为 under development，本轮只依赖 OS 沙箱硬边界；字符串危险命令规则有绕过空间，OS 沙箱才是主边界。
 
 ## 关闭与恢复细节
 

@@ -3,19 +3,32 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 
-from .commands.registry import parse_command
+from .commands.registry import command_allowed, parse_command
 from .commands.session import (
     cc_prompt,
+    cd_success_text,
     help_text,
     info_text,
+    initbase_text,
     new_session_text,
+    pwd_text,
     resumed_session_text,
 )
 from .constants import (
     AGENT_INTERRUPTED_REPLY,
+    APPROVAL_BROKER_ERROR_REPLY,
+    APPROVAL_USAGE_REPLY,
     CC_USAGE_REPLY,
+    CD_NOT_CONFIGURED_REPLY,
+    CD_NOT_DIRECTORY_REPLY,
+    CD_OUTSIDE_ROOTS_REPLY,
+    CD_RUNNING_REPLY,
+    CD_USAGE_REPLY,
     CONTINUE_PROMPT,
+    INITBASE_FAILED_REPLY,
+    NO_COMMAND_PERMISSION_REPLY,
     NO_RUNNING_AGENT_REPLY,
     NO_SESSION_TO_END_REPLY,
     NO_SESSION_TO_RESUME_REPLY,
@@ -24,16 +37,32 @@ from .constants import (
     RECEIPT_ERROR,
     RECEIPT_QUEUED,
     SESSION_ENDED_REPLY,
+    WORK_DIR_MISSING_REPLY,
 )
-from .contracts import AuthorizationDecision, IncomingMessage, SessionSettings
+from .contracts import (
+    AuthorizationDecision,
+    ConversationKey,
+    IncomingMessage,
+    SessionSettings,
+)
+from .permissions import allowed_work_dir, resolve_path, workspace_roots
 from .sessions import SessionManager
 from .storage import SessionStore
+from .templates import init_base_templates
 
 
 class ConversationService:
-    def __init__(self, store: SessionStore, sessions: SessionManager):
+    def __init__(
+        self,
+        store: SessionStore,
+        sessions: SessionManager,
+        config: dict | None = None,
+        approvals=None,
+    ):
         self.store = store
         self.sessions = sessions
+        self.config = config or {}
+        self.approvals = approvals
 
     async def handle(
         self, message: IncomingMessage, decision: AuthorizationDecision, claimed: bool = False
@@ -68,10 +97,27 @@ class ConversationService:
         self, message: IncomingMessage, settings: SessionSettings, name: str, argument: str
     ) -> str | None:
         conversation = message.conversation
+        if not command_allowed(settings.role, name):
+            return NO_COMMAND_PERMISSION_REPLY
+
         if name == "/help":
-            return help_text()
+            return help_text(settings.role)
         if name == "/info":
             return info_text(self.store.active(conversation))
+        if name == "/pwd":
+            return pwd_text(settings)
+        if name == "/cd":
+            return self._change_work_dir(conversation, settings, argument)
+        if name == "/initbase":
+            return self._init_base(settings)
+        if name in ("/approve", "/deny"):
+            if self.approvals is None:
+                return APPROVAL_BROKER_ERROR_REPLY
+            if not argument:
+                return APPROVAL_USAGE_REPLY
+            return self.approvals.resolve(
+                argument.strip(), name == "/approve", settings.sender_id
+            )
         if name == "/!":
             interrupted = await self.sessions.interrupt(conversation)
             if argument:
@@ -104,3 +150,34 @@ class ConversationService:
                 conversation, settings, cc_prompt(argument), message.message_id
             )
         return None
+
+    def _change_work_dir(
+        self, conversation: ConversationKey, settings: SessionSettings, argument: str
+    ) -> str:
+        if not argument:
+            return CD_USAGE_REPLY
+        if not workspace_roots(self.config):
+            return CD_NOT_CONFIGURED_REPLY
+        raw = Path(argument.strip()).expanduser()
+        if not raw.is_absolute():
+            raw = Path(settings.work_dir) / raw
+        target = resolve_path(raw)
+        if not allowed_work_dir(str(target), self.config):
+            return CD_OUTSIDE_ROOTS_REPLY
+        if not target.is_dir():
+            return CD_NOT_DIRECTORY_REPLY
+        # 当前有代理执行时拒绝切换，避免执行中工作目录漂移。
+        if self.sessions.is_running(conversation):
+            return CD_RUNNING_REPLY
+        self.store.set_work_dir_override(conversation, str(target))
+        self.store.end(conversation)
+        return cd_success_text(str(target))
+
+    def _init_base(self, settings: SessionSettings) -> str:
+        if not Path(settings.work_dir).is_dir():
+            return WORK_DIR_MISSING_REPLY
+        try:
+            created, skipped = init_base_templates(settings.work_dir)
+        except OSError:
+            return INITBASE_FAILED_REPLY
+        return initbase_text(created, skipped)

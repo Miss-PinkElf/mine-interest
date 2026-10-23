@@ -26,6 +26,8 @@ from .contracts import (
 SESSION_TABLE = "sessions"
 MESSAGE_RECEIPT_TABLE = "message_receipts"
 TURN_TABLE = "turns"
+CONVERSATION_WORK_DIR_TABLE = "conversation_work_dirs"
+PERMISSION_AUDIT_TABLE = "permission_audit"
 
 
 class SessionStore:
@@ -99,6 +101,32 @@ class SessionStore:
                     status TEXT NOT NULL,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )"""
+            )
+            connection.execute(
+                f"""CREATE TABLE IF NOT EXISTS {CONVERSATION_WORK_DIR_TABLE} (
+                    conversation_key TEXT PRIMARY KEY,
+                    work_dir TEXT NOT NULL,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )"""
+            )
+            connection.execute(
+                f"""CREATE TABLE IF NOT EXISTS {PERMISSION_AUDIT_TABLE} (
+                    id INTEGER PRIMARY KEY,
+                    conversation_key TEXT NOT NULL,
+                    sender_id TEXT NOT NULL DEFAULT '',
+                    role TEXT NOT NULL DEFAULT '',
+                    profile TEXT NOT NULL DEFAULT '',
+                    tool_name TEXT NOT NULL DEFAULT '',
+                    summary TEXT NOT NULL DEFAULT '',
+                    decision TEXT NOT NULL DEFAULT '',
+                    reason TEXT NOT NULL DEFAULT '',
+                    approver_id TEXT NOT NULL DEFAULT '',
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )"""
+            )
+            connection.execute(
+                f"""CREATE INDEX IF NOT EXISTS permission_audit_by_time
+                ON {PERMISSION_AUDIT_TABLE} (created_at DESC)"""
             )
 
     @staticmethod
@@ -252,6 +280,71 @@ class SessionStore:
                 f"UPDATE {MESSAGE_RECEIPT_TABLE} SET status=? WHERE platform_id=? AND message_id=?",
                 (status, conversation.platform_id, message_id),
             )
+
+    def work_dir_override(self, conversation: ConversationKey) -> str:
+        with self._connection() as connection:
+            row = connection.execute(
+                f"SELECT work_dir FROM {CONVERSATION_WORK_DIR_TABLE} WHERE conversation_key=?",
+                (conversation.storage_key(),),
+            ).fetchone()
+        return str(row["work_dir"]) if row else ""
+
+    def set_work_dir_override(self, conversation: ConversationKey, work_dir: str) -> None:
+        with self._connection() as connection:
+            connection.execute(
+                f"""INSERT INTO {CONVERSATION_WORK_DIR_TABLE} (conversation_key, work_dir)
+                VALUES (?, ?)
+                ON CONFLICT(conversation_key) DO UPDATE SET
+                    work_dir=excluded.work_dir,
+                    updated_at=CURRENT_TIMESTAMP""",
+                (conversation.storage_key(), work_dir),
+            )
+
+    def clear_work_dir_override(self, conversation: ConversationKey) -> None:
+        with self._connection() as connection:
+            connection.execute(
+                f"DELETE FROM {CONVERSATION_WORK_DIR_TABLE} WHERE conversation_key=?",
+                (conversation.storage_key(),),
+            )
+
+    def record_permission_event(
+        self,
+        conversation_key: str,
+        sender_id: str,
+        role: str,
+        profile: str,
+        tool_name: str,
+        summary: str,
+        decision: str,
+        reason: str = "",
+        approver_id: str = "",
+    ) -> None:
+        with self._connection() as connection:
+            connection.execute(
+                f"""INSERT INTO {PERMISSION_AUDIT_TABLE}
+                (conversation_key, sender_id, role, profile, tool_name, summary,
+                 decision, reason, approver_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    conversation_key,
+                    sender_id,
+                    role,
+                    profile,
+                    tool_name,
+                    summary,
+                    decision,
+                    reason,
+                    approver_id,
+                ),
+            )
+
+    def recent_permission_events(self, limit: int = 20) -> list[dict]:
+        with self._connection() as connection:
+            rows = connection.execute(
+                f"SELECT * FROM {PERMISSION_AUDIT_TABLE} ORDER BY id DESC LIMIT ?",
+                (max(1, int(limit)),),
+            ).fetchall()
+        return [dict(row) for row in rows]
 
     def record_turn(
         self, session_id: int, message_id: str, prompt: str, response: str, status: str

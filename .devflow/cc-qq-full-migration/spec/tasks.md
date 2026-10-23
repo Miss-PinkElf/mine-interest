@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:33:00 +08:00
-- 更新时间（Updated At）：2026-09-29 17:00:00 +08:00
+- 更新时间（Updated At）：2026-10-23 00:00:00 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：按计划跟踪第一阶段可独立核验的实施任务。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -67,9 +67,23 @@
 - [x] T04.10 私聊未在 `private_user_ids` 且不是 owner／管理员时按范围外静默，不回复未授权文案。群聊 @ 后未授权仍提示。代码与单元测试已完成。
 - [x] T04.11 私聊同一发送者同一正文（含空文本）在 10 秒内只处理一次；相同回复不连发。私聊范围外会停止事件。代码与单元测试已完成。
 
+## T05 权限分级与危险操作审批（Permission Profiles & Approval）
+
+- [x] T05.1 `permissions.py` 定义 owner/admin/member/guest 角色、readonly/workspace/full 档位、群规则覆盖、路径边界与危险命令识别；单元测试覆盖。
+- [x] T05.2 `policy.py` 将已启用群内非白名单成员从拒绝改为 guest 只读；私聊非白名单仍静默；`SessionSettings` 携带每轮角色、档位、发送者与来源。
+- [x] T05.3 `agents/profiles.py` 按档位生成 Claude `--permission-mode`、`--tools`、`--settings`、`--setting-sources` 与 Codex 权限档案参数；参数快照测试。Codex `resume` 不接受 `-s`，统一走 `-c` 覆盖。
+- [x] T05.4 生成 Claude settings：只读/工作区/完全三档的 sandbox、permissions.deny、PreToolUse hooks；不包含密钥。
+- [x] T05.5 `approval.py` + `hooks/approval_hook.py`：本机 JSON 行审批服务、审批号、超时拒绝、去重、fail-safe；hook 脚本独立测试。
+- [x] T05.6 `main.py` 在会话队列前处理 `/approve`、`/deny`；只有 owner／管理员可批准；审批事件写入 `permission_audit`。
+- [x] T05.7 命令级权限：`/help`、`/info` 对 guest 可用；管理命令仅 owner／管理员；新增 `/cd`、`/pwd`、`/initbase`。
+- [x] T05.8 `/cd` 仅允许 `allowed_work_dirs` 的 realpath 子目录；覆盖值持久化；`/initbase` 只补缺失基础模板，不覆盖已有文件。
+- [x] T05.9 版本提升到 `0.2.0`，更新 `metadata.yaml`、`README.md`、`_conf_schema.json` 和本 mission 文档。
+- [ ] T05.10 真机验收：guest 只读、member 工作区写入、目录外审批、管理员 `/cd`、`/initbase`；Claude 与 Codex 分别记录证据。当前 83 个单元测试通过；Claude 审批 allow/deny、Codex 权限档案读写边界已在本机 CLI 实测，但尚未经 AstrBot/QQ。
+
 ## 每次插件代码变更的固定门禁
 
 - [x] 同步提升 `metadata.yaml` 与 Python 版本常量至 `0.1.16`。覆盖安装目录后需用户重载才生效。
+- [x] 权限子变更提升 `metadata.yaml` 与 Python 版本常量至 `0.2.0`；仍须用户明确要求才覆盖安装目录。
 - [x] 补丁编辑仓库文本；复制动作的差异以 `git status --short` 与相关相对路径的 `git diff` 展示，并在回复中说明内联差异限制。
 - [x] 2026-09-30 收尾时用户明确要求先提交再写交接。代码提交为 `7a714ac`，未推送。
 

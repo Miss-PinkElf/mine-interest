@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from collections import deque
 from contextlib import suppress
 from pathlib import Path
@@ -60,6 +61,7 @@ class ProcessRunner:
         args: list[str],
         work_dir: str,
         prompt: str,
+        env: dict | None = None,
     ) -> AsyncIterator[str]:
         """通过标准输入传递用户消息，逐行读取标准输出。"""
         if conversation_key in self._active:
@@ -67,6 +69,7 @@ class ProcessRunner:
         if not Path(work_dir).is_dir():
             raise AgentProcessError(NO_WORK_DIR_REPLY)
 
+        process_env = {**os.environ, **env} if env else None
         try:
             process = await asyncio.create_subprocess_exec(
                 command,
@@ -75,6 +78,7 @@ class ProcessRunner:
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                env=process_env,
                 limit=MAX_AGENT_OUTPUT_LINE_BYTES,
             )
         except FileNotFoundError as exc:

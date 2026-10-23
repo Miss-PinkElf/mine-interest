@@ -3,19 +3,14 @@
 from __future__ import annotations
 
 import json
-from contextlib import aclosing
 from typing import AsyncIterator, Optional
 from uuid import uuid4
 
-from ..constants import CLAUDE_COMMAND, CLAUDE_DEFAULT_PERMISSION_MODE
+from ..async_utils import aclosing
+from ..constants import CLAUDE_COMMAND
 from ..contracts import AgentEvent, AgentEventKind, AgentRequest
 from .process import AgentProcessError, ProcessRunner
-
-
-CLAUDE_BASE_ARGS = (
-    "--permission-mode", CLAUDE_DEFAULT_PERMISSION_MODE,
-    "--print", "--output-format", "stream-json", "--verbose",
-)
+from .profiles import claude_args
 
 
 def parse_claude_event(line: str) -> Optional[AgentEvent]:
@@ -60,18 +55,18 @@ class ClaudeAdapter:
         self._command = command
 
     async def execute(self, request: AgentRequest) -> AsyncIterator[AgentEvent]:
-        args = list(CLAUDE_BASE_ARGS)
-        if request.model:
-            args.extend(("--model", request.model))
-        if request.agent_session_id:
-            args.extend(("--resume", request.agent_session_id))
-        else:
-            args.extend(("--session-id", str(uuid4())))
-
+        args = claude_args(
+            profile=request.permission_profile,
+            model=request.model,
+            agent_session_id=request.agent_session_id or "",
+            new_session_id=str(uuid4()),
+            settings_path=request.claude_settings_path,
+            setting_sources=request.claude_setting_sources,
+        )
         try:
             async with aclosing(self._process_runner.run(
                 request.conversation.storage_key(), self._command, args,
-                request.work_dir, request.message,
+                request.work_dir, request.message, request.process_env,
             )) as lines:
                 async for line in lines:
                     event = parse_claude_event(line)

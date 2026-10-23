@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
+
+from .permissions import PROFILE_WORKSPACE, ROLE_MEMBER
 
 
 class ConversationKind(str, Enum):
@@ -63,6 +65,10 @@ class SessionSettings:
     work_dir: str
     agent_type: str
     model: str = ""
+    role: str = ROLE_MEMBER
+    permission_profile: str = PROFILE_WORKSPACE
+    sender_id: str = ""
+    origin: str = ""
 
 
 @dataclass(frozen=True)
@@ -79,6 +85,12 @@ class AgentRequest:
     message: str
     model: str = ""
     agent_session_id: Optional[str] = None
+    permission_profile: str = PROFILE_WORKSPACE
+    sender_id: str = ""
+    origin: str = ""
+    claude_settings_path: str = ""
+    claude_setting_sources: str = ""
+    process_env: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

@@ -3,17 +3,21 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, StarTools, register
 
+from .approval import ApprovalBroker, approval_targets
+from .commands.registry import command_allowed, parse_command
 from .constants import (
+    APPROVAL_USAGE_REPLY,
     ENABLED_GROUP_IDS_KEY,
     CONFIGURATION_INVALID_REPLY,
     INTERRUPTED_ON_RESTART_REPLY,
     LOG_PREFIX,
-    NOT_ALLOWED_REPLY,
+    NO_COMMAND_PERMISSION_REPLY,
     PLUGIN_DESCRIPTION,
     PLUGIN_NAME,
     PLUGIN_VERSION,
@@ -25,7 +29,6 @@ from .constants import (
     RECEIPT_INTERRUPTED,
     RECEIPT_PROCESSING,
     REASON_CONFIGURATION_INVALID,
-    REASON_NOT_ALLOWED,
     REASON_OUT_OF_SCOPE,
     REASON_WORK_DIR_MISSING,
     SERVICE_ERROR_REPLY,
@@ -33,6 +36,7 @@ from .constants import (
     WORK_DIR_MISSING_REPLY,
 )
 from .contracts import ConversationKind, IncomingMessage
+from .permissions import ROLE_ADMIN, ROLE_OWNER
 from .platform.duplicates import is_recent_duplicate
 from .platform.qq_events import empty_text_reply, parse_qq_event, should_ignore_as_stale, stale_max_age_from_config
 from .platform.replies import send_text
@@ -51,10 +55,16 @@ class CcQqPlugin(Star):
         self.config = config or {}
         self.store = SessionStore(StarTools.get_data_dir(PLUGIN_NAME))
         self.sessions = SessionManager(self.store, self.config)
-        self.service = ConversationService(self.store, self.sessions)
+        self.approvals = ApprovalBroker(
+            self.store, logging.getLogger(f"{PLUGIN_NAME}.approval"), self.config
+        )
+        self.service = ConversationService(
+            self.store, self.sessions, self.config, self.approvals
+        )
         self._background_tasks: set[asyncio.Task] = set()
         self._recent_private_incoming: dict[tuple[str, ...], int] = {}
         self._recent_outgoing: dict[tuple[str, ...], int] = {}
+        self._admin_origins: dict[str, str] = {}
 
     async def initialize(self):
         group_count = len(self.config.get(ENABLED_GROUP_IDS_KEY) or [])
@@ -66,8 +76,18 @@ class CcQqPlugin(Star):
             group_count,
             "启用" if private_enabled else "关闭",
         )
+        try:
+            await self.approvals.start(self._notify_approval)
+        except OSError as exc:
+            # 启动失败时危险操作会被 hook 拒绝，但安全操作仍可用。
+            self.logger.error("%s 审批服务启动失败：%s", LOG_PREFIX, type(exc).__name__)
+        self.sessions.set_approval_env(self.approvals.hook_env())
         for pending in self.store.queued_messages():
-            decision = authorize(pending, self.config)
+            decision = authorize(
+                pending,
+                self.config,
+                self.store.work_dir_override(pending.conversation),
+            )
             if not decision.allowed:
                 self.store.mark_message(
                     pending.conversation, pending.message_id, RECEIPT_CANCELLED
@@ -78,8 +98,20 @@ class CcQqPlugin(Star):
             self.store.mark_message(
                 interrupted.conversation, interrupted.message_id, RECEIPT_INTERRUPTED
             )
-            if authorize(interrupted, self.config).allowed:
+            if authorize(
+                interrupted,
+                self.config,
+                self.store.work_dir_override(interrupted.conversation),
+            ).allowed:
                 self._schedule_background(self._notify_interrupted(interrupted))
+
+    async def _notify_approval(self, origin: str, text: str) -> None:
+        delivered = False
+        for target in approval_targets(origin, self._admin_origins.values()):
+            if await send_text(self.context, target, text, self.logger):
+                delivered = True
+        if not delivered:
+            raise RuntimeError("审批卡片发送失败")
 
     def _schedule_background(self, coroutine):
         task = asyncio.create_task(coroutine)
@@ -94,6 +126,7 @@ class CcQqPlugin(Star):
         if self._background_tasks:
             await asyncio.gather(*self._background_tasks, return_exceptions=True)
         await self.sessions.shutdown()
+        await self.approvals.stop()
         for message in in_flight:
             status = self.store.message_status(message.conversation, message.message_id)
             if status in (RECEIPT_CANCELLED, RECEIPT_PROCESSING):
@@ -138,7 +171,13 @@ class CcQqPlugin(Star):
         if message.conversation.kind is ConversationKind.GROUP and not message.mentions_bot:
             return
 
-        decision = authorize(message, self.config)
+        decision = authorize(
+            message,
+            self.config,
+            self.store.work_dir_override(message.conversation),
+        )
+        if decision.role in (ROLE_OWNER, ROLE_ADMIN) and message.origin:
+            self._admin_origins[message.sender_id] = message.origin
         if not decision.allowed:
             if decision.reason == REASON_OUT_OF_SCOPE:
                 if message.conversation.kind is ConversationKind.PRIVATE:
@@ -174,10 +213,15 @@ class CcQqPlugin(Star):
                 message.event_time,
             )
             return
+        # 审批回复不进入会话串行队列，否则会与正在等待审批的代理进程死锁。
+        approval_command = parse_command(message.text)
+        if approval_command and approval_command[0] in ("/approve", "/deny"):
+            event.stop_event()
+            await self._handle_approval_command(message, decision, approval_command)
+            return
         event.stop_event()
         if not decision.allowed:
             reason_replies = {
-                REASON_NOT_ALLOWED: NOT_ALLOWED_REPLY,
                 REASON_CONFIGURATION_INVALID: CONFIGURATION_INVALID_REPLY,
                 REASON_WORK_DIR_MISSING: WORK_DIR_MISSING_REPLY,
             }
@@ -193,6 +237,22 @@ class CcQqPlugin(Star):
                 self.logger.error("%s 消息处理失败：%s", LOG_PREFIX, type(exc).__name__)
                 reply = SERVICE_ERROR_REPLY
 
+        await self._send_reply(message, reply, decision.allowed)
+
+    async def _handle_approval_command(self, message, decision, command) -> None:
+        name, argument = command
+        if not command_allowed(decision.role, name):
+            reply = NO_COMMAND_PERMISSION_REPLY
+        elif not argument:
+            reply = APPROVAL_USAGE_REPLY
+        else:
+            reply = self.approvals.resolve(
+                argument.strip(), name == "/approve", message.sender_id
+            )
+        await self._send_reply(message, reply, False)
+
+    async def _send_reply(self, message, reply: str, mark_failed: bool) -> None:
+        """统一回复与重复回复抑制；审批回复也走这里，但不写消息回执。"""
         if reply:
             outgoing_key = (message.origin, reply)
             now = int(time.time())
@@ -211,7 +271,7 @@ class CcQqPlugin(Star):
                     now,
                     PRIVATE_DUPLICATE_WINDOW_SECONDS,
                 )
-            if not delivered and decision.allowed:
+            if not delivered and mark_failed:
                 self.store.mark_message(
                     message.conversation, message.message_id, RECEIPT_DELIVERY_FAILED
                 )

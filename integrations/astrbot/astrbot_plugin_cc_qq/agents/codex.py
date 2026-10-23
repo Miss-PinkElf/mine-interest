@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 import json
-from contextlib import aclosing
 from typing import AsyncIterator, Optional
 
-from ..constants import CODEX_COMMAND, CODEX_DEFAULT_ACCESS_FLAG
+from ..async_utils import aclosing
+from ..constants import CODEX_COMMAND
 from ..contracts import AgentEvent, AgentEventKind, AgentRequest
 from .process import AgentProcessError, ProcessRunner
-
-
-CODEX_BASE_ARGS = ("--skip-git-repo-check", CODEX_DEFAULT_ACCESS_FLAG, "--json")
+from .profiles import codex_args
 
 
 def parse_codex_event(line: str) -> Optional[AgentEvent]:
@@ -59,21 +57,16 @@ class CodexAdapter:
         self._command = command
 
     async def execute(self, request: AgentRequest) -> AsyncIterator[AgentEvent]:
-        args = ["exec"]
-        if request.agent_session_id:
-            args.append("resume")
-        args.extend(CODEX_BASE_ARGS)
-        if request.model:
-            args.extend(("--model", request.model))
-        if request.agent_session_id:
-            args.extend((request.agent_session_id, "-"))
-        else:
-            args.extend(("--cd", request.work_dir, "-"))
-
+        args = codex_args(
+            profile=request.permission_profile,
+            model=request.model,
+            agent_session_id=request.agent_session_id or "",
+            work_dir=request.work_dir,
+        )
         try:
             async with aclosing(self._process_runner.run(
                 request.conversation.storage_key(), self._command, args,
-                request.work_dir, request.message,
+                request.work_dir, request.message, request.process_env,
             )) as lines:
                 async for line in lines:
                     event = parse_codex_event(line)

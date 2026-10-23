@@ -15,7 +15,7 @@
   "group_rules_json": {
     "description": "各群配置 JSON（Group Rules）",
     "type": "string",
-    "hint": "以群号为键，每项填写 work_dir，可选 agent、model、allowed_user_ids；群 model 高于该代理默认模型，示例见 README。",
+    "hint": "以群号为键，每项填写 work_dir，可选 agent、model、allowed_user_ids、guest_permission_profile、member_permission_profile；群 model 高于该代理默认模型，示例见 README。",
     "default": "{}"
   },
   "private_enabled": {
@@ -82,6 +82,52 @@
     "type": "string",
     "hint": "桌面版 AstrBot 找不到 codex 时，填写其可执行文件绝对路径。",
     "default": "codex"
+  },
+  "guest_permission_profile": {
+    "description": "群内非白名单权限档（Guest Profile）",
+    "type": "string",
+    "options": ["readonly", "workspace", "full"],
+    "default": "readonly",
+    "hint": "只读档（readonly）默认只提供 Read/Grep/Glob，不开放 Bash 与写入；不建议改成 full。"
+  },
+  "member_permission_profile": {
+    "description": "白名单成员权限档（Member Profile）",
+    "type": "string",
+    "options": ["readonly", "workspace", "full"],
+    "default": "workspace",
+    "hint": "工作区档（workspace）只允许读写当前工作目录；目录外写入与危险命令走审批。"
+  },
+  "owner_permission_profile": {
+    "description": "owner/管理员权限档（Owner Profile）",
+    "type": "string",
+    "options": ["readonly", "workspace", "full"],
+    "default": "full",
+    "hint": "完全权限档（full）不启用文件沙箱，但关键路径 deny 规则仍然生效。"
+  },
+  "danger_approval_enabled": {
+    "description": "启用危险操作审批（Danger Approval）",
+    "type": "bool",
+    "default": true,
+    "hint": "关闭后，工作区档需要审批的操作会被直接拒绝。"
+  },
+  "danger_approval_timeout_seconds": {
+    "description": "审批超时秒数（Approval Timeout）",
+    "type": "int",
+    "default": 300,
+    "hint": "默认 300 秒，允许 30–3600；超时后自动拒绝。"
+  },
+  "allowed_work_dirs": {
+    "description": "允许 /cd 的工作目录根（Allowed Work Directories）",
+    "type": "list",
+    "default": [],
+    "hint": "只有 owner/管理员可以使用 /cd，且目标必须位于这些根目录内；留空表示禁用 /cd。",
+    "items": { "type": "string" }
+  },
+  "claude_setting_sources": {
+    "description": "Claude 设置来源（Claude Setting Sources）",
+    "type": "string",
+    "default": "",
+    "hint": "默认留空，屏蔽用户与仓库 settings，只使用插件注入的策略文件。若 Claude 依赖 settings 中的 apiKeyHelper，填写 user。"
   },
   "stale_message_max_age_seconds": {
     "description": "过期消息秒数（Stale Message Max Age）",

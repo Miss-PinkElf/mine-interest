@@ -3,21 +3,14 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:23:07 +08:00
-- 更新时间（Updated At）：2026-09-30 16:08:00 +08:00
-- 作者（Author）：Grok
+- 更新时间（Updated At）：2026-10-23 00:00:00 +08:00
+- 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：记录本 mission 最近的阶段切换与继续位置。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
-- 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`
-- 当前状态（Status）：第一阶段待运行验收（Stage 1 Runtime Verification Pending）
+- 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
+- 当前状态（Status）：权限分级待真机验收（Permission Runtime Verification Pending）
 - 文档边界（Scope / Boundary）：最近检查点真相源（source of truth）；仅保留最近三条，不代替对齐文档或计划。
-
-## 2026-09-30 15:35:00 +08:00 — 三项修复已写入 0.1.14
-
-- 已完成：按计划实现过期秒数配置、私聊空文本静默、标准输入错误。当时 11 个单元测试通过。
-- 当前阶段：写这条时，代码实施完成，真实 QQ 验收还在等用户上传。
-- 下一步：当时写成用户上传 ZIP 后再看三条行为。
-- 注意：这是历史检查点。随后已提交 `7a714ac` 并覆盖安装目录。
 
 ## 2026-09-30 15:38:00 +08:00 — 已覆盖、已提交，验收留到下一对话
 
@@ -32,3 +25,11 @@
 - 当前阶段：本轮暂停。AstrBot 尚未重载，运行中仍是 `0.1.14`。
 - 下一步：用户重载后确认 `已加载 v0.1.16`，再验空白与非白名单私聊不回复。
 - 注意：现场配置仍是私聊关闭、名单为空。`prompt-01.md` 的聚合需求仍未提交、未对齐。
+
+## 2026-10-23 00:00:00 +08:00 — 权限分级 0.2.0 已实施，待提交与真机验收
+
+- 已完成：权限档位、Claude 审批 hook、Codex 权限档案、`/cd`、`/pwd`、`/initbase`、审计表与基础模板。83 个单元测试通过。
+- 本机验证：Claude 2.1.202 的 hook→broker→allow/deny 链路可用；Codex 0.162.1 的 `ccqq-readonly`/`ccqq-workspace` 能限制工作区外读写。
+- 当前阶段：代码已实施，未提交；未生成 `v0.2.0` ZIP，未覆盖安装目录，AstrBot 尚未重载。
+- 下一步：用户决定提交与打包；重载后按 T05.10 验收 guest 只读、member 工作区、目录外审批、`/cd`、`/initbase`。
+- 注意：Codex 本轮没有逐次审批；审批卡片只在来源会话可见。

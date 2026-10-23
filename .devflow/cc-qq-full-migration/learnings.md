@@ -3,7 +3,8 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-30 15:38:00 +08:00
-- 作者（Author）：Grok
+- 更新时间（Updated At）：2026-10-23 00:00:00 +08:00
+- 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：留下这次排查里下次还会用到的判断，避免再走错证据。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
@@ -20,3 +21,8 @@
 - 空白事件是双端登录机器人号时多推进来的空包，日志为 `1968401530/1968401530:`，发送者仍是对方。回执按 `message_id` 去重，拦不住这种连发空包。
 - 在 AstrBot 插件设置页保存新 schema 字段时，可能把 `private_enabled` 和 `private_user_ids` 写回默认值。15:44 那次保存清掉了 `1968401530`。
 - 未授权判断若排在空文本静默之前，空白私聊会刷「未获授权」。私聊未在名单应走范围外静默。
+- Claude Code 2.1.202 实测 `bypassPermissions` 不执行 `permissions.deny`（`Write` 能写 `/etc` 和 `~/.ssh`）。需要保留关键路径保护时，用 `dontAsk` + PreToolUse 守护 hook，而不是 `bypassPermissions`。
+- PreToolUse hook 用 `permissionDecision: "allow"` 可以覆盖 `dontAsk` 的默认拒绝；hook 异常或超时按拒绝处理。`--setting-sources ""` 可以屏蔽仓库 settings，同时 `--settings` 注入的 hooks 仍然生效。
+- Codex 传统 `read-only` 只限制写入，不限制读取；权限档案（Permission Profiles，Beta）才能用 `:root = deny` + `:workspace_roots = read/write` 把读写收进工作区。`codex exec resume` 不接受 `-s`，要用 `-c` 覆盖。
+- Claude 沙箱只包 shell 子进程，不包内置 `Read/Edit/Write`；因此内置文件工具要用权限规则或 hook，不能只靠沙箱。
+- 审批回复要在进入会话串行队列之前处理，否则会与等待审批的代理进程死锁。
