@@ -8,6 +8,14 @@
     {
       "type": "folder",
       "path": ".devflow/multi-source-hub"
+    },
+    {
+      "type": "file",
+      "path": ".devflow/multi-source-hub/learnings.md"
+    },
+    {
+      "type": "file",
+      "path": ".devflow/cc-qq-full-migration/state.md"
     }
   ]
 }

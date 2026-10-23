@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../../../../.astrbot/data/sourcehub-inspector"
+		},
+		{
+			"path": "../../../../../../.astrbot/data/sourcehub"
+		}
+	],
+	"settings": {
+		"markdown.copyFiles.destination": {
+			"**/*.md": "images_md/${fileName}"
+		},
+		"markdown.copyFiles.overwriteBehavior": "nameIncrementally",
+		"markdown.editor.filePaste.copyIntoWorkspace": "mediaFiles",
+		"markdown.editor.drop.copyIntoWorkspace": "mediaFiles"
+	}
+}
