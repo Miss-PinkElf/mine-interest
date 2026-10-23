@@ -1,30 +1,33 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-10-15 22:36:00 +08:00。
+- 更新时间（Updated At）：2026-10-23 12:00:00 +08:00。
 - 作者（Author）：rin（Claude 协助）。
 - 目的（Purpose）：提供当前 mission 的短恢复入口。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
-- 原始需求（Original Requirement）：`zzz-prompt-debug/prompt-1.md` 第 34–38、50–58 行；本轮追加见当日会话。
-- 最新计划（Latest Plan）：`plans/2026-10-15-QQ日文档摘要多行截断修复与链路说明-plan.md`。
-- 最新交接（Latest Handoff）：`handoffs/2026-10-15-014-QQ日文档摘要修复与收尾.md`。
-- 关联延期（Related Deferred）：`deferred/QQ日文档摘要首版边界与待验收.md`。
-- 关联说明（Related Doc）：`qq-message-pipeline.md`。
-- 当前状态（Status）：QQ 日文档摘要多行截断已修复（代码 + 历史 + 部署），**待重载后验收**。需求 4 Verify、需求 7 Close 仍开。
-- 文档边界（Scope / Boundary）：本任务记录；不代表整体信息中心 14 项已获准实施。
+- 原始需求（Original Requirement）：`zzz-prompt-debug/prompt-1.md` 第 34–38、50–67 行。
+- 最新计划（Latest Plan）：`plans/2026-10-23-需求8-GitHub链接自动star-fork与Cookie提醒-plan.md`。
+- 轻量任务（Light Tasks）：`spec/2026-10-23-需求8/tasks.md`。
+- 最新交接（Latest Handoff）：`handoffs/2026-10-23-015-需求8已部署待验收.md`。
+- 当前状态（Status）：需求 8 已实施并部署（inspector `0.6.2`、B 站 `0.3.4`），**待重载与真实链接验收**。`github_enabled` 仍关闭。
+- 文档边界（Scope / Boundary）：本任务记录；不代表需求 4 / 需求 7 已关闭。
 
-# 当前状态（2026-10-15 轮）
+# 当前状态（2026-10-23 轮）
 
-- 路径：轻量路径（Light Path）。任务 1–5 已完成；任务 6 的部署、重载与真实多行消息验证已完成，**只剩 `@机器人 整理` 的端到端确认**。
-- 代码提交：`930e4d5`「修复 QQ 日文档摘要多行截断并补充采集链路说明」（26 个文件）。
-- 本轮缺陷：日文档「实时消息（Live Messages）」区只保留正文最后一行。根因 `vault.py` 用 `render_content_md(envelope).splitlines()[-1]`；全库复扫仅 2026-10-15 的 `1441885612` 1 条受影响。详见 `bug-log.md`。
-- 代码改动：`sourcehub/markdown.py`（新增 `render_message_body_md`，`render_content_md` 输出不变）、`sourcehub/vault.py`（`format_daily_message_entry` + 续行缩进常量）。各 3 份副本已同步并复核一致。**未 commit。**
-- 插件版本：inspector `0.6.0 → 0.6.1`，B 站 `0.3.2 → 0.3.3`（B 站行为未变，仅同步共享库，以保持两副本一致）。
-- 部署：两个插件目录已覆盖并 `diff -rq` 复核与仓库一致；`py_compile` 通过。**进程尚未重载。**
-- 历史订正：`items/qq/2026-10-15/content.md` 摘要区已按日账本重建（多行 + 续行缩进）。备份 `~/.astrbot/data/sourcehub-qq-daily-backup-20261015-223332/`；插件目录备份 `~/.astrbot/data/plugin-backup-20261015-223550/`。
-- 新增文档：`.devflow/multi-source-hub/qq-message-pipeline.md`（QQ 群消息链路说明）。
-- 测试：`PYTHONPATH=backend/src backend/.venv/bin/python -m unittest discover -s tests -t . -p 'test_*.py'` → 130 项通过。**注意必须带 `-t .`**，否则 `test_sourcehub_vendoring` 因相对导入报错。
-- 本轮有意覆盖的旧结论：`NEXT-SESSION-PROMPT` 与上一版 state 都写着「不要再重载」。本轮代码改了，不重载修复不生效，故改为**需要重载**。
-- 仍然开放：需求 4 的 Verify 未关；需求 7 未 Close；T5、T7 未勾选。
-- 仍暂缓：`remote_private_unverified`、B 站直连 DNS、旧文档重采、超过 100MB 的视频、未识别 `link_type`、`BV1aVjMzeE96`。
-- 下一步：① 重载两个插件；② 群里发一条**多行**普通消息，确认日文档摘要行不丢；③ `@机器人 整理`，确认成条且日索引多一行链接；④ 询问用户是否提交代码。
+- 路径：轻量路径（Mini Align → Light Plan → Apply），T1–T6 完成，T7 待重载验收。
+- 新能力：采集内容里的 GitHub 仓库链接自动 star；有权限的 QQ 发送 `/fork` 时 fork；B 站触发评论含 `/fork` 时 fork。fork 内安装 GitHub Actions，只同步默认分支，每 6 小时用 `git merge` 合并上游。
+- 代理：`gh` 直连失败且属于网络错误时，用 `http://127.0.0.1:7897` 重试一次；权限/未登录不重试，提示 `gh auth status`。
+- QQ：落点在检查插件；owner `1961618848`、admin `2844973553`，成功/失败都回复；私聊与群聊都按账号权限判断。
+- B 站：`login/status` 改为实时校验，返回 `valid/status/message/checked_at`；页面红色提示 Cookie 失效，网络未知不误报。页面新增 GitHub 自动化最近动作。
+- 测试：全量离线 **160 项通过**（命令须带 `-t .`）。真实只读验证：`gh api user` 返回 `Miss-PinkElf`，直连成功；真实 B 站 Cookie 检查返回 `healthy`。
+- 部署：两插件目录与仓库 `diff -rq` 一致；现场配置已加新键，`github_enabled=false`；备份在 `~/.astrbot/data/plugin-backup-20261023-112324/`。AstrBot 当前未运行，尚未加载本轮版本。
+- 代码提交：`b9ef0fc`「实现需求8 GitHub 链接自动 star/fork 与 Cookie 失效提醒」，未推送。收尾文档见同一分支后续提交。
+- `prompt-1.md`、`.vscode/controlled-explorer.json` 与 `.code-workspace` 三个既有未提交文件不属于本轮，未纳入提交。
+
+## 本轮不做 / 后续阶段（Deferred Scope）
+
+- QQ 合并转发内部消息里的链接不处理；只处理发送者本条正文。
+- fork 与上游冲突时不自动解决；Actions 失败并通知仓库所有者。
+- 私有上游仓库的 fork 同步不在首版保证范围。
+- 同步频率固定每 6 小时，暂不配置化。
+- 需求 4 Verify、需求 7 Close、T5/T7 仍未关闭。

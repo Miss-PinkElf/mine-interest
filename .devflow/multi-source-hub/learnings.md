@@ -1,7 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-21 18:38:00 +08:00
-- 更新时间（Updated At）：2026-10-15 22:50:00 +08:00。
+- 更新时间（Updated At）：2026-10-23 12:00:00 +08:00。
 - 作者（Author）：Grok
 - 目的（Purpose）：沉淀本轮成条切片的踩坑。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub（`.`）。
@@ -26,3 +26,7 @@
 12. **改共享库时要连历史数据一起想。** 修好代码只解决「以后」；已经写坏的记录不会自己变好，而且 `_write_daily_index` 会原样保留摘要块。修历史要用**与修复后同一个函数**重投影（本轮一次性命令按日账本重建），不要手工敲一遍——那样格式会与代码漂移，且不可复现。改真实 Vault 前先备份。
 13. **`unittest discover` 必须带 `-t .`。** `tests/__init__.py` 用相对导入做引导，`discover -s tests` 会把 `tests` 当顶层目录，导致 `test_sourcehub_vendoring` 报 `attempted relative import with no known parent package`。正确命令：`PYTHONPATH=backend/src backend/.venv/bin/python -m unittest discover -s tests -t . -p 'test_*.py'`。
 14. **验证「纯重构」要比对输出，不能只看测试绿。** 本轮把改动前的 `markdown.py` 从 `HEAD` 取出，对 8 类封套（QQ 单行/多行/带缺口/图片/转发树/未知节点/文件节点 + B 站作品）逐字比对 `render_content_md`。既有测试绿只能说明没测到差异，不能说明没有差异。
+15. **在 fork 里装同步工作流，会天然让 fork 领先上游。** `gh repo sync` 默认只做快进，遇到工作流提交会失败；`--force` 会把工作流一起删掉，下一次定时任务就没了。正确做法是工作流内 `git fetch upstream` + `git merge` + `git push`，只同步默认分支。2026-10-23 需求 8 因此没有采用 `gh repo sync`。
+16. **GitHub Actions 在 fork 里默认可能未启用。** 安装工作流后要尝试 `gh workflow enable <file> -R <fork>`；失败时必须在回复或页面里明确提示用户去 Actions 页手动启用，不能静默当作完成。
+17. **AstrBot 插件运行时找不到 `gh` 是真实风险。** 桌面版进程的 PATH 未必包含 Homebrew；`GithubRunner` 必须按「配置路径 → `shutil.which` → `/opt/homebrew/bin/gh` → `/usr/local/bin/gh`」依次查找，不能只依赖 PATH。
+18. **用 AstrBot 内置 Python 做现场导入验证，比只看仓库测试更接近真实加载。** 命令：`PYTHONPATH=$HOME/.astrbot/data/plugins:/Applications/AstrBot.app/Contents/Resources/backend/app /Applications/AstrBot.app/Contents/Resources/backend/python/bin/python -c "import astrbot_plugin_sourcehub_inspector.main, astrbot_plugin_sourcehub_bilibili.main"`。它不需要真的启动 AstrBot，也不会触发网络副作用。

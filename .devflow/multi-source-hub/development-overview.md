@@ -7,11 +7,21 @@
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
 - 原始需求（Original Requirement）：`zzz-prompt-debug/多种信息源整合.md`。
 - 关联计划（Related Plan）：`.devflow/multi-source-hub/plans/2026-09-09-多源信息中心-通用接入与QQ收藏闭环-plan.md`。
-- 更新时间（Updated At）：2026-09-29 13:56:00 +08:00。
-- 当前状态（Status）：需求 7 邮件已验收；运行中的 B 站插件已是 `0.3.2`。需求 4 Verify 待续。
+- 更新时间（Updated At）：2026-10-23 12:00:00 +08:00。
+- 当前状态（Status）：需求 8 已实施并部署，待重载与真实链接验收；需求 4 Verify、需求 7 Close 仍待续。
 - 文档边界（Scope / Boundary）：整体过程记录，不是默认恢复热路径；决定以 decision-log.md 及当前状态为准。
 
 # 多源信息中心开发总记录
+
+## 2026-10-23：需求 8 把 GitHub 自动化接入采集链路
+
+用户先用 `cc-qq-full-migration` 的恢复提示恢复上下文，随后点名 `prompt-1.md` 第 60–67 行的需求 8。Mini Align 的四个关键选择是：QQ 侧放在检查插件并用自有 owner/admin 白名单；fork 后由 fork 内的 GitHub Actions 自动同步；B 站扫描整篇采集内容、`/fork` 只认触发评论；B 站插件页打开时实时校验 Cookie。
+
+**同步方式的技术修正**：用户最初问「不能让 GitHub 自动同步吗，只同步 master」。GitHub 没有内置定时同步，工作流文件又会天然让 fork 领先上游；`gh repo sync` 默认快进会失败，`--force` 会删掉工作流。最终采用用户确认的「Actions + merge」：只同步默认分支，工作流内 `git fetch upstream` + `git merge` + `git push`，保留工作流与 fork 本地提交。
+
+**落点**：共享库新增 `github_links.py`（纯解析）与 `github_actions.py`（gh 直连、连接失败回退 7897 代理、star/fork、工作流安装、状态去重）。B 站 `Poller` 在 `store.save` 后调用自动化，`login/status` 改为实时校验并返回 `valid/status/message/checked_at`；检查插件在 `inspect_message` 里按账号权限处理本条正文并回复。`github_enabled` 两端默认关闭，避免部署即产生外部副作用。
+
+**验证**：全量离线 160 项通过；`gh api user` 直连成功；真实 B 站 Cookie 返回 `healthy`；用 AstrBot 内置 Python 导入现场插件成功。B 站 `0.3.4`、检查插件 `0.6.2` 已覆盖安装目录，现场配置写入 owner/admin 与代理但保持关闭。真实 star/fork 与页面视觉验收留给用户重载后完成。完整边界见 `deferred/需求8首版边界与待验收.md`。
 
 ## 2026-10-15 晚：QQ 日文档摘要多行截断修复与链路说明
 

@@ -1,14 +1,24 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-10-15 22:36:00 +08:00。
+- 更新时间（Updated At）：2026-10-23 12:00:00 +08:00。
 - 作者（Author）：rin（Claude 协助）。
 - 目的（Purpose）：记录最近三个检查点。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
-- 当前状态（Status）：QQ 日文档摘要多行截断已修复并部署，待重载验收。
-- 文档边界（Scope / Boundary）：本任务记录；诊断插件不代表完整信息中心已获准实施。
+- 当前状态（Status）：需求 8 已实施并部署，待重载与真实链接验收。
+- 文档边界（Scope / Boundary）：本任务记录；不代表真实 star/fork 已发生。
 
 # 最近检查点
+
+## 2026-10-23 12:00:00 +08:00：需求 8 已实施并部署，待重载
+
+- 新能力：GitHub 链接自动 star；有权限的 QQ 与 B 站触发评论 `/fork` 自动 fork；fork 内安装 Actions，每 6 小时只合并默认分支；直连失败回退 7897 代理；QQ 成功/失败回复；B 站页面实时显示 Cookie 是否失效。
+- 代码：共享库新增 `github_links.py`、`github_actions.py`；B 站 `0.3.4`、检查插件 `0.6.2`。两插件目录已覆盖并 `diff -rq` 一致。
+- 测试：全量离线 **160 项通过**；真实 `gh api user` 直连返回 `Miss-PinkElf`；真实 B 站 Cookie 检查返回 `healthy`。
+- 配置：现场新增键已写入，`github_enabled=false`；owner `1961618848`、admin `2844973553`。
+- 备份：`~/.astrbot/data/plugin-backup-20261023-112324/`。
+- 代码提交：`b9ef0fc`（未推送）。
+- **下一步**：用户重载插件 → 打开 B 站插件页确认 Cookie 与 GitHub 区块 → 打开 `github_enabled` 后用真实链接验收。代码已提交 `b9ef0fc`；验收发现问题再另开修复切片。
 
 ## 2026-10-15 22:36:00 +08:00：QQ 日文档摘要多行截断已修复，待重载
 
@@ -26,9 +36,3 @@
 - 插件列表、登录接口和仓库状态与 11:12 相同：运行中是 `0.3.2`，已登录且可刷新，两个仓库仍是 10:24 的私有、可读、可推记录。
 - 本轮没有改代码、没有重载、没有重采、没有再推告警。最新交接改为 013。
 - 下一步仍是用户点名后再重采。T5、T7 和需求 4 的验证（Verify）继续开着。
-
-## 2026-09-29 11:12:00 +08:00：运行中的插件已是 0.3.2
-
-- 插件列表返回 `astrbot_plugin_sourcehub_bilibili` `0.3.2`，已启用。页面标题和「插件版本」都是 `0.3.2`。10:52 的加载日志与此一致，不需要再重载。
-- `login/status` 立即返回已登录、可刷新，账号「尾号 4836」。两个仓库的上次校验仍是 10:24：`Miss-PinkElf/data-hub`、`Miss-PinkElf/sourcehub-alerts` 都是私有、可读、可推。
-- T5、T7 仍开。下一步是用户点名后再重采一篇旧视频或专栏。没有改代码。

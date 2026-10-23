@@ -1,16 +1,27 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-09 11:14:50 +08:00
-- 更新时间（Updated At）：2026-10-15 22:50:00 +08:00。
+- 更新时间（Updated At）：2026-10-23 12:00:00 +08:00。
 - 作者（Author）：Codex
 - 目的（Purpose）：索引原始需求及相关历史资料。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub（`.`）
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`
 - 原始需求（Original Requirement）：`zzz-prompt-debug/多种信息源整合.md`
-- 当前状态（Status）：成条切片已实施并收尾交接
+- 当前状态（Status）：需求 8 已实施并部署，待重载与真实链接验收
 - 文档边界（Scope / Boundary）：原始输入索引真相源（Source of Truth）；历史草案只作为参考，不自动转为批准方案。
 
 # 原始输入索引
+
+## 2026-10-23 12:00:00 +08:00：需求 8 GitHub 自动化与 Cookie 提醒
+
+- 原始输入（用户）：先读 `.devflow/cc-qq-full-migration/NEXT-SESSION-PROMPT-cc-qq-full-migration.md` 恢复上下文，然后完成 `zzz-prompt-debug/prompt-1.md` 第 60–67 行「需求 8」。
+- 需求原文：内容里出现 GitHub 仓库链接时自动 fork 并 star；B 站默认 star，`@bot /fork` 才 fork；QQ 由有权限的人触发，逻辑相同；QQ 成功失败都要回复；fork 后要能自动同步上游；GitHub 连不上或权限有问题要提示，本机代理端口 7897、ClashVerge；B 站 WebUI 提醒 Cookie 是否失效。
+- 对齐输入（二选一 1）：QQ 落点选「检查插件 + 自有白名单」；自动同步选「fork 内装 GitHub Actions」；B 站扫描选「整篇内容 + 触发评论 /fork」；Cookie 提醒选「打开页面实时校验 + 红色提示」。
+- 对齐输入（追问）：「这个是什么意思，不能让github自动同步吗？只用同步fork的master分支即可」。
+- 对齐输入（二选一 2）：「Actions + merge（推荐）」，只同步默认分支。
+- 对齐输入（批准）：「批准，用现有两个 QQ 号（推荐）」；首批 `2844973553`、`1961618848`；先实施部署，`github_enabled` 保持关闭。
+- 收尾输入：「收一下尾，等下我自己来测试一下」；要求回顾对话、读根目录 `devflow-handoff.md` 收尾（只读）、更新未收尾文档、提交本次相关代码、默认不提交 `config.ts`/`.gitignore`/`tsconfig.json`、先提交再收尾。
+- 吸收状态：T1–T6 完成，全量离线 160 项通过，两插件已部署（B 站 `0.3.4`、检查插件 `0.6.2`）。代码提交 `b9ef0fc`。真实 star/fork 未执行，等待用户打开开关后用真实链接验收。
 
 ## 2026-10-15 22:50:00 +08:00：QQ 日文档摘要排查与修复
 
