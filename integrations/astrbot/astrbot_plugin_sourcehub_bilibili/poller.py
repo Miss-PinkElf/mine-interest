@@ -7,13 +7,27 @@ import asyncio
 from .client import FetchError
 from .constants import COLLECTION_GAP_PREFIX, MAX_ITEMS_PER_CYCLE, MAX_SCAN_PAGES
 from .content import Document
+from .sourcehub.github_actions import MAX_REPOSITORIES_PER_MESSAGE
+from .sourcehub.github_links import extract_repository_links, fork_requested
+
+
+def trigger_message(notification: dict, raw: dict) -> str:
+    """取本次触发评论的正文；取不到时退回通知自带的 source_content。"""
+    comments = raw.get("comments") or {}
+    trigger = comments.get("trigger") or {}
+    message = str(((trigger.get("content") or {}).get("message")) or "")
+    if not message:
+        message = str(((notification.get("item") or {}).get("source_content")) or "")
+    return message
 
 
 class Poller:
-    def __init__(self, client, collector, store):
+    def __init__(self, client, collector, store, github=None, logger=None):
         self.client = client
         self.collector = collector
         self.store = store
+        self.github = github
+        self.logger = logger
 
     async def scan(self):
         cursor = self.store.cursor()
@@ -47,6 +61,44 @@ class Poller:
                 raw = {"notification": notification}
                 doc = Document(gaps=[f"{COLLECTION_GAP_PREFIX}{reason}"])
             await self.store.save(notification, raw, doc, self.client)
+            await self._run_github(notification, raw, doc)
+
+    async def _run_github(self, notification: dict, raw: dict, doc: Document) -> None:
+        """B 站不回复消息；结果写入日志，插件页可查看最近动作。"""
+        if self.github is None:
+            return
+        repositories = extract_repository_links(doc.text)
+        if not repositories:
+            return
+        if len(repositories) > MAX_REPOSITORIES_PER_MESSAGE:
+            self._log(
+                "GitHub 链接超过单条上限 %s，只处理前 %s 个"
+                % (MAX_REPOSITORIES_PER_MESSAGE, MAX_REPOSITORIES_PER_MESSAGE),
+                warning=True,
+            )
+        try:
+            results = await asyncio.to_thread(
+                self.github.handle,
+                repositories,
+                fork_requested(trigger_message(notification, raw)),
+                "bilibili",
+            )
+        except Exception as exc:
+            self._log("GitHub 自动化异常：%s" % type(exc).__name__, warning=True)
+            return
+        for result in results:
+            self._log(
+                "GitHub %s %s：%s" % (result.action, result.repository, result.message),
+                warning=not result.ok,
+            )
+
+    def _log(self, message: str, warning: bool = False) -> None:
+        if self.logger is None:
+            return
+        if warning:
+            self.logger.warning(message)
+        else:
+            self.logger.info(message)
 
     async def cycle(self):
         # 扫描失败也处理已经安全保存的通知。

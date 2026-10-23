@@ -59,6 +59,15 @@ QQ 状态监测（QQ Status Probe）需显式启用 `qq_status_enabled`，并填
 
 GitHub 提醒与资料发布分离：`alert_enabled` 默认关闭，`alert_remote` 填专用私有仓库 SSH remote，并与 B 站插件保持一致。提醒内容只含平台、账号尾号、状态与时间；私有性校验失败时保留待送事件，不推送。
 
+## GitHub 自动化（GitHub Automation）
+
+`github_enabled` 默认关闭。打开后，只有 `github_owner_qq_ids`、`github_admin_qq_ids` 中的 QQ 号（以及 AstrBot 管理员）发送的**本条消息正文**会触发：
+
+- 出现 GitHub 仓库链接：自动 `star`；
+- 正文含独立 `/fork`：自动 `fork`，并在 fork 仓库安装 `.github/workflows/sourcehub-fork-sync.yml`，每 6 小时把上游默认分支合并进 fork 默认分支。
+
+成功和失败都会回复（`github_reply_enabled` 可关）。直连失败时用 `github_proxy`（默认 `http://127.0.0.1:7897`）重试一次；权限或未登录问题不会重试代理。GitHub 自动化按账号权限判断，不受群号白名单限制；私聊和群聊都生效。合并转发内部消息里的链接不处理，避免无权限的人通过转发触发外部操作。状态文件保存在插件数据目录的 `github_actions.json`。
+
 | 配置 | 行为 |
 | --- | --- |
 | 留空（默认） | **全部群**都保存快照并展开转发 |

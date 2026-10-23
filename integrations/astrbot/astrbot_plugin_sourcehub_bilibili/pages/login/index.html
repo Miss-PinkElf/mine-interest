@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>登录与仓库校验 0.3.2</title>
+  <title>登录与仓库校验 0.3.4</title>
   <script src="/api/plugin/page/bridge-sdk.js"></script>
   <style>
     body {
@@ -44,11 +44,16 @@
   <main>
     <section>
       <h1>B 站扫码登录</h1>
-      <p id="plugin-version">插件版本 0.3.2</p>
+      <p id="plugin-version">插件版本 0.3.4</p>
       <p id="login-text">正在读取登录状态。</p>
       <button id="qr-button" type="button">生成二维码</button>
       <p id="qr-text"></p>
       <img id="qr-image" alt="登录二维码" hidden>
+    </section>
+    <section>
+      <h2>GitHub 自动化</h2>
+      <p id="github-text">正在读取 GitHub 自动化状态。</p>
+      <div id="github-result"></div>
     </section>
     <section>
       <h2>仓库推送校验</h2>
@@ -71,19 +76,32 @@
     const qrButton = document.querySelector("#qr-button");
     const qrText = document.querySelector("#qr-text");
     const qrImage = document.querySelector("#qr-image");
+    const githubText = document.querySelector("#github-text");
+    const githubResult = document.querySelector("#github-result");
     const repoButton = document.querySelector("#repo-button");
     const repoResult = document.querySelector("#repo-result");
     const repoTime = document.querySelector("#repo-time");
     let polling = false;
 
     function describeLogin(data) {
-      const account = data.account ? `，账号${data.account}` : "";
-      if (data.refreshable) return `已登录，可以自动刷新${account}。`;
-      if (data.logged_in) return `已有登录凭证，还不能自动刷新${account}。`;
+      const account = data.account ? `账号${data.account}` : "";
+      const checked = data.checked_at ? `校验时间 ${data.checked_at}` : "";
+      if (data.status && data.message) {
+        return [data.message, account, checked].filter(Boolean).join(" ");
+      }
+      if (data.refreshable) return `已登录，可以自动刷新${account ? `，${account}` : ""}。`;
+      if (data.logged_in) return `已有登录凭证，还不能自动刷新${account ? `，${account}` : ""}。`;
       return "还没有登录凭证。";
     }
 
-    const LOGIN_STATUS_TIMEOUT_MS = 8000;
+    function applyLoginText(data) {
+      loginText.textContent = describeLogin(data);
+      if (data.valid === true) loginText.className = "ok";
+      else if (data.valid === false) loginText.className = "bad";
+      else loginText.className = "";
+    }
+
+    const LOGIN_STATUS_TIMEOUT_MS = 35000;
 
     function withTimeout(work, timeoutMs, message) {
       let timer;
@@ -99,7 +117,33 @@
         LOGIN_STATUS_TIMEOUT_MS,
         "登录状态读取超时。",
       );
-      loginText.textContent = describeLogin(data);
+      applyLoginText(data);
+    }
+
+    async function refreshGithub() {
+      const data = await AstrBotPluginPage.apiGet("github/status");
+      githubResult.replaceChildren();
+      if (!data.enabled) {
+        githubText.textContent = "未启用。需要在插件设置中打开 GitHub 自动化（github_enabled）。";
+        return;
+      }
+      if (!data.actions || !data.actions.length) {
+        githubText.textContent = "已启用，还没有执行过动作。";
+        return;
+      }
+      githubText.textContent = "已启用。最近动作：";
+      for (const action of [...data.actions].reverse()) {
+        const row = document.createElement("div");
+        row.className = "row";
+        const title = document.createElement("strong");
+        title.textContent = `${action.repository} · ${action.action} · ${action.ok ? "成功" : "失败"}`;
+        const detail = document.createElement("p");
+        detail.className = action.ok ? "ok" : "bad";
+        const proxy = action.via_proxy ? "，经代理" : "";
+        detail.textContent = `${action.at || ""}${proxy}：${action.message || ""}`;
+        row.append(title, detail);
+        githubResult.append(row);
+      }
     }
 
     async function pollQr() {
@@ -109,7 +153,7 @@
         while (polling) {
           const data = await AstrBotPluginPage.apiGet("login/qr/status");
           qrText.textContent = QR_TEXT[data.qr] || QR_TEXT.unknown;
-          loginText.textContent = describeLogin(data);
+          applyLoginText(data);
           if (data.qr === "success" || data.qr === "expired" || data.qr === "idle") {
             if (data.qr === "success") qrImage.hidden = true;
             break;
@@ -177,15 +221,19 @@
     async function boot() {
       const loginTask = refreshLogin().catch((error) => {
         loginText.textContent = error.message || "登录状态读取失败。";
+        loginText.className = "bad";
       });
       const repoTask = refreshRepo().catch((error) => {
         repoTime.textContent = error.message || "没有读到上次校验。";
       });
-      await Promise.all([loginTask, repoTask]);
+      const githubTask = refreshGithub().catch((error) => {
+        githubText.textContent = error.message || "GitHub 自动化状态读取失败。";
+      });
+      await Promise.all([loginTask, repoTask, githubTask]);
     }
 
     if (!window.AstrBotPluginPage) {
-      loginText.textContent = "插件页面通道没有加载。请重新打开。当前版本 0.3.2。";
+      loginText.textContent = "插件页面通道没有加载。请重新打开。当前版本 0.3.4。";
     } else {
       AstrBotPluginPage.ready().then(boot).catch((error) => {
         loginText.textContent = error.message || "页面还没有连上 AstrBot。";

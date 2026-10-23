@@ -78,5 +78,41 @@
     "type": "string",
     "hint": "在群内 @机器人后发送此命令，默认“整理”。",
     "default": "整理"
+  },
+  "github_enabled": {
+    "description": "启用 GitHub 自动化（GitHub Automation）",
+    "type": "bool",
+    "hint": "打开后，有权限的 QQ 发送 GitHub 仓库链接会自动 star；文本含 /fork 时自动 fork 并安装同步工作流。",
+    "default": false
+  },
+  "github_owner_qq_ids": {
+    "description": "GitHub 自动化 owner QQ 号（Owner QQ IDs）",
+    "type": "list",
+    "hint": "这些 QQ 号发送的消息会触发 star/fork。",
+    "default": []
+  },
+  "github_admin_qq_ids": {
+    "description": "GitHub 自动化 admin QQ 号（Admin QQ IDs）",
+    "type": "list",
+    "hint": "与 owner 一样有权限；AstrBot 管理员账号也会自动认可。",
+    "default": []
+  },
+  "github_reply_enabled": {
+    "description": "GitHub 操作结果回复（Reply GitHub Results）",
+    "type": "bool",
+    "hint": "成功和失败都回复；关闭后只写日志。",
+    "default": true
+  },
+  "github_proxy": {
+    "description": "GitHub 直连失败时使用的本机代理（Local GitHub Proxy）",
+    "type": "string",
+    "hint": "默认 ClashVerge 的 HTTP 端口 7897；留空表示不重试代理。",
+    "default": "http://127.0.0.1:7897"
+  },
+  "github_gh_path": {
+    "description": "gh 命令路径（GitHub CLI Path）",
+    "type": "string",
+    "hint": "留空自动查找 PATH、/opt/homebrew/bin/gh、/usr/local/bin/gh。",
+    "default": ""
   }
 }

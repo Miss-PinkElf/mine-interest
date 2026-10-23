@@ -65,5 +65,23 @@
     "type": "string",
     "hint": "相对 AstrBot 工作目录或绝对路径，默认 data/sourcehub",
     "default": "data/sourcehub"
+  },
+  "github_enabled": {
+    "description": "启用 GitHub 自动化（GitHub Automation）",
+    "type": "bool",
+    "hint": "打开后，采集内容里的 GitHub 仓库链接会自动 star；触发评论含 /fork 时自动 fork 并安装同步工作流。",
+    "default": false
+  },
+  "github_proxy": {
+    "description": "GitHub 直连失败时使用的本机代理（Local GitHub Proxy）",
+    "type": "string",
+    "hint": "默认 ClashVerge 的 HTTP 端口 7897；留空表示不重试代理。",
+    "default": "http://127.0.0.1:7897"
+  },
+  "github_gh_path": {
+    "description": "gh 命令路径（GitHub CLI Path）",
+    "type": "string",
+    "hint": "留空自动查找 PATH、/opt/homebrew/bin/gh、/usr/local/bin/gh。",
+    "default": ""
   }
 }

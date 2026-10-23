@@ -45,6 +45,11 @@
 | `publish_enabled` | 启用私有仓库安全自动发布；只发布 Markdown | `true` |
 | `alert_enabled`、`alert_remote` | 启用独立私有 GitHub 告警仓库和其 SSH remote | `false`、空 |
 | `network_proxy` | 可选本机 HTTP 代理（Local HTTP Proxy），用于 B 站接口与媒体访问 | 空 |
+| `github_enabled` | 启用 GitHub 自动化（GitHub Automation）：采集内容里的仓库链接自动 star，触发评论含 `/fork` 时 fork | `false` |
+| `github_proxy` | GitHub 直连失败时重试用的本机代理 | `http://127.0.0.1:7897` |
+| `github_gh_path` | `gh` 命令路径；留空自动查找 PATH 与常见安装位置 | 空 |
+
+GitHub 自动化仍不写 B 站内容，只通过本机 `gh` 操作 GitHub。它先直连，连接类失败才用 `github_proxy` 重试；权限或未登录错误不会冒充网络错误。fork 后在 fork 仓库安装 `.github/workflows/sourcehub-fork-sync.yml`，每 6 小时把上游默认分支合并进 fork 的默认分支。第一次同步前请在 fork 的 Actions 页面确认工作流已启用。插件页的「GitHub 自动化」区块会显示最近动作和失败原因。
 
 本插件使用自己的凭据文件，不读取 BiliBot 配置。扫码登录（QR Login）在本机终端运行：
 

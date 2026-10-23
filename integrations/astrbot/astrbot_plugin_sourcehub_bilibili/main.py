@@ -13,12 +13,15 @@ from .sourcehub.vault import Vault
 from .sourcehub.publish import Publisher, PublishError, PUBLISH_INTERVAL_SECONDS
 from .sourcehub.alerts import AlertLedger, HEALTHY, LOGIN_REQUIRED, UNKNOWN
 from .sourcehub.alert_publish import ALERT_DIR_SUFFIX, AlertPublisher, AlertPublishError
+from .sourcehub.github_actions import DEFAULT_GITHUB_PROXY, GithubAutomation, GithubRunner
 
 from .auth import BilibiliAuth, CredentialStore
 from .client import BilibiliClient, FetchError
 from .collector import Collector, numeric_id
 from .constants import (
-    ALERT_ENABLED_KEY, ALERT_POLL_SECONDS, ALERT_REMOTE_KEY, DEFAULT_POLL_SECONDS, LOG_PREFIX, MEDIA_MAX_BYTES, MIN_POLL_SECONDS, NETWORK_PROXY_KEY,
+    ALERT_ENABLED_KEY, ALERT_POLL_SECONDS, ALERT_REMOTE_KEY, DEFAULT_POLL_SECONDS,
+    GITHUB_ENABLED_KEY, GITHUB_GH_PATH_KEY, GITHUB_PROXY_KEY, GITHUB_STATE_FILE,
+    LOG_PREFIX, MEDIA_MAX_BYTES, MIN_POLL_SECONDS, NETWORK_PROXY_KEY,
     PLUGIN_NAME, PLUGIN_VERSION,
 )
 from .poller import Poller
@@ -46,7 +49,23 @@ class SourceHubBilibili(Star):
         self.alert_task = None
         self._qr_key = ""
         self._qr_status = "idle"
+        self.github_automation = self._build_github_automation()
+        self.logger.info(
+            "%s GitHub 自动化：%s", LOG_PREFIX, "开" if self.github_automation else "关"
+        )
         register_webui(self, context)
+
+    def _build_github_automation(self) -> GithubAutomation | None:
+        """GitHub 自动化默认关闭；只有显式打开才创建状态文件与 gh 调用器。"""
+        if not self.config.get(GITHUB_ENABLED_KEY, False):
+            return None
+        return GithubAutomation(
+            StarTools.get_data_dir(PLUGIN_NAME) / GITHUB_STATE_FILE,
+            GithubRunner(
+                str(self.config.get(GITHUB_GH_PATH_KEY) or ""),
+                str(self.config.get(GITHUB_PROXY_KEY) or DEFAULT_GITHUB_PROXY),
+            ),
+        )
 
     async def initialize(self):
         if not self.config.get("enabled", False):
@@ -128,7 +147,13 @@ class SourceHubBilibili(Star):
                 if poller is None or account != current_account:
                     current_account = account
                     store = Store(StarTools.get_data_dir(PLUGIN_NAME) / account, vault=self.vault)
-                    poller = Poller(self.client, Collector(self.client), store)
+                    poller = Poller(
+                        self.client,
+                        Collector(self.client),
+                        store,
+                        github=self.github_automation,
+                        logger=self.logger,
+                    )
                 await poller.cycle()
             except asyncio.CancelledError:
                 raise

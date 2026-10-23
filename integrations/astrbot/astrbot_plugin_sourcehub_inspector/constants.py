@@ -3,6 +3,8 @@
 集中管理日志前缀、落盘目录名与转发接口相关常量，避免散落在各个模块里。
 """
 
+PLUGIN_NAME = "astrbot_plugin_sourcehub_inspector"
+PLUGIN_VERSION = "0.6.2"
 LOG_PREFIX = "[SourceHub Inspector]"
 
 # 快照与转发展开结果的落盘目录（相对 AstrBot 运行工作目录）
@@ -45,6 +47,13 @@ SESSION_END_KEY = "session_end"
 MEDIA_MAX_BYTES_KEY = "media_max_bytes"
 TIMEZONE_KEY = "timezone"
 ORGANIZE_COMMAND_KEY = "organize_command"
+GITHUB_ENABLED_KEY = "github_enabled"
+GITHUB_OWNER_QQ_IDS_KEY = "github_owner_qq_ids"
+GITHUB_ADMIN_QQ_IDS_KEY = "github_admin_qq_ids"
+GITHUB_REPLY_ENABLED_KEY = "github_reply_enabled"
+GITHUB_PROXY_KEY = "github_proxy"
+GITHUB_GH_PATH_KEY = "github_gh_path"
+GITHUB_STATE_FILE = "github_actions.json"
 DEFAULT_TIMEZONE = "Asia/Shanghai"
 DEFAULT_ORGANIZE_COMMAND = "整理"
 DEFAULT_VAULT_DIR = "data/sourcehub"

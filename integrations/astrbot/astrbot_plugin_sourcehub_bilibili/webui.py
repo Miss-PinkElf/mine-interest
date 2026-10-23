@@ -15,6 +15,8 @@ from astrbot.api.web import error_response, json_response
 
 from .auth import AuthError, BilibiliAuth
 from .constants import ALERT_REMOTE_KEY, PLUGIN_NAME
+from .login_view import MISSING_LOGIN_STATUS, login_validity
+from .sourcehub.alerts import UNKNOWN
 from .sourcehub.publish import DEFAULT_PUBLISH_REMOTE, verify_remote_access
 
 LOG_PREFIX = "[SourceHub Bilibili]"
@@ -22,8 +24,10 @@ ACCOUNT_TAIL_LENGTH = 4
 QR_START_ROUTE = "login/qr/start"
 QR_STATUS_ROUTE = "login/qr/status"
 LOGIN_STATUS_ROUTE = "login/status"
+GITHUB_STATUS_ROUTE = "github/status"
 REPO_CHECK_ROUTE = "repo/check"
 REPO_STATUS_ROUTE = "repo/status"
+GITHUB_ACTION_LIMIT = 10
 ACCESS_RECORD_NAME = "repo_access.json"
 PUBLISH_ROLE = "资料发布"
 ALERT_ROLE = "告警"
@@ -64,6 +68,7 @@ def _bind(plugin: Any, handler: Handler):
 def register_webui(plugin: Any, context: Context) -> None:
     routes = (
         (LOGIN_STATUS_ROUTE, "GET", handle_login_status, "SourceHub 登录状态"),
+        (GITHUB_STATUS_ROUTE, "GET", handle_github_status, "SourceHub GitHub 自动化状态"),
         (QR_START_ROUTE, "POST", handle_qr_start, "SourceHub 生成登录二维码"),
         (QR_STATUS_ROUTE, "GET", handle_qr_status, "SourceHub 查询扫码状态"),
         (REPO_STATUS_ROUTE, "GET", handle_repo_status, "SourceHub 读取上次仓库校验"),
@@ -97,7 +102,29 @@ def _login_view(plugin: Any) -> dict:
 
 
 async def handle_login_status(plugin: Any):
-    return _response(_login_view(plugin))
+    """打开页面时实时校验 Cookie；网络未知不冒充失效。"""
+    credentials = _credentials(plugin)
+    view = _login_view(plugin)
+    checked_at = datetime.now().astimezone().isoformat(timespec="seconds")
+    status = MISSING_LOGIN_STATUS
+    if credentials.get("SESSDATA"):
+        try:
+            async with BilibiliAuth(plugin.credential_store, plugin.config) as auth:
+                status = await auth.check(credentials)
+        except Exception:
+            status = UNKNOWN
+    view.update(login_validity(status, checked_at))
+    return _response(view)
+
+
+async def handle_github_status(plugin: Any):
+    automation = getattr(plugin, "github_automation", None)
+    return _response(
+        {
+            "enabled": automation is not None,
+            "actions": automation.recent_actions(GITHUB_ACTION_LIMIT) if automation else [],
+        }
+    )
 
 
 async def handle_qr_start(plugin: Any):

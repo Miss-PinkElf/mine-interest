@@ -11,7 +11,7 @@ from typing import Any
 
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.message_components import Forward
-from astrbot.api.star import Context, Star, register
+from astrbot.api.star import Context, Star, StarTools, register
 
 from .collect import build_pack, collect_event, load_engine
 from .collect import finalize_daily_collection
@@ -24,11 +24,18 @@ from .constants import (
     DEFAULT_VAULT_DIR,
     ENABLED_GROUP_IDS_KEY,
     FORWARD_DIR_NAME,
+    GITHUB_ENABLED_KEY,
+    GITHUB_GH_PATH_KEY,
+    GITHUB_PROXY_KEY,
+    GITHUB_REPLY_ENABLED_KEY,
+    GITHUB_STATE_FILE,
     LOG_PREFIX,
     MEDIA_MAX_BYTES_KEY,
     DEFAULT_ORGANIZE_COMMAND,
     DEFAULT_TIMEZONE,
     ORGANIZE_COMMAND_KEY,
+    PLUGIN_NAME,
+    PLUGIN_VERSION,
     QQ_ACCOUNT_ID_KEY,
     QQ_DISCONNECT_GRACE_KEY,
     QQ_PLATFORM_ID_KEY,
@@ -37,6 +44,14 @@ from .constants import (
     VAULT_DIR_KEY,
     TIMEZONE_KEY,
 )
+from .github_gate import compose_github_reply, is_github_authorized, message_plain_text
+from .sourcehub.github_actions import (
+    DEFAULT_GITHUB_PROXY,
+    MAX_REPOSITORIES_PER_MESSAGE,
+    GithubAutomation,
+    GithubRunner,
+)
+from .sourcehub.github_links import extract_repository_links, fork_requested
 from .sourcehub.daily import DailyLedger
 from .sourcehub.constants import DEFAULT_MEDIA_MAX_BYTES, SPOOL_DIR
 from .sourcehub.vault import Vault
@@ -88,7 +103,7 @@ def _describe_group(event: AstrMessageEvent) -> str:
     return group_name or group_id or "非群聊"
 
 
-@register("astrbot_plugin_sourcehub_inspector", "Codex", "保存消息事件快照并成条入库", "0.6.1")
+@register(PLUGIN_NAME, "Codex", "保存消息事件快照并成条入库", PLUGIN_VERSION)
 class SourceHubInspector(Star):
     def __init__(self, context: Context, config: dict | None = None):
         super().__init__(context, config)
@@ -124,14 +139,17 @@ class SourceHubInspector(Star):
         self._daily_task = None
         self._engine = load_engine(self._pack, self._spool_path) if self._collect_enabled else None
         self._media_max_bytes = int(self.config.get(MEDIA_MAX_BYTES_KEY) or DEFAULT_MEDIA_MAX_BYTES)
+        self._github_reply = bool(self.config.get(GITHUB_REPLY_ENABLED_KEY, True))
+        self._github = self._build_github_automation()
 
         self.logger.info(
-            "%s 插件已加载，快照目录：%s，启用范围：%s，成条：%s，Vault：%s",
+            "%s 插件已加载，快照目录：%s，启用范围：%s，成条：%s，Vault：%s，GitHub 自动化：%s",
             LOG_PREFIX,
             self._snapshot_dir,
             self._describe_scope(),
             self._collect_enabled,
             vault_dir,
+            "开" if self._github else "关",
         )
 
     async def initialize(self):
@@ -177,6 +195,18 @@ class SourceHubInspector(Star):
                 self.logger.warning("%s 资料待推送：%s", LOG_PREFIX, exc)
             await asyncio.sleep(PUBLISH_INTERVAL_SECONDS)
 
+    def _build_github_automation(self) -> GithubAutomation | None:
+        """GitHub 自动化默认关闭；打开后才创建状态文件与 gh 调用器。"""
+        if not self.config.get(GITHUB_ENABLED_KEY, False):
+            return None
+        return GithubAutomation(
+            StarTools.get_data_dir(PLUGIN_NAME) / GITHUB_STATE_FILE,
+            GithubRunner(
+                str(self.config.get(GITHUB_GH_PATH_KEY) or ""),
+                str(self.config.get(GITHUB_PROXY_KEY) or DEFAULT_GITHUB_PROXY),
+            ),
+        )
+
     def _describe_scope(self) -> str:
         """启用范围的日志文案。留空时明确说明是全部群。"""
         if not self._enabled_group_ids:
@@ -189,13 +219,42 @@ class SourceHubInspector(Star):
             return True
         return group_id in self._enabled_group_ids
 
+    async def _github_reply(self, event: AstrMessageEvent) -> str | None:
+        """GitHub 自动化只看本条消息正文；私聊与群聊都按账号权限判断。"""
+        if self._github is None:
+            return None
+        text = message_plain_text(event)
+        repositories = extract_repository_links(text)
+        if not repositories or not is_github_authorized(event, self.config):
+            return None
+        if len(repositories) > MAX_REPOSITORIES_PER_MESSAGE:
+            self.logger.warning(
+                "%s GitHub 链接超过单条上限 %s，只处理前 %s 个",
+                LOG_PREFIX,
+                MAX_REPOSITORIES_PER_MESSAGE,
+                MAX_REPOSITORIES_PER_MESSAGE,
+            )
+        try:
+            results = await asyncio.to_thread(
+                self._github.handle, repositories, fork_requested(text), "qq"
+            )
+        except Exception:
+            self.logger.exception("%s GitHub 自动化失败", LOG_PREFIX)
+            return "GitHub 自动化失败：内部错误。" if self._github_reply else None
+        if results and self._github_reply:
+            return compose_github_reply(results)
+        return None
+
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def inspect_message(self, event: AstrMessageEvent):
+        github_reply = await self._github_reply(event)
         group_id = event.get_group_id() or ""
         if not self._is_group_enabled(group_id):
             self.logger.debug(
                 "%s 群不在启用范围内，跳过：%s", LOG_PREFIX, _describe_group(event)
             )
+            if github_reply:
+                yield event.plain_result(github_reply)
             return
 
         received_at = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
@@ -228,6 +287,9 @@ class SourceHubInspector(Star):
                     self.logger.info("%s 已成条入库：%s", LOG_PREFIX, "、".join(item_ids))
             except Exception:
                 self.logger.exception("%s 成条入库失败", LOG_PREFIX)
+
+        if github_reply:
+            yield event.plain_result(github_reply)
 
     @filter.command("整理")
     async def organize_today(self, event: AstrMessageEvent):

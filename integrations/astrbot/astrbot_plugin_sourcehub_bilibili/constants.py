@@ -1,11 +1,15 @@
 """接口契约和业务常量（Protocol and Business Constants）。"""
 
 PLUGIN_NAME = "astrbot_plugin_sourcehub_bilibili"
-PLUGIN_VERSION = "0.3.3"
+PLUGIN_VERSION = "0.3.4"
 ALERT_POLL_SECONDS = 30
 ALERT_ENABLED_KEY = "alert_enabled"
 ALERT_REMOTE_KEY = "alert_remote"
 NETWORK_PROXY_KEY = "network_proxy"
+GITHUB_ENABLED_KEY = "github_enabled"
+GITHUB_PROXY_KEY = "github_proxy"
+GITHUB_GH_PATH_KEY = "github_gh_path"
+GITHUB_STATE_FILE = "github_actions.json"
 LOG_PREFIX = "[SourceHub Bilibili]"
 API_BASE = "https://api.bilibili.com"
 SITE_BASE = "https://www.bilibili.com"
