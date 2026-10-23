@@ -1,7 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-21 18:38:00 +08:00
-- 更新时间（Updated At）：2026-10-23 12:00:00 +08:00。
+- 更新时间（Updated At）：2026-10-23 17:20:00 +08:00。
 - 作者（Author）：Grok
 - 目的（Purpose）：沉淀本轮成条切片的踩坑。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub（`.`）。
@@ -30,3 +30,7 @@
 16. **GitHub Actions 在 fork 里默认可能未启用。** 安装工作流后要尝试 `gh workflow enable <file> -R <fork>`；失败时必须在回复或页面里明确提示用户去 Actions 页手动启用，不能静默当作完成。
 17. **AstrBot 插件运行时找不到 `gh` 是真实风险。** 桌面版进程的 PATH 未必包含 Homebrew；`GithubRunner` 必须按「配置路径 → `shutil.which` → `/opt/homebrew/bin/gh` → `/usr/local/bin/gh`」依次查找，不能只依赖 PATH。
 18. **用 AstrBot 内置 Python 做现场导入验证，比只看仓库测试更接近真实加载。** 命令：`PYTHONPATH=$HOME/.astrbot/data/plugins:/Applications/AstrBot.app/Contents/Resources/backend/app /Applications/AstrBot.app/Contents/Resources/backend/python/bin/python -c "import astrbot_plugin_sourcehub_inspector.main, astrbot_plugin_sourcehub_bilibili.main"`。它不需要真的启动 AstrBot，也不会触发网络副作用。
+19. **实例属性会静默遮蔽同名方法。** 检查插件曾同时定义 `self._github_reply = bool(...)` 与 `async def _github_reply(...)`，调用时得到 `TypeError: 'bool' object is not callable`，且发生在消息处理入口，导致快照与成条全部跳过。新增 AST 守卫 `tests/test_sourcehub_plugin_names.py`，禁止 `integrations/astrbot/*/main.py` 出现该冲突。
+20. **`gh repo fork <repository>` 不接受 `--remote`，写成 `--remote=false` 也算 flag 被设置。** 报错：`the --remote flag is unsupported when a repository argument is provided`。正确命令是 `gh repo fork <repo> --clone=false --default-branch-only`。
+21. **GitHub Lists 只能走 GraphQL。** REST `/user/lists` 实测 404；`viewer.lists` 可读，`updateUserListsForItem(input: {itemId, listIds})` 设置归属，语义是**替换**条目的列表集合，因此要保留其他列表必须先查当前归属再取并集。`gh api graphql` 可用，不需要额外依赖。
+22. **长轮询插件的正常流程必须有可观测日志。** B 站插件此前只在异常时写日志，用户 @ 后无法判断是否收到、采集、保存。补日志时要把「收到数量 → 开始采集 → 失败原因 → 保存成功」串起来，并统一前缀，否则仍难以筛选。

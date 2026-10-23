@@ -21,6 +21,40 @@ WORKFLOW_FILE = ".github/workflows/sourcehub-fork-sync.yml"
 WORKFLOW_MARKER = "# Managed by SourceHub"
 WORKFLOW_CRON = "17 */6 * * *"
 
+#: GitHub Lists 的一次性读取上限；超过时放弃列表归属，避免覆盖手动归属。
+STAR_LIST_MAX_LISTS = 100
+STAR_LIST_MAX_ITEMS = 100
+STAR_LIST_ID_PATTERN = re.compile(r"^UL_[A-Za-z0-9_-]+$")
+
+#: 同时读取仓库 node id、目标列表与各列表的当前条目，用于保留已有归属。
+STAR_LIST_QUERY = f"""
+query($owner: String!, $name: String!) {{
+  repository(owner: $owner, name: $name) {{ id }}
+  viewer {{
+    lists(first: {STAR_LIST_MAX_LISTS}) {{
+      pageInfo {{ hasNextPage }}
+      nodes {{
+        id
+        name
+        items(first: {STAR_LIST_MAX_ITEMS}) {{
+          pageInfo {{ hasNextPage }}
+          nodes {{ ... on Repository {{ nameWithOwner }} }}
+        }}
+      }}
+    }}
+  }}
+}}
+"""
+
+#: listIds 只允许由本模块校验过的 UL_ 开头的 ID 嵌入。
+STAR_LIST_MUTATION_TEMPLATE = """
+mutation($itemId: ID!) {{
+  updateUserListsForItem(input: {{itemId: $itemId, listIds: [{list_ids}]}}) {{
+    list {{ id name }}
+  }}
+}}
+"""
+
 GH_CANDIDATE_PATHS = (
     "/opt/homebrew/bin/gh",
     "/usr/local/bin/gh",
@@ -182,6 +216,16 @@ def parse_fork_name(output: str) -> str:
     return ""
 
 
+def list_node_names(node: dict) -> set[str]:
+    """取出一个列表节点里已包含的仓库全名（小写），用于保留原有归属。"""
+    items = (node.get("items") or {}).get("nodes") or []
+    return {
+        str((item or {}).get("nameWithOwner") or "").lower()
+        for item in items
+        if isinstance(item, dict)
+    }
+
+
 def workflow_template(upstream: str, upstream_branch: str, fork_branch: str) -> str:
     """生成只同步默认分支、保留工作流文件的 GitHub Actions 工作流。"""
     return f"""# {WORKFLOW_MARKER}。请勿手工修改，插件会在需要时覆盖。
@@ -279,9 +323,10 @@ class GithubRunner:
 class GithubAutomation:
     """对采集内容执行 star/fork，并把结果记录到本机状态文件。"""
 
-    def __init__(self, state_path: Path, runner: GithubRunner):
+    def __init__(self, state_path: Path, runner: GithubRunner, star_list: str = ""):
         self.state_path = Path(state_path)
         self.runner = runner
+        self.star_list = str(star_list or "").strip()
         self._lock = threading.Lock()
         self._state = self._load_state()
 
@@ -375,6 +420,115 @@ class GithubAutomation:
             return None, CommandResult(1, result.stdout, "api_response_not_json", result.via_proxy)
         return (payload if isinstance(payload, dict) else None), result
 
+    def _graphql(
+        self, query: str, variables: dict[str, str]
+    ) -> tuple[dict | None, CommandResult]:
+        """调用 GraphQL；HTTP 200 里带 errors 也算失败。"""
+        args = ["api", "graphql", "-f", f"query={query}"]
+        for key, value in variables.items():
+            args.extend(["-f", f"{key}={value}"])
+        result = self.runner.run_with_fallback(args)
+        if not result.ok:
+            return None, result
+        try:
+            payload = json.loads(result.stdout)
+        except (TypeError, ValueError):
+            return None, CommandResult(
+                1, result.stdout, "graphql_response_not_json", result.via_proxy
+            )
+        if not isinstance(payload, dict):
+            return None, CommandResult(
+                1, result.stdout, "graphql_response_not_object", result.via_proxy
+            )
+        errors = payload.get("errors")
+        if errors:
+            detail = "；".join(
+                str((error or {}).get("message") or error) for error in errors
+            )
+            return None, CommandResult(
+                1, result.stdout, f"graphql_error: {detail}", result.via_proxy
+            )
+        data = payload.get("data")
+        return (data if isinstance(data, dict) else None), result
+
+    def _assign_star_list(self, repository: str) -> tuple[bool, str, bool]:
+        """把刚 star 的仓库加入配置列表，并保留它已有的其他列表。"""
+        owner, _, name = repository.partition("/")
+        data, query_result = self._graphql(
+            STAR_LIST_QUERY, {"owner": owner, "name": name}
+        )
+        if data is None:
+            detail = describe_failure(query_result, self.runner.proxy_url)
+            return (
+                False,
+                f"已 star，但加入列表「{self.star_list}」失败：{detail}",
+                query_result.via_proxy,
+            )
+
+        item_id = str(((data.get("repository") or {}).get("id")) or "")
+        if not item_id:
+            return False, "已 star，但加入列表失败：仓库 node id 缺失", query_result.via_proxy
+
+        lists_connection = (data.get("viewer") or {}).get("lists") or {}
+        list_nodes = lists_connection.get("nodes") or []
+        if (lists_connection.get("pageInfo") or {}).get("hasNextPage"):
+            return (
+                False,
+                f"已 star，但加入列表「{self.star_list}」失败：列表数量超过 {STAR_LIST_MAX_LISTS}，无法安全保留原有归属",
+                query_result.via_proxy,
+            )
+        if any(
+            (((node.get("items") or {}).get("pageInfo")) or {}).get("hasNextPage")
+            for node in list_nodes
+        ):
+            return (
+                False,
+                f"已 star，但加入列表「{self.star_list}」失败：列表条目超过 {STAR_LIST_MAX_ITEMS}，无法安全保留原有归属",
+                query_result.via_proxy,
+            )
+
+        target = next(
+            (
+                node
+                for node in list_nodes
+                if str(node.get("name") or "").strip() == self.star_list
+            ),
+            None,
+        )
+        if target is None:
+            return (
+                True,
+                f"已 star（列表「{self.star_list}」不存在，放入默认位置）",
+                query_result.via_proxy,
+            )
+
+        list_ids: list[str] = []
+        for node in list_nodes:
+            list_id = str(node.get("id") or "")
+            if not STAR_LIST_ID_PATTERN.match(list_id):
+                continue
+            items = list_node_names(node)
+            if node is target or repository.lower() in items:
+                if list_id not in list_ids:
+                    list_ids.append(list_id)
+        if not list_ids:
+            return False, "已 star，但加入列表失败：列表 ID 非法", query_result.via_proxy
+
+        mutation = STAR_LIST_MUTATION_TEMPLATE.format(
+            list_ids=", ".join(f'"{list_id}"' for list_id in list_ids)
+        )
+        result = self.runner.run_with_fallback(
+            ["api", "graphql", "-f", f"query={mutation}", "-f", f"itemId={item_id}"]
+        )
+        if not result.ok:
+            detail = describe_failure(result, self.runner.proxy_url)
+            return (
+                False,
+                f"已 star，但加入列表「{self.star_list}」失败：{detail}",
+                result.via_proxy,
+            )
+        return True, f"已 star（已加入列表「{self.star_list}」）", result.via_proxy
+
     def _star(self, repository: str, source: str) -> ActionResult:
         state = self._repo_state(repository)
         if state.get("starred_at"):
@@ -382,13 +536,18 @@ class GithubAutomation:
         result = self.runner.run_with_fallback(
             ["api", "--method", "PUT", f"/user/starred/{repository}"]
         )
-        if result.ok:
-            state["starred_at"] = _now()
-            action = ActionResult(repository, "star", True, "已 star", result.via_proxy)
-        else:
+        if not result.ok:
             action = ActionResult(
                 repository, "star", False, describe_failure(result, self.runner.proxy_url), result.via_proxy
             )
+            self._record(source, action)
+            return action
+        state["starred_at"] = _now()
+        ok, message, via_proxy = True, "已 star", result.via_proxy
+        if self.star_list:
+            ok, message, list_via_proxy = self._assign_star_list(repository)
+            via_proxy = via_proxy or list_via_proxy
+        action = ActionResult(repository, "star", ok, message, via_proxy)
         self._record(source, action)
         return action
 
@@ -428,7 +587,7 @@ class GithubAutomation:
         via_proxy = upstream_result.via_proxy
         if fork_data is None:
             created = self.runner.run_with_fallback(
-                ["repo", "fork", repository, "--clone=false", "--remote=false", "--default-branch-only"]
+                ["repo", "fork", repository, "--clone=false", "--default-branch-only"]
             )
             via_proxy = created.via_proxy
             if not created.ok:

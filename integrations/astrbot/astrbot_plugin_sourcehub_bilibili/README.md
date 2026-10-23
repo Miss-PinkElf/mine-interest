@@ -46,6 +46,7 @@
 | `alert_enabled`、`alert_remote` | 启用独立私有 GitHub 告警仓库和其 SSH remote | `false`、空 |
 | `network_proxy` | 可选本机 HTTP 代理（Local HTTP Proxy），用于 B 站接口与媒体访问 | 空 |
 | `github_enabled` | 启用 GitHub 自动化（GitHub Automation）：采集内容里的仓库链接自动 star，触发评论含 `/fork` 时 fork | `false` |
+| `github_star_list` | 新 star 加入的 GitHub Lists 名称；留空或找不到时留在默认位置，并保留已有其他列表 | 空 |
 | `github_proxy` | GitHub 直连失败时重试用的本机代理 | `http://127.0.0.1:7897` |
 | `github_gh_path` | `gh` 命令路径；留空自动查找 PATH 与常见安装位置 | 空 |
 

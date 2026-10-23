@@ -94,6 +94,13 @@ class GithubAutomationTests(unittest.TestCase):
                 self.existing_fork = existing_fork
                 self.login_fails = login_fails
                 self.fork_created = False
+                self.graphql_fails = False
+                self.graphql_data = {
+                    "repository": {"id": "R_demo"},
+                    "viewer": {
+                        "lists": {"pageInfo": {"hasNextPage": False}, "nodes": []}
+                    },
+                }
 
             def run_with_fallback(self, args):
                 self.calls.append(list(args))
@@ -101,6 +108,24 @@ class GithubAutomationTests(unittest.TestCase):
                     if self.login_fails:
                         return CommandResult(1, "", "Could not resolve host: api.github.com")
                     return CommandResult(0, "tester", "")
+                if args[:2] == ["api", "graphql"]:
+                    if self.graphql_fails:
+                        return CommandResult(1, "", "graphql_error: boom")
+                    query = next(
+                        (argument for argument in args if argument.startswith("query=")),
+                        "",
+                    )
+                    if "updateUserListsForItem" in query:
+                        return CommandResult(
+                            0,
+                            json.dumps(
+                                {"data": {"updateUserListsForItem": {"list": None}}}
+                            ),
+                            "",
+                        )
+                    return CommandResult(
+                        0, json.dumps({"data": self.graphql_data}), ""
+                    )
                 if args[:2] == ["workflow", "enable"]:
                     return CommandResult(0, "", "")
                 if args[:2] == ["repo", "fork"]:
@@ -190,7 +215,9 @@ class GithubAutomationTests(unittest.TestCase):
         self.assertEqual(len(fork_calls), 1)
         self.assertIn("--default-branch-only", fork_calls[0])
         self.assertIn("--clone=false", fork_calls[0])
-        self.assertIn("--remote=false", fork_calls[0])
+        # `gh repo fork <repository>` 不接受 --remote（即使显式传 false 也会报错）：
+        # the `--remote` flag is unsupported when a repository argument is provided
+        self.assertNotIn("--remote=false", fork_calls[0])
 
     def test_unmanaged_existing_workflow_is_not_overwritten(self):
         runner = self._runner(existing_workflow="name: Someone Else\n")
@@ -219,6 +246,112 @@ class GithubAutomationTests(unittest.TestCase):
         automation.handle(["owner/demo"], fork=True, source="qq")
         actions = automation.recent_actions()
         self.assertEqual([action["action"] for action in actions], ["star", "fork"])
+
+
+    def _list_node(self, list_id, name, repositories=(), truncated=False):
+        return {
+            "id": list_id,
+            "name": name,
+            "items": {
+                "pageInfo": {"hasNextPage": truncated},
+                "nodes": [{"nameWithOwner": repository} for repository in repositories],
+            },
+        }
+
+    def _set_lists(self, runner, nodes):
+        runner.graphql_data["viewer"]["lists"] = {
+            "pageInfo": {"hasNextPage": False},
+            "nodes": nodes,
+        }
+
+    def _mutations(self, runner):
+        return [
+            call
+            for call in runner.calls
+            if call[:2] == ["api", "graphql"]
+            and any("updateUserListsForItem" in argument for argument in call)
+        ]
+
+    def test_new_star_joins_configured_list(self):
+        runner = self._runner()
+        self._set_lists(runner, [self._list_node("UL_ai", "AI相关")])
+        automation = GithubAutomation(self.state_path, runner, star_list="AI相关")
+
+        results = automation.handle(["owner/demo"], fork=False, source="qq")
+
+        self.assertTrue(results[0].ok)
+        self.assertIn("已加入列表「AI相关」", results[0].message)
+        mutations = self._mutations(runner)
+        self.assertEqual(len(mutations), 1)
+        self.assertIn('"UL_ai"', " ".join(mutations[0]))
+
+    def test_star_list_preserves_existing_lists(self):
+        runner = self._runner()
+        self._set_lists(
+            runner,
+            [
+                self._list_node("UL_ai", "AI相关"),
+                self._list_node("UL_useful", "Useful", ["owner/demo"]),
+            ],
+        )
+        automation = GithubAutomation(self.state_path, runner, star_list="AI相关")
+
+        results = automation.handle(["owner/demo"], fork=False, source="qq")
+
+        self.assertTrue(results[0].ok)
+        mutation = " ".join(self._mutations(runner)[0])
+        self.assertIn('"UL_ai"', mutation)
+        self.assertIn('"UL_useful"', mutation)
+
+    def test_missing_list_falls_back_to_default_star(self):
+        runner = self._runner()
+        self._set_lists(runner, [self._list_node("UL_other", "其他")])
+        automation = GithubAutomation(self.state_path, runner, star_list="不存在")
+
+        results = automation.handle(["owner/demo"], fork=False, source="qq")
+
+        self.assertTrue(results[0].ok)
+        self.assertIn("不存在，放入默认位置", results[0].message)
+        self.assertEqual(self._mutations(runner), [])
+
+    def test_already_starred_does_not_query_lists(self):
+        runner = self._runner()
+        self._set_lists(runner, [self._list_node("UL_ai", "AI相关")])
+        automation = GithubAutomation(self.state_path, runner, star_list="AI相关")
+        automation.handle(["owner/demo"], fork=False, source="qq")
+        runner.calls.clear()
+
+        results = automation.handle(["owner/demo"], fork=False, source="qq")
+
+        self.assertEqual(results[0].message, "已经 star，跳过")
+        self.assertFalse(
+            any(call[:2] == ["api", "graphql"] for call in runner.calls)
+        )
+
+    def test_truncated_list_skips_assignment(self):
+        runner = self._runner()
+        self._set_lists(
+            runner, [self._list_node("UL_ai", "AI相关", truncated=True)]
+        )
+        automation = GithubAutomation(self.state_path, runner, star_list="AI相关")
+
+        results = automation.handle(["owner/demo"], fork=False, source="qq")
+
+        self.assertFalse(results[0].ok)
+        self.assertIn("超过 100", results[0].message)
+        self.assertEqual(self._mutations(runner), [])
+
+    def test_graphql_failure_keeps_star_recorded(self):
+        runner = self._runner()
+        runner.graphql_fails = True
+        automation = GithubAutomation(self.state_path, runner, star_list="AI相关")
+
+        results = automation.handle(["owner/demo"], fork=False, source="qq")
+
+        self.assertFalse(results[0].ok)
+        self.assertIn("已 star，但加入列表", results[0].message)
+        state = json.loads(self.state_path.read_text(encoding="utf-8"))
+        self.assertTrue(state["repos"]["owner/demo"].get("starred_at"))
 
 
 class GithubHelpersTests(unittest.TestCase):

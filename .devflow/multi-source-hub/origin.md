@@ -1,16 +1,30 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-09 11:14:50 +08:00
-- 更新时间（Updated At）：2026-10-23 12:00:00 +08:00。
+- 更新时间（Updated At）：2026-10-23 17:20:00 +08:00。
 - 作者（Author）：Codex
 - 目的（Purpose）：索引原始需求及相关历史资料。
 - 关联仓库或项目（Related Repository / Project）：mine-interest-source-hub（`.`）
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`
 - 原始需求（Original Requirement）：`zzz-prompt-debug/多种信息源整合.md`
-- 当前状态（Status）：需求 8 已实施并部署，待重载与真实链接验收
+- 当前状态（Status）：需求 8 star/fork 已真实验收；需求 9 star 列表归类已部署，待真实仓库验证
 - 文档边界（Scope / Boundary）：原始输入索引真相源（Source of Truth）；历史草案只作为参考，不自动转为批准方案。
 
 # 原始输入索引
+
+## 2026-10-23 17:20:00 +08:00：需求 8 验收修复、B 站日志与需求 9 star 列表
+
+- 原始输入（报错日志）：QQ 群消息触发 `TypeError: 'bool' object is not callable`，要求排查。
+- 原始输入（追问）：「是不是 gh 有问题，或者是 github 链接不稳定」。
+- 原始输入（fork 失败）：「看下这个为什么 fork 失败」。
+- 原始输入（B 站日志）：「对于 bilibili 插件，为什么我在 astrbot 的日志里面看不到，你加一下」；随后澄清：「@bot 后需要有日志，就是现在 bilibili 的所有日志我都看不到，不只是对于 github」。
+- 原始输入（存量确认）：「bilibili 插件会把存量的 items 也 star 吗？」；随后明确：「这个保持现状即可」。
+- 原始输入（需求 9）：「gh star 的时候，能不能放到不同的 star 文件夹中，这个可以配置，如果不填或者不匹配，就还是默认 star 的位置，bilibili 和 qq 插件都需要」。
+- 原始输入（追问）：「之前不是用 gh star 的吗？」。
+- 对齐输入（已 star）：「只在本次新 star 时放入（推荐）」。
+- 对齐输入（其他列表）：「保留其他列表（推荐）」。
+- 收尾输入：「收一下尾」；要求记录未讨论/延期项、读根目录 `devflow-handoff.md`、更新未收尾文档并提交本次相关代码、默认不提交 `config.ts`/`.gitignore`/`tsconfig.json`、无需确认先提交。
+- 吸收状态：三处缺陷已修复；B 站日志已补全；需求 9 已实施部署，全量离线 174 项通过，真实列表归属待验证。
 
 ## 2026-10-23 12:00:00 +08:00：需求 8 GitHub 自动化与 Cookie 提醒
 

@@ -20,7 +20,8 @@ from .client import BilibiliClient, FetchError
 from .collector import Collector, numeric_id
 from .constants import (
     ALERT_ENABLED_KEY, ALERT_POLL_SECONDS, ALERT_REMOTE_KEY, DEFAULT_POLL_SECONDS,
-    GITHUB_ENABLED_KEY, GITHUB_GH_PATH_KEY, GITHUB_PROXY_KEY, GITHUB_STATE_FILE,
+    GITHUB_ENABLED_KEY, GITHUB_GH_PATH_KEY, GITHUB_PROXY_KEY, GITHUB_STAR_LIST_KEY,
+    GITHUB_STATE_FILE,
     LOG_PREFIX, MEDIA_MAX_BYTES, MIN_POLL_SECONDS, NETWORK_PROXY_KEY,
     PLUGIN_NAME, PLUGIN_VERSION,
 )
@@ -65,6 +66,7 @@ class SourceHubBilibili(Star):
                 str(self.config.get(GITHUB_GH_PATH_KEY) or ""),
                 str(self.config.get(GITHUB_PROXY_KEY) or DEFAULT_GITHUB_PROXY),
             ),
+            star_list=str(self.config.get(GITHUB_STAR_LIST_KEY) or ""),
         )
 
     async def initialize(self):

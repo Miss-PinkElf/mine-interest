@@ -72,6 +72,12 @@
     "hint": "打开后，采集内容里的 GitHub 仓库链接会自动 star；触发评论含 /fork 时自动 fork 并安装同步工作流。",
     "default": false
   },
+  "github_star_list": {
+    "description": "GitHub star 列表名称（Star List Name）",
+    "type": "string",
+    "hint": "填写 GitHub Lists 中的列表名称；留空或找不到时只 star，不加入列表。",
+    "default": ""
+  },
   "github_proxy": {
     "description": "GitHub 直连失败时使用的本机代理（Local GitHub Proxy）",
     "type": "string",

@@ -227,3 +227,32 @@
 - 插件列表返回 `astrbot_plugin_sourcehub_bilibili` `0.3.2`，已启用。页面标题和「插件版本」都是 `0.3.2`。10:52 的加载日志与此一致，不需要再重载。
 - `login/status` 立即返回已登录、可刷新，账号「尾号 4836」。两个仓库的上次校验仍是 10:24：`Miss-PinkElf/data-hub`、`Miss-PinkElf/sourcehub-alerts` 都是私有、可读、可推。
 - T5、T7 仍开。下一步是用户点名后再重采一篇旧视频或专栏。没有改代码。
+
+## 2026-10-23 16:14:00 +08:00：修复 QQ 消息处理入口属性遮蔽
+
+- 缺陷：QQ 任意消息在 `main.py:250` 抛 `TypeError: 'bool' object is not callable`，快照、成条、回复全部跳过。
+- 根因：`self._github_reply` 布尔属性遮蔽同名方法 `_github_reply`。
+- 修法：属性改名 `_github_reply_enabled`；新增 `tests/test_sourcehub_plugin_names.py` 静态守卫。
+- 版本与部署：inspector `0.6.3`，现场目录已覆盖且 `diff -rq` 一致；全量离线 161 项通过。
+- 下一步当时：重载 AstrBot → 发一条普通 QQ 消息确认无报错 → 继续需求 8 验收。
+
+## 2026-10-23 12:00:00 +08:00：需求 8 已实施并部署，待重载
+
+- 新能力：GitHub 链接自动 star；有权限的 QQ 与 B 站触发评论 `/fork` 自动 fork；fork 内安装 Actions，每 6 小时只合并默认分支；直连失败回退 7897 代理；QQ 成功/失败回复；B 站页面实时显示 Cookie 是否失效。
+- 代码：共享库新增 `github_links.py`、`github_actions.py`；B 站 `0.3.4`、检查插件 `0.6.2`。两插件目录已覆盖并 `diff -rq` 一致。
+- 测试：全量离线 160 项通过；真实 `gh api user` 直连返回 `Miss-PinkElf`；真实 B 站 Cookie 检查返回 `healthy`。
+- 配置：现场新增键已写入，`github_enabled=false`；owner `1961618848`、admin `2844973553`。
+- 备份：`~/.astrbot/data/plugin-backup-20261023-112324/`。代码提交 `b9ef0fc`（未推送）。
+
+## 2026-10-15 22:36:00 +08:00：QQ 日文档摘要多行截断已修复，待重载
+
+- 缺陷：日文档「实时消息（Live Messages）」区只留正文最后一行。根因 `render_content_md(envelope).splitlines()[-1]`。
+- 修法：`markdown.py` 新增 `render_message_body_md`；`vault.py` 新增 `format_daily_message_entry`。历史按日账本重新投影。
+- 部署：inspector `0.6.1`、B 站 `0.3.3`；全量离线 130 项通过。
+- 新增 `qq-message-pipeline.md`；旧「不要再重载」结论被有意覆盖。
+
+## 2026-09-29 13:56:00 +08:00：收尾前再次核对
+
+- 运行中是 `0.3.2`，已登录且可刷新，两个仓库仍是 10:24 的私有、可读、可推记录。
+- 本轮没有改代码、没有重载、没有重采、没有再推告警。最新交接改为 013。
+- 下一步仍是用户点名后再重采；T5、T7 和需求 4 的 Verify 继续开着。

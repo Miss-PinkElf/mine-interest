@@ -1,6 +1,6 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-10-15 22:28:11 +08:00。
+- 更新时间（Updated At）：2026-10-23 16:36:00 +08:00。
 - 作者（Author）：rin（Claude 协助）。
 - 目的（Purpose）：恢复插件诊断上下文。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
@@ -10,6 +10,35 @@
 - 文档边界（Scope / Boundary）：本任务记录；诊断插件不代表完整信息中心已获准实施。
 
 # 问题清单（Bug Log）
+
+## 2026-10-23：B 站插件的正常处理流程没有日志
+
+| 问题现象 | 问题原因 | 解决方案与状态 |
+| --- | --- | --- |
+| 在 AstrBot 平台日志里看不到 B 站插件的运行日志；B 站 @ 之后也无法判断是否收到通知、是否开始采集、是否保存成功。只有发布器/登录状态异常时才会出现 WARNING | `Poller.scan` 收到通知后不记录数量；`Poller.process` 在采集与保存成功后完全不写日志；GitHub 动作日志虽然调用 `self.logger`，但没有统一前缀，也不易筛选 | **已修复（2026-10-23）**。`scan` 记录「收到 N 条 B 站通知」；`process` 记录「开始采集 B 站通知：业务｜发送者｜标题」「采集未完成（原因）」「已保存 B 站条目」；GitHub 动作日志统一加 `[SourceHub Bilibili]` 前缀；自动化关闭但检测到链接时记录跳过原因。B 站插件升 `0.3.6`，新增日志测试，全量离线 **168 项通过**。**待重载后观察真实日志** |
+
+## 2026-10-23：`/fork` 因 `--remote` 参数被 `gh repo fork` 拒绝
+
+| 问题现象 | 问题原因 | 解决方案与状态 |
+| --- | --- | --- |
+| 打开 `github_enabled` 后，QQ 发送 `https://github.com/Blinue/Magpie /fork`，回复 `[失败] Blinue/Magpie：gh 执行失败：the \`--remote\` flag is unsupported when a repository argument is provided`；同一条消息里的 star 已成功（状态文件记录 `已 star`） | `gh repo fork` 在传入仓库参数时不允许出现 `--remote`，即使写成 `--remote=false` 也算该 flag 被设置。代码同时传了 `--clone=false` 与 `--remote=false` | **已修复（2026-10-23）**。fork 命令改为 `gh repo fork <repo> --clone=false --default-branch-only`，去掉 `--remote=false`；三份 `sourcehub` 副本同步；回归测试由「断言包含 `--remote=false`」改为「断言不包含」；inspector 升 `0.6.4`、B 站插件升 `0.3.5` 并覆盖现场；全量离线 **161 项通过**。**待重载后重发 `/fork` 验证真实 fork** |
+
+补充证据：
+
+- `github_actions.json` 记录：16:19:13 `star` 成功；16:19:57 `fork` 失败，报文即上述 `--remote` 错误。
+- 该失败发生在 `gh` 参数校验阶段，尚未创建 fork，因此重试不会产生重复仓库。
+
+## 2026-10-23：QQ 消息处理入口 `TypeError: 'bool' object is not callable`
+
+| 问题现象 | 问题原因 | 解决方案与状态 |
+| --- | --- | --- |
+| 重载检查插件 `0.6.2` 后，QQ 任意消息都会在 `main.py:250` 抛 `TypeError: 'bool' object is not callable`。异常发生在 `inspect_message` 第一行，后续消息快照、成条入库、回复全部被跳过，**QQ 采集链路整体失效**；与 `github_enabled` 开关无关 | `__init__` 第 142 行把配置 `github_reply_enabled` 存成实例属性 `self._github_reply`（布尔），第 222 行又定义了同名方法 `_github_reply`。Python 中实例属性优先于类方法，调用 `await self._github_reply(event)` 实际变成 `await True(event)` | **已修复（2026-10-23）**。属性改名为 `self._github_reply_enabled`，同步更新 3 处引用；新增 `tests/test_sourcehub_plugin_names.py` 静态守卫，禁止实例属性遮蔽同名方法（已用旧部署副本验证能检出该缺陷）；inspector 升 `0.6.3` 并覆盖现场目录，`diff -rq` 一致；全量离线 **161 项通过**。**待重载后发普通 QQ 消息复验** |
+
+补充证据：
+
+- 现场与仓库两份 `main.py` 逐行一致，排除部署版本错位。
+- 守卫只扫描 `integrations/astrbot/*/main.py`；当前只发现这一处冲突，B 站插件无同类问题。
+- 离线测试原先只覆盖 `github_gate` 纯函数，未实例化插件主类，因此未捕获该运行时错误。
 
 ## 2026-10-15：QQ 日文档摘要多行截断
 

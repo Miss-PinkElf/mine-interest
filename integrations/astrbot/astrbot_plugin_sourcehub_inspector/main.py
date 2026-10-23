@@ -28,6 +28,7 @@ from .constants import (
     GITHUB_GH_PATH_KEY,
     GITHUB_PROXY_KEY,
     GITHUB_REPLY_ENABLED_KEY,
+    GITHUB_STAR_LIST_KEY,
     GITHUB_STATE_FILE,
     LOG_PREFIX,
     MEDIA_MAX_BYTES_KEY,
@@ -139,7 +140,7 @@ class SourceHubInspector(Star):
         self._daily_task = None
         self._engine = load_engine(self._pack, self._spool_path) if self._collect_enabled else None
         self._media_max_bytes = int(self.config.get(MEDIA_MAX_BYTES_KEY) or DEFAULT_MEDIA_MAX_BYTES)
-        self._github_reply = bool(self.config.get(GITHUB_REPLY_ENABLED_KEY, True))
+        self._github_reply_enabled = bool(self.config.get(GITHUB_REPLY_ENABLED_KEY, True))
         self._github = self._build_github_automation()
 
         self.logger.info(
@@ -205,6 +206,7 @@ class SourceHubInspector(Star):
                 str(self.config.get(GITHUB_GH_PATH_KEY) or ""),
                 str(self.config.get(GITHUB_PROXY_KEY) or DEFAULT_GITHUB_PROXY),
             ),
+            star_list=str(self.config.get(GITHUB_STAR_LIST_KEY) or ""),
         )
 
     def _describe_scope(self) -> str:
@@ -240,8 +242,8 @@ class SourceHubInspector(Star):
             )
         except Exception:
             self.logger.exception("%s GitHub 自动化失败", LOG_PREFIX)
-            return "GitHub 自动化失败：内部错误。" if self._github_reply else None
-        if results and self._github_reply:
+            return "GitHub 自动化失败：内部错误。" if self._github_reply_enabled else None
+        if results and self._github_reply_enabled:
             return compose_github_reply(results)
         return None
 

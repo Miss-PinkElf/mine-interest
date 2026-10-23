@@ -85,6 +85,12 @@
     "hint": "打开后，有权限的 QQ 发送 GitHub 仓库链接会自动 star；文本含 /fork 时自动 fork 并安装同步工作流。",
     "default": false
   },
+  "github_star_list": {
+    "description": "GitHub star 列表名称（Star List Name）",
+    "type": "string",
+    "hint": "填写 GitHub Lists 中的列表名称；留空或找不到时只 star，不加入列表。",
+    "default": ""
+  },
   "github_owner_qq_ids": {
     "description": "GitHub 自动化 owner QQ 号（Owner QQ IDs）",
     "type": "list",

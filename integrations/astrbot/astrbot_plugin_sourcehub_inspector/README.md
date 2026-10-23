@@ -66,7 +66,7 @@ GitHub 提醒与资料发布分离：`alert_enabled` 默认关闭，`alert_remot
 - 出现 GitHub 仓库链接：自动 `star`；
 - 正文含独立 `/fork`：自动 `fork`，并在 fork 仓库安装 `.github/workflows/sourcehub-fork-sync.yml`，每 6 小时把上游默认分支合并进 fork 默认分支。
 
-成功和失败都会回复（`github_reply_enabled` 可关）。直连失败时用 `github_proxy`（默认 `http://127.0.0.1:7897`）重试一次；权限或未登录问题不会重试代理。GitHub 自动化按账号权限判断，不受群号白名单限制；私聊和群聊都生效。合并转发内部消息里的链接不处理，避免无权限的人通过转发触发外部操作。状态文件保存在插件数据目录的 `github_actions.json`。
+配置 `github_star_list` 后，**本次新 star** 的仓库会加入同名 GitHub Lists，并保留它已有的其他列表；留空、名称不匹配或列表查询失败时仍完成普通 star（默认位置）。成功和失败都会回复（`github_reply_enabled` 可关）。直连失败时用 `github_proxy`（默认 `http://127.0.0.1:7897`）重试一次；权限或未登录问题不会重试代理。GitHub 自动化按账号权限判断，不受群号白名单限制；私聊和群聊都生效。合并转发内部消息里的链接不处理，避免无权限的人通过转发触发外部操作。状态文件保存在插件数据目录的 `github_actions.json`。
 
 | 配置 | 行为 |
 | --- | --- |

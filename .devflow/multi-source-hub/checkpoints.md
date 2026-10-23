@@ -1,38 +1,35 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-10-23 12:00:00 +08:00。
+- 更新时间（Updated At）：2026-10-23 17:20:00 +08:00。
 - 作者（Author）：rin（Claude 协助）。
 - 目的（Purpose）：记录最近三个检查点。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
-- 当前状态（Status）：需求 8 已实施并部署，待重载与真实链接验收。
-- 文档边界（Scope / Boundary）：本任务记录；不代表真实 star/fork 已发生。
+- 当前状态（Status）：需求 8 star/fork 已真实验收；需求 9 已部署，待真实列表归属验证。
+- 文档边界（Scope / Boundary）：本任务记录；不代表需求 9 的真实列表归属已验证。
 
 # 最近检查点
 
-## 2026-10-23 12:00:00 +08:00：需求 8 已实施并部署，待重载
+## 2026-10-23 17:02:00 +08:00：需求 9 star 列表归类已实施
 
-- 新能力：GitHub 链接自动 star；有权限的 QQ 与 B 站触发评论 `/fork` 自动 fork；fork 内安装 Actions，每 6 小时只合并默认分支；直连失败回退 7897 代理；QQ 成功/失败回复；B 站页面实时显示 Cookie 是否失效。
-- 代码：共享库新增 `github_links.py`、`github_actions.py`；B 站 `0.3.4`、检查插件 `0.6.2`。两插件目录已覆盖并 `diff -rq` 一致。
-- 测试：全量离线 **160 项通过**；真实 `gh api user` 直连返回 `Miss-PinkElf`；真实 B 站 Cookie 检查返回 `healthy`。
-- 配置：现场新增键已写入，`github_enabled=false`；owner `1961618848`、admin `2844973553`。
-- 备份：`~/.astrbot/data/plugin-backup-20261023-112324/`。
-- 代码提交：`b9ef0fc`（未推送）。
-- **下一步**：用户重载插件 → 打开 B 站插件页确认 Cookie 与 GitHub 区块 → 打开 `github_enabled` 后用真实链接验收。代码已提交 `b9ef0fc`；验收发现问题再另开修复切片。
+- 新能力：`github_star_list` 配置；新 star 的仓库按名称加入 GitHub Lists；保留原有其他列表；留空、不匹配、分页截断或 GraphQL 失败时回退默认位置。
+- 实现：REST 无 Lists 接口（`/user/lists` 404），改用 `gh api graphql` 的 `viewer.lists` 与 `updateUserListsForItem`。
+- 版本与部署：检查插件 `0.6.5`、B 站 `0.3.7`；两个现场目录 `diff -rq` 一致，`py_compile` 通过。
+- 测试：全量离线 **174 项通过**（新增 6 项列表行为测试）。
+- **下一步**：重载两个插件 → 在插件页填写 `github_star_list`（本机现有列表：自动化日常、AI相关、Useful、Want to Learn）→ 用新仓库链接验证列表归属与其他列表保留。
 
-## 2026-10-15 22:36:00 +08:00：QQ 日文档摘要多行截断已修复，待重载
+## 2026-10-23 16:36:00 +08:00：补全 B 站插件正常流程日志
 
-- 缺陷：日文档「实时消息（Live Messages）」区只留正文最后一行。根因 `sourcehub/vault.py` 的 `append_daily_message` 用 `render_content_md(envelope).splitlines()[-1]` 从整篇 Markdown 抠最后一行。全库复扫仅 2026-10-15 的 `1441885612` 1 条受影响（此前日子都是单行消息，缺陷被掩盖）。
-- 修法：`markdown.py` 拆出 `_envelope_header_lines` / `_envelope_body_lines` 并新增 `render_message_body_md`（`render_content_md` 输出保持字节级不变）；`vault.py` 新增 `format_daily_message_entry` 与 `DAILY_MESSAGE_CONTINUATION_INDENT`，多行正文按续行 2 空格缩进。
-- 历史订正：按日账本重新投影 2026-10-15 摘要区；备份 `~/.astrbot/data/sourcehub-qq-daily-backup-20261015-223332/`。
-- 部署：inspector `0.6.1`、B 站 `0.3.3`；两插件目录已覆盖并 `diff -rq` 复核与仓库一致，`py_compile` 通过。插件目录备份 `~/.astrbot/data/plugin-backup-20261015-223550/`。
-- 测试：全量离线 130 项通过（命令须带 `-t .`）。`git diff --check` 本轮改动无空白错误。
-- 新增文档：`qq-message-pipeline.md`（QQ 群消息链路说明），并给 `qq-bilibili-capability-boundary.md` 补了文档分工说明。
-- 有意覆盖旧结论：旧记录写「不要再重载」，本轮代码改了必须重载才能生效。
-- **下一步**：重载两插件 → 群里发一条多行普通消息验证摘要行不丢 → `@机器人 整理` 验证成条 → 询问是否提交代码。
+- 问题：B 站插件只有异常时才写日志，收到 @、开始采集、保存成功都没有记录，平台日志里看不到运行状态。
+- 修法：`Poller.scan` 记录收到数量；`Poller.process` 记录开始采集、采集失败原因、保存成功；GitHub 动作日志统一加 `[SourceHub Bilibili]` 前缀；自动化关闭但检测到链接时记录跳过原因。
+- 版本与部署：B 站插件 `0.3.6`，现场目录已覆盖且 `diff -rq` 一致；新增 4 项日志测试，全量离线 **168 项通过**。
+- **下一步**：重载 B 站插件 → 在 B 站 @ 机器人 → 平台日志应出现「收到 N 条 B 站通知」「开始采集 B 站通知：…」「已保存 B 站条目：…」。
 
-## 2026-09-29 13:56:00 +08:00：收尾前再次核对
+## 2026-10-23 16:23:00 +08:00：修复 `/fork` 的 `--remote` 参数错误
 
-- 插件列表、登录接口和仓库状态与 11:12 相同：运行中是 `0.3.2`，已登录且可刷新，两个仓库仍是 10:24 的私有、可读、可推记录。
-- 本轮没有改代码、没有重载、没有重采、没有再推告警。最新交接改为 013。
-- 下一步仍是用户点名后再重采。T5、T7 和需求 4 的验证（Verify）继续开着。
+- 验收进展：`github_enabled` 已打开；16:19:13 真实 star 成功（`Blinue/Magpie`，状态文件记录 `已 star`）。
+- 缺陷：16:19:57 发送 `/fork` 失败，`gh` 报 `the --remote flag is unsupported when a repository argument is provided`。
+- 根因：`gh repo fork <repo>` 不接受 `--remote`，即使显式传 `--remote=false` 也算设置该 flag。
+- 修法：命令改为 `gh repo fork <repo> --clone=false --default-branch-only`；三副本同步；测试断言改为不包含 `--remote=false`。
+- 版本与部署：inspector `0.6.4`、B 站 `0.3.5`，现场目录已覆盖且 `diff -rq` 一致；全量离线 161 项通过。
+- **下一步**：重载 AstrBot → 再发 `https://github.com/Blinue/Magpie /fork` → 确认 fork 成功、工作流安装与 Actions 启用。

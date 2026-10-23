@@ -5,10 +5,26 @@ from __future__ import annotations
 import asyncio
 
 from .client import FetchError
-from .constants import COLLECTION_GAP_PREFIX, MAX_ITEMS_PER_CYCLE, MAX_SCAN_PAGES
+from .constants import COLLECTION_GAP_PREFIX, LOG_PREFIX, MAX_ITEMS_PER_CYCLE, MAX_SCAN_PAGES
 from .content import Document
 from .sourcehub.github_actions import MAX_REPOSITORIES_PER_MESSAGE
 from .sourcehub.github_links import extract_repository_links, fork_requested
+
+#: 通知日志里标题的最大展示长度，避免把整条视频标题刷进日志。
+NOTIFICATION_TITLE_LOG_MAX_CHARS = 40
+
+
+def notification_label(notification: dict) -> str:
+    """把通知压成一行可读标签：业务类型｜发送者｜标题。"""
+    item = notification.get("item") or {}
+    user = notification.get("user") or {}
+    business = str(item.get("business") or item.get("type") or "通知").strip()
+    nickname = str(user.get("nickname") or user.get("mid") or "").strip()
+    title = str(item.get("title") or "").strip().replace("\n", " ")
+    if len(title) > NOTIFICATION_TITLE_LOG_MAX_CHARS:
+        title = title[:NOTIFICATION_TITLE_LOG_MAX_CHARS] + "…"
+    parts = [part for part in (business, nickname, title) if part]
+    return "｜".join(parts) if parts else "未命名通知"
 
 
 def trigger_message(notification: dict, raw: dict) -> str:
@@ -36,6 +52,8 @@ class Poller:
             data = await self.client.get("mentions", **params)
             if not isinstance(data.get("items"), list) or not isinstance(data.get("cursor"), dict):
                 raise FetchError("notification_shape_changed")
+            if data["items"]:
+                self._log("收到 %s 条 B 站通知" % len(data["items"]))
             for item in data["items"]:
                 self.store.receive(item)
             next_cursor = data["cursor"]
@@ -52,6 +70,8 @@ class Poller:
 
     async def process(self):
         for notification in self.store.pending()[:MAX_ITEMS_PER_CYCLE]:
+            label = notification_label(notification)
+            self._log("开始采集 B 站通知：%s" % label)
             try:
                 raw, doc = await self.collector.collect(notification)
             except asyncio.CancelledError:
@@ -60,15 +80,18 @@ class Poller:
                 reason = str(exc) if isinstance(exc, FetchError) else type(exc).__name__
                 raw = {"notification": notification}
                 doc = Document(gaps=[f"{COLLECTION_GAP_PREFIX}{reason}"])
+                self._log("采集未完成：%s（%s）" % (label, reason), warning=True)
             await self.store.save(notification, raw, doc, self.client)
+            self._log("已保存 B 站条目：%s" % label)
             await self._run_github(notification, raw, doc)
 
     async def _run_github(self, notification: dict, raw: dict, doc: Document) -> None:
-        """B 站不回复消息；结果写入日志，插件页可查看最近动作。"""
-        if self.github is None:
-            return
+        """B 站不回复消息；结果写入 AstrBot 日志，插件页可查看最近动作。"""
         repositories = extract_repository_links(doc.text)
         if not repositories:
+            return
+        if self.github is None:
+            self._log("检测到 GitHub 链接，但 GitHub 自动化未启用，跳过")
             return
         if len(repositories) > MAX_REPOSITORIES_PER_MESSAGE:
             self._log(
@@ -76,15 +99,22 @@ class Poller:
                 % (MAX_REPOSITORIES_PER_MESSAGE, MAX_REPOSITORIES_PER_MESSAGE),
                 warning=True,
             )
+        fork = fork_requested(trigger_message(notification, raw))
+        self._log(
+            "GitHub 自动化开始：%s 个仓库，fork=%s"
+            % (len(repositories), "是" if fork else "否")
+        )
         try:
             results = await asyncio.to_thread(
                 self.github.handle,
                 repositories,
-                fork_requested(trigger_message(notification, raw)),
+                fork,
                 "bilibili",
             )
         except Exception as exc:
-            self._log("GitHub 自动化异常：%s" % type(exc).__name__, warning=True)
+            self._log(
+                "GitHub 自动化异常：%s：%s" % (type(exc).__name__, exc), warning=True
+            )
             return
         for result in results:
             self._log(
@@ -96,9 +126,9 @@ class Poller:
         if self.logger is None:
             return
         if warning:
-            self.logger.warning(message)
+            self.logger.warning("%s %s", LOG_PREFIX, message)
         else:
-            self.logger.info(message)
+            self.logger.info("%s %s", LOG_PREFIX, message)
 
     async def cycle(self):
         # 扫描失败也处理已经安全保存的通知。
