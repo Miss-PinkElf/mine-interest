@@ -77,8 +77,8 @@
 - [x] T05.6 `main.py` 在会话队列前处理 `/approve`、`/deny`；只有 owner／管理员可批准；审批事件写入 `permission_audit`。
 - [x] T05.7 命令级权限：`/help`、`/info` 对 guest 可用；管理命令仅 owner／管理员；新增 `/cd`、`/pwd`、`/initbase`。
 - [x] T05.8 `/cd` 仅允许 `allowed_work_dirs` 的 realpath 子目录；覆盖值持久化；`/initbase` 只补缺失基础模板，不覆盖已有文件。
-- [x] T05.9 版本提升到 `0.2.0`，更新 `metadata.yaml`、`README.md`、`_conf_schema.json` 和本 mission 文档。
-- [ ] T05.10 真机验收：guest 只读、member 工作区写入、目录外审批、管理员 `/cd`、`/initbase`；Claude 与 Codex 分别记录证据。当前 83 个单元测试通过；Claude 审批 allow/deny、Codex 权限档案读写边界已在本机 CLI 实测，但尚未经 AstrBot/QQ。
+- [x] T05.9 版本提升到 `0.2.0`，更新 `metadata.yaml`、`README.md`、`_conf_schema.json` 和本 mission 文档；代码提交为 `0ad479e`（未推送）。
+- [ ] T05.10 真机验收：guest 只读、member 工作区写入、目录外审批、管理员 `/cd`、`/initbase`；Claude 与 Codex 分别记录证据。当前 83 个单元测试通过；Claude 只读/审批/守护 hook、Codex 权限档案读写边界已在本机 CLI 实测，但尚未经 AstrBot/QQ。
 
 ## 每次插件代码变更的固定门禁
 

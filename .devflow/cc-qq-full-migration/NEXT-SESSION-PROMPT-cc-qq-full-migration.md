@@ -16,7 +16,7 @@
 
 继续 `.devflow/cc-qq-full-migration/` mission。先读 `state.md`、`checkpoints.md`，再读 `handoffs/2026-10-23-005-权限分级待真机验收.md`。任务勾选看 `spec/tasks.md` 的 T05。遵守仓库 `AGENTS.md` 与 devflow 的 Align → Plan → Spec/Tasks → Apply 门禁。
 
-当前仓库插件版本是 `0.2.0`，权限分级已实施，83 个单元测试通过，但**未提交、未生成 v0.2.0 ZIP、未覆盖安装目录、AstrBot 未重载**。安装目录仍是旧版。
+当前仓库插件版本是 `0.2.0`，权限分级已实施并提交为 `0ad479e`（未推送），83 个单元测试通过；但**未生成 v0.2.0 ZIP、未覆盖安装目录、AstrBot 未重载**。安装目录仍是旧版。
 
 本轮新增：群内非白名单 guest 只读；白名单 member 工作区读写；owner/管理员完全权限 + 守护 hook 拦关键路径（不用 bypassPermissions，因为 2.1.202 实测其不执行 deny）；Claude 通过 PreToolUse hook + 本机 broker + QQ `/approve`、`/deny` 做逐次审批；Codex 使用权限档案 `ccqq-readonly`、`ccqq-workspace` 限制读写；管理员 `/cd`、`/pwd`、`/initbase`；审计表 `permission_audit`；基础模板。
 

@@ -9,12 +9,12 @@
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
-- 当前状态（Status）：权限分级代码已实施、待提交与真机验收（Implemented / Runtime Verification Pending）
-- 文档边界（Scope / Boundary）：当前状态真相源（source of truth）。不代表已在 AstrBot/QQ 上验收通过，也不代表已提交或已覆盖安装目录。
+- 当前状态（Status）：权限分级已提交、待真机验收（Committed / Runtime Verification Pending）
+- 文档边界（Scope / Boundary）：当前状态真相源（source of truth）。不代表已在 AstrBot/QQ 上验收通过，也不代表已打包或已覆盖安装目录。
 
 ## 当前快照
 
-- 仓库插件版本升至 `0.2.0`，新增权限分级、危险操作审批、`/cd`、`/pwd`、`/initbase`、审计表与基础模板。83 个单元测试通过；尚未提交，安装目录仍不是这一版。
+- 仓库插件版本升至 `0.2.0`，新增权限分级、危险操作审批、`/cd`、`/pwd`、`/initbase`、审计表与基础模板。83 个单元测试通过；已提交为 `0ad479e`，未推送。未生成 ZIP，安装目录仍不是这一版。
 - 权限模型：群内非白名单为 `readonly`，群／私聊白名单为 `workspace`，owner／管理员为 `full`；档位按每轮发言者计算，不写入会话记录。
 - Claude Code：只读用 `dontAsk + --tools`；工作区用 `acceptEdits + Seatbelt/bubblewrap 沙箱 + PreToolUse 审批 hook`；完全权限用 `dontAsk + 守护 hook`（实测 `bypassPermissions` 不执行 deny 规则）。默认 `--setting-sources ""`。
 - Codex：只读/工作区改用权限档案 `ccqq-readonly`、`ccqq-workspace`，工作区外读写与 `/tmp` 被拒绝；完全权限用 `sandbox_mode="danger-full-access"`。Codex 本轮没有逐次审批。

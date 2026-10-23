@@ -39,7 +39,7 @@
 - 2026-10-23 00:00:00 +08:00：Codex `exec` 的非交互审批仍为 under development，本轮 Codex 只做沙箱硬边界，逐次审批列为后续项；Claude Code 走 PreToolUse hook 审批。
 - 2026-10-23 00:00:00 +08:00：实测 Claude Code 2.1.202 的 `bypassPermissions` 不执行 deny 规则（`Write` 可绕过），完全权限档改用 `dontAsk + guard_hook`：默认放行，只拦凭据/系统目录与系统级危险命令；该档不再是 `bypassPermissions`。
 - 2026-10-23 00:00:00 +08:00：实测 Codex 传统 `read-only` 不限制读取范围，只读/工作区档改用权限档案 `ccqq-readonly`、`ccqq-workspace`，排除 `/tmp` 并收紧工作区外读写。
-- 2026-10-23 00:00:00 +08:00：收尾决定：提交 `0.2.0` 相关代码与文档；本轮不生成 ZIP、不覆盖安装目录；真机 AstrBot/QQ 验收留到下一次对话。
+- 2026-10-23 00:00:00 +08:00：收尾决定：提交 `0.2.0` 相关代码与文档；本轮不生成 ZIP、不覆盖安装目录；真机 AstrBot/QQ 验收留到下一次对话。代码提交为 `0ad479e`，未推送。
 
 ## 本轮不做 / 后续阶段（Deferred Scope）
 

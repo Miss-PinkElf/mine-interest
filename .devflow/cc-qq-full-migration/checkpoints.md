@@ -28,8 +28,8 @@
 
 ## 2026-10-23 00:00:00 +08:00 — 权限分级 0.2.0 已实施，待提交与真机验收
 
-- 已完成：权限档位、Claude 审批 hook、Codex 权限档案、`/cd`、`/pwd`、`/initbase`、审计表与基础模板。83 个单元测试通过。
-- 本机验证：Claude 2.1.202 的 hook→broker→allow/deny 链路可用；Codex 0.162.1 的 `ccqq-readonly`/`ccqq-workspace` 能限制工作区外读写。
-- 当前阶段：代码已实施，未提交；未生成 `v0.2.0` ZIP，未覆盖安装目录，AstrBot 尚未重载。
-- 下一步：用户决定提交与打包；重载后按 T05.10 验收 guest 只读、member 工作区、目录外审批、`/cd`、`/initbase`。
+- 已完成：权限档位、Claude 只读/审批/守护 hook、Codex 权限档案、`/cd`、`/pwd`、`/initbase`、审计表与基础模板。83 个单元测试通过。
+- 本机验证：Claude 2.1.202 的 hook→broker→allow/deny 链路可用；只读 hook 阻止工作目录外读取；完全权限守护 hook 阻止 `/etc` 与 `~/.ssh` 写入；Codex 0.162.1 的 `ccqq-readonly`/`ccqq-workspace` 能限制工作区外读写。
+- 当前阶段：代码已提交为 `0ad479e`，未推送；未生成 `v0.2.0` ZIP，未覆盖安装目录，AstrBot 尚未重载。
+- 下一步：下次对话生成 ZIP、重载后按 T05.10 验收 guest 只读、member 工作区、目录外审批、`/cd`、`/initbase`。
 - 注意：Codex 本轮没有逐次审批；审批卡片只在来源会话可见。
