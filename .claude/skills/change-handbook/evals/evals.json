@@ -1,0 +1,72 @@
+{
+  "skill_name": "change-handbook",
+  "evals": [
+    {
+      "id": 0,
+      "name": "global-config-statusline",
+      "prompt": "刚才你把我的 Claude Code 状态栏脚本 ~/.claude/statusline-command.sh 从原来的一行（用户名@主机 + 目录末级 + 剩余上下文）改成了 Codex 风格的两行：第一行是模型名 + 推理强度 + Context 剩余百分比，第二行是完整路径；另外按我的要求去掉了 Fast 段。旧版本备份在同目录的 statusline-command.sh.bak，~/.claude/settings.json 里已经配好了 statusLine。帮我把这次改动整理成一份改动手册，我要不靠你也能自己复现、验证和回滚。",
+      "expected_output": "一份中文 Markdown 改动手册，含完整 Metadata、改动清单、原理说明、可复制的手动步骤、验证方法和回滚方案；按规则应落盘到 ~/.claude/change-notes/。",
+      "files": [
+        "/Users/mobius/.claude/statusline-command.sh",
+        "/Users/mobius/.claude/statusline-command.sh.bak",
+        "/Users/mobius/.claude/settings.json"
+      ],
+      "expectations": [
+        "输出是 Markdown 文档，且包含「Metadata（元数据）」小节",
+        "Metadata 包含具体到分钟的创建时间、作者、目的三个字段",
+        "文档包含「改了什么」清单，并给出具体文件路径",
+        "文档包含原理说明，解释了改动为什么会生效（数据流/加载机制/调用链）",
+        "文档包含可复制的手动复现步骤，关键路径未用省略号替代",
+        "文档包含可观察的验证方法",
+        "文档包含回滚方案",
+        "文档注明按规则应落盘到当前工作目录的 docs/change-notes/",
+        "文档未输出 ANTHROPIC_AUTH_TOKEN 的实际值（magpie）"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "repo-change-with-historical-diff",
+      "prompt": "刚才你帮我改了 /tmp/change-handbook-eval/repo/bin/greet.sh：原来只会输出固定的 Hello，现在支持把第一个参数当作名字，不传名字时用 World 兜底。这个仓库里还有别的未提交改动，但那不是这次做的。请把 greet.sh 这次改动写成改动手册，我要能自己复现和回滚。",
+      "expected_output": "一份中文 Markdown 改动手册，只记录 greet.sh 的改动，不把 README.md 的未提交改动算进来；仓库内路径用相对路径；按规则应落盘到该仓库的 docs/change-notes/。",
+      "files": [
+        "/tmp/change-handbook-eval/repo/bin/greet.sh",
+        "/tmp/change-handbook-eval/repo/README.md"
+      ],
+      "expectations": [
+        "输出是 Markdown 文档，且包含「Metadata（元数据）」小节",
+        "Metadata 包含具体到分钟的创建时间、作者、目的三个字段",
+        "文档包含「改了什么」清单，并给出具体文件路径",
+        "文档包含原理说明，解释了改动为什么会生效（数据流/加载机制/调用链）",
+        "文档包含可复制的手动复现步骤，关键路径未用省略号替代",
+        "文档包含可观察的验证方法",
+        "文档包含回滚方案",
+        "只把 bin/greet.sh 的改动算作本次改动，没有把 README.md 的未提交改动写成本次改动",
+        "仓库内文件的路径使用相对路径（如 bin/greet.sh），而不是绝对路径",
+        "文档注明按规则应落盘到 docs/change-notes/ 目录"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "focused-scope-statusline-only",
+      "prompt": "这次对话里我们做了两件事：一是把 ~/.claude/statusline-command.sh 改成两行状态栏，二是创建了 .claude/skills/change-handbook 这个 skill。我现在只要状态栏这一项的手册，别把 skill 创建写进去，也别把 Fast 去掉当成重点。请写一份聚焦 statusline 的改动手册，包括 settings.json 里的 statusLine 是怎么把脚本接上的。",
+      "expected_output": "一份只覆盖 statusline 改动的中文手册，明确不展开 skill 创建；解释 settings.json 的 statusLine 配置与脚本的连接关系；含手动复现、验证、回滚。",
+      "files": [
+        "/Users/mobius/.claude/statusline-command.sh",
+        "/Users/mobius/.claude/settings.json"
+      ],
+      "expectations": [
+        "输出是 Markdown 文档，且包含「Metadata（元数据）」小节",
+        "Metadata 包含具体到分钟的创建时间、作者、目的三个字段",
+        "文档包含「改了什么」清单，并给出具体文件路径",
+        "文档包含原理说明，解释了改动为什么会生效（数据流/加载机制/调用链）",
+        "文档包含可复制的手动复现步骤，关键路径未用省略号替代",
+        "文档包含可观察的验证方法",
+        "文档包含回滚方案",
+        "没有把 change-handbook skill 的创建写成本次改动手册的主体内容",
+        "解释了 ~/.claude/settings.json 中 statusLine 配置与脚本的连接关系",
+        "没有把去掉 Fast 段作为叙述重点",
+        "文档注明按规则应落盘到当前工作目录的 docs/change-notes/"
+      ]
+    }
+  ]
+}
