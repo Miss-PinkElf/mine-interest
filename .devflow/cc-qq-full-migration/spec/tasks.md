@@ -78,7 +78,8 @@
 - [x] T05.7 命令级权限：`/help`、`/info` 对 guest 可用；管理命令仅 owner／管理员；新增 `/cd`、`/pwd`、`/initbase`。
 - [x] T05.8 `/cd` 仅允许 `allowed_work_dirs` 的 realpath 子目录；覆盖值持久化；`/initbase` 只补缺失基础模板，不覆盖已有文件。
 - [x] T05.9 版本提升到 `0.2.0`，更新 `metadata.yaml`、`README.md`、`_conf_schema.json` 和本 mission 文档；代码提交为 `0ad479e`（未推送）。
-- [ ] T05.10 真机验收：guest 只读、member 工作区写入、目录外审批、管理员 `/cd`、`/initbase`；Claude 与 Codex 分别记录证据。当前 83 个单元测试通过；Claude 只读/审批/守护 hook、Codex 权限档案读写边界已在本机 CLI 实测，但尚未经 AstrBot/QQ。
+- [ ] T05.10 真机验收：guest 只读、member 工作区写入、目录外审批、管理员 `/cd`、`/initbase`；Claude 与 Codex 分别记录证据。当前 87 个单元测试通过；Claude 只读/审批/守护 hook、Codex 权限档案读写边界已在本机 CLI 实测，但尚未经 AstrBot/QQ。
+- [x] T05.11 MCP 搜索放行与原生联网禁用（`0.2.2`）：workspace／full 档放行服务器级 `mcp__deepseek-web`；只读档由 `readonly_mcp_enabled`（默认开）控制；原生 `WebSearch`／`WebFetch` 与本机 `mcp__fetch` 全档禁用；87 个单元测试与 CLI 实测通过。尚未经 QQ 真机验证，且需把 `claude_setting_sources` 设为 `user` 才会加载 MCP。
 
 ## 每次插件代码变更的固定门禁
 

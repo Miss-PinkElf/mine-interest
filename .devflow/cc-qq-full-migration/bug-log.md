@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 16:39:25 +08:00
-- 更新时间（Updated At）：2026-10-23 00:00:00 +08:00
+- 更新时间（Updated At）：2026-10-27 15:45:00 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：记录第一阶段真实 QQ 验收时发现的问题、原因和解决方案。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -73,3 +73,21 @@
   - Codex 改用权限档案 `ccqq-readonly`、`ccqq-workspace`，实测能限制工作区外读写与 `/tmp`。
   - 审批卡片尽力发往 owner／管理员最近一次交互来源；仍要求管理员本次加载后发言过。
   - 83 个单元测试通过；真机 AstrBot/QQ 验收仍未做。
+
+## 2026-10-27 — 群已启用但未配群规则时报「插件配置无效」
+
+- 问题现象：群 `432199252` 在 `enabled_group_ids` 中，@bot 后回复「当前会话的插件配置无效，请联系插件管理员检查群配置。」
+- 问题原因：`group_rules_json` 没有该群条目，`policy.authorize` 取到 `rule=None`，走到 `REASON_CONFIGURATION_INVALID`，而不是更准确的「未配置工作目录」。代码本身按设计 fail-closed。
+- 解决方案：在 WebUI 的 `group_rules_json` 补齐该群 `work_dir`（本轮已给用户完整 JSON）。把「群规则缺失」改成更准确的中文提示仍是后续优化，已记入 backlog，本轮未改代码。
+
+## 2026-10-27 — Claude 会话报 `Not logged in · Please run /login`
+
+- 问题现象：群内触发 Claude 时代理回复 `Not logged in · Please run /login`。
+- 问题原因：用户的 Claude 鉴权来自 `~/.claude/settings.json` 的 `env.ANTHROPIC_AUTH_TOKEN`／`ANTHROPIC_BASE_URL`；AstrBot 进程环境没有这两个变量；插件默认 `--setting-sources ""` 屏蔽用户 settings，CLI 拿不到鉴权。同一条限制还会导致用户级 MCP（deepseek-web）不加载。
+- 解决方案：WebUI 将 `claude_setting_sources` 设为 `user`（用户已设置），登录与 MCP 同时恢复；已写入 README、配置提示与本轮计划。
+
+## 2026-10-27 — 直接修改配置文件被运行中的 AstrBot 覆盖
+
+- 问题现象：为群 `432199252` 直接编辑 `~/.astrbot/data/config/astrbot_plugin_cc_qq_config.json` 后，几分钟后文件被重写，改动消失。
+- 问题原因：运行中的 AstrBot 使用内存中的 `AstrBotConfig`，保存配置时会把内存快照写回磁盘，覆盖外部编辑。
+- 解决方案：插件配置统一从 WebUI 修改并保存；直接改文件仅在停止进程后有效。本轮最终向用户提供完整 `group_rules_json`，由用户自行在 WebUI 配置。

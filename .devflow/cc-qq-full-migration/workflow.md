@@ -3,20 +3,20 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:10:32 +08:00
-- 更新时间（Updated At）：2026-10-23 00:00:00 +08:00
+- 更新时间（Updated At）：2026-10-27 15:45:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：记录本次完整迁移的阶段与门禁。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
-- 当前状态（Status）：权限分级待真机验收（Permission Runtime Verification Pending）
+- 当前状态（Status）：0.2.2 已覆盖安装目录、待重载与真机验收（Deployed / Runtime Pending）
 - 文档边界（Scope / Boundary）：本 mission 的流程真相源（source of truth）。对齐、计划和第一阶段开放规格已落盘，不代表第一阶段已验收。
 
 ## 目标与路径
 
 - 目标：理解 `cc-ding/` 的完整能力，借鉴其运行链路，用原生 Python 实现基于 AstrBot 的 QQ 插件并分阶段补齐功能，保持模块化。
 - 路径：重型路径（Heavy Route），依次进行对齐（Align）→ 计划（Plan）→ 开放规格（OpenSpec）→ 实施（Apply）→ 审查与验证（Review / Verify）→ 收尾（Close）。
-- 当前阶段：`0.2.0` 权限分级已实施并提交为 `0ad479e`，83 个单元测试通过；未打包、未覆盖安装目录。AstrBot/QQ 真机验收未完成。
+- 当前阶段：`0.2.0` 权限分级已提交为 `0ad479e`；`0.2.1` 配置页文案与 `0.2.2` MCP 搜索放行已实施，87 个单元测试通过，安装目录已覆盖到 `0.2.2`，待重载与 AstrBot/QQ 真机验收。
 
 ## 阶段门禁
 
@@ -27,6 +27,7 @@
 
 ## 下一步
 
-1. 用户决定是否提交 `0.2.0`、是否生成 `v0.2.0` 上传 ZIP、是否覆盖安装目录。
-2. 重载后确认日志版本，再按 T05.10 验收 guest 只读、member 工作区、目录外审批、管理员 `/cd`、`/initbase`。
-3. 同时补验先前遗留的 T03-M.4b、T04.4、T04.5；真机证据回填 `spec/feature-mapping.md`。
+1. 重载 AstrBot，确认日志 `已加载 v0.2.2`，在 QQ 群验证 deepseek 搜索问答与 guest 只读边界。
+2. 按 T05.10 验 guest 只读、member 工作区、目录外审批、管理员 `/cd`、`/initbase`；同时验 T05.11 的 MCP 搜索。
+3. 补验先前遗留的 T03-M.4b、T04.4、T04.5；真机证据回填 `spec/feature-mapping.md`。
+4. 群内 @bot 管理私聊白名单等候选需求，先补齐 4 个待确认问题再进入对齐。

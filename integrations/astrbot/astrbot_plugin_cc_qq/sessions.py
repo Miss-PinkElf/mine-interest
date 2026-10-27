@@ -26,9 +26,11 @@ from .constants import (
     CODEX_COMMAND_KEY,
     DANGER_APPROVAL_TIMEOUT_SECONDS_KEY,
     DEFAULT_DANGER_APPROVAL_TIMEOUT_SECONDS,
+    DEFAULT_READONLY_MCP_ENABLED,
     MAX_DANGER_APPROVAL_TIMEOUT_SECONDS,
     MIN_DANGER_APPROVAL_TIMEOUT_SECONDS,
     NO_ACTIVE_SESSION_REPLY,
+    READONLY_MCP_ENABLED_KEY,
     RECEIPT_CANCELLED,
     RECEIPT_DONE,
     RECEIPT_ERROR,
@@ -188,6 +190,11 @@ class SessionManager:
                 profile,
                 self._approval_hook_script,
                 self._approval_timeout_seconds,
+                bool(
+                    self.config.get(
+                        READONLY_MCP_ENABLED_KEY, DEFAULT_READONLY_MCP_ENABLED
+                    )
+                ),
             )
         process_env = {
             AGENT_ENV_PROFILE: profile,

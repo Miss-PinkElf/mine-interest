@@ -12,8 +12,11 @@ from ..constants import (
     APPROVAL_HOOK_TIMEOUT_MARGIN_SECONDS,
     CLAUDE_SETTING_SOURCES_KEY,
     DEFAULT_CLAUDE_SETTING_SOURCES,
+    DENIED_NATIVE_WEB_TOOL_RULES,
     GUARD_HOOK_SCRIPT_NAME,
     GUARD_HOOK_TIMEOUT_SECONDS,
+    MCP_DEEPSEEK_SERVER_RULE,
+    MCP_LOCAL_FETCH_SERVER_RULE,
     READONLY_HOOK_SCRIPT_NAME,
 )
 from ..permissions import (
@@ -77,17 +80,32 @@ def build_base_claude_settings() -> dict:
     }
 
 
+def build_permission_rules(profile: str, readonly_mcp_enabled: bool = True) -> dict:
+    """生成 Claude 的 allow/deny：原生联网工具全禁，只放行服务端 MCP 搜索。"""
+    deny = list(CRITICAL_PATH_DENY_RULES)
+    deny.extend(DENIED_NATIVE_WEB_TOOL_RULES)
+    deny.append(MCP_LOCAL_FETCH_SERVER_RULE)
+    allow: list[str] = []
+    if profile == PROFILE_READONLY and not readonly_mcp_enabled:
+        deny.append(MCP_DEEPSEEK_SERVER_RULE)
+    else:
+        allow.append(MCP_DEEPSEEK_SERVER_RULE)
+    rules: dict = {"deny": deny}
+    if allow:
+        rules["allow"] = allow
+    return rules
+
+
 def build_claude_settings(
     profile: str,
     hook_script: Path | None,
     approval_timeout_seconds: int,
     python_executable: str | None = None,
+    readonly_mcp_enabled: bool = True,
 ) -> dict:
     """只放策略，不放任何凭据；工作区档才启用沙箱与审批 hook。"""
     settings: dict = {
-        "permissions": {
-            "deny": list(CRITICAL_PATH_DENY_RULES),
-        }
+        "permissions": build_permission_rules(profile, readonly_mcp_enabled),
     }
     if profile == PROFILE_WORKSPACE and hook_script is not None:
         settings["sandbox"] = dict(WORKSPACE_SANDBOX_SETTINGS)
@@ -146,9 +164,12 @@ def ensure_claude_settings(
     profile: str,
     hook_script: Path | None,
     approval_timeout_seconds: int,
+    readonly_mcp_enabled: bool = True,
 ) -> str:
     """把策略写到插件数据区；内容变化时才重写，返回文件路径。"""
-    payload = build_claude_settings(profile, hook_script, approval_timeout_seconds)
+    payload = build_claude_settings(
+        profile, hook_script, approval_timeout_seconds, None, readonly_mcp_enabled
+    )
     serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2)
     digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()[:16]
     target_dir = Path(data_dir) / AGENT_POLICY_DIR_NAME

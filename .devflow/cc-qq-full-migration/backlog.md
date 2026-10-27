@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-30 15:38:00 +08:00
-- 更新时间（Updated At）：2026-10-23 00:00:00 +08:00
+- 更新时间（Updated At）：2026-10-27 15:45:00 +08:00
 - 作者（Author）：Grok
 - 目的（Purpose）：用一句话记下还没展开的后续想法，方便交接引用。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -18,3 +18,7 @@
 - 把 `/qa` 作为显式只读命令复用到 `readonly` 档，而不是再写一套权限。
 - 评估用 Codex 权限档案替代传统 `sandbox_mode` 后的跨平台兼容性（Linux／Windows）。
 - 评估把审批卡片可靠发到管理员私聊：持久化管理员来源，而不是内存记录。
+- 群在 `enabled_group_ids` 但缺 `group_rules_json` 条目时，把「插件配置无效」改成「该群未配置 work_dir」的准确提示。
+- 确认 codex-cli 0.162.1 关闭原生 web search 的配置键，并在 `codex_args` 统一追加。
+- 评估只读档 MCP 是否需要进一步细分（搜索开、服务端抓取关），当前是一个总开关。
+- 群内 @bot 管理私聊白名单（候选）：先补齐 4 个待确认问题，见 `deferred/第一版边界与未讨论项.md`。

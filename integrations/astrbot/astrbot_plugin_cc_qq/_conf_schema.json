@@ -1,138 +1,155 @@
 {
   "qq_platform_id": {
-    "description": "QQ 平台实例 ID（Platform ID）",
+    "description": "①【必填】QQ 平台实例 ID（Platform ID）",
     "type": "string",
-    "hint": "填写 AstrBot 中的 aiocqhttp 平台 ID；留空时不处理消息。",
+    "hint": "在 AstrBot「平台」页复制的 aiocqhttp 实例 ID。插件只处理这个平台的 QQ 消息；留空时插件不响应任何消息。",
     "default": ""
   },
   "enabled_group_ids": {
-    "description": "启用的 QQ 群号（Enabled Groups）",
+    "description": "① 启用的 QQ 群号（Enabled Groups）",
     "type": "list",
-    "hint": "只有列表中的群才进入插件；群聊文本和命令均须 @ 当前机器人，未 @ 静默。留空时不处理任何群。",
+    "hint": "只有名单内的群由插件接管。群聊里必须 @ 机器人：未 @ 不回复、也不启动 Claude/Codex。留空表示不处理群聊（只做私聊时可留空）。",
     "default": [],
     "items": { "type": "string" }
-  },
-  "group_rules_json": {
-    "description": "各群配置 JSON（Group Rules）",
-    "type": "string",
-    "hint": "以群号为键，每项填写 work_dir，可选 agent、model、allowed_user_ids、guest_permission_profile、member_permission_profile；群 model 高于该代理默认模型，示例见 README。",
-    "default": "{}"
   },
   "private_enabled": {
-    "description": "启用 QQ 私聊（Private Chat）",
+    "description": "① 启用 QQ 私聊（Private Chat）",
     "type": "bool",
+    "hint": "默认关闭，关闭时私聊一律静默（owner 也不回复）。打开后只有 owner、管理员和「允许私聊的 QQ 号」名单能使用私聊。",
     "default": false
   },
-  "private_user_ids": {
-    "description": "允许私聊的 QQ 号（Private User IDs）",
-    "type": "list",
-    "hint": "留空时仅 owner 和管理员可使用私聊。不在名单中的私聊不回复。",
-    "default": [],
-    "items": { "type": "string" }
-  },
-  "private_work_dir": {
-    "description": "私聊工作目录（Private Work Directory）",
-    "type": "string",
-    "hint": "私聊代理使用的工作目录；私聊启用前必须配置。",
-    "default": ""
-  },
+
   "owner_qq_id": {
-    "description": "插件所有者 QQ 号（Owner QQ ID）",
+    "description": "② 所有者 QQ 号（Owner QQ ID）",
     "type": "string",
+    "hint": "你的 QQ 号。owner 在群聊和私聊里都是最高身份：不受群和私聊白名单限制，可用全部命令，权限档读取第③组的「owner/管理员权限档」。留空表示没有 owner。",
     "default": ""
   },
   "admin_qq_ids": {
-    "description": "管理员 QQ 号（Admin QQ IDs）",
+    "description": "② 管理员 QQ 号（Admin QQ IDs）",
     "type": "list",
+    "hint": "在 owner 之外追加管理员。权限与 owner 相同：可用 /cd、/initbase、/approve、/deny，权限档同样读取「owner/管理员权限档」。",
     "default": [],
     "items": { "type": "string" }
   },
   "global_allowed_user_ids": {
-    "description": "全局允许用户 QQ 号（Global Allowed User IDs）",
+    "description": "② 全局白名单 QQ 号（Global Allowed User IDs）",
     "type": "list",
+    "hint": "这些号在所有已启用群里都算白名单成员，不必逐群配置；权限档读取「白名单成员权限档」。",
     "default": [],
     "items": { "type": "string" }
   },
-  "default_agent": {
-    "description": "默认代理（Default Agent）",
-    "type": "string",
-    "options": ["claude", "codex"],
-    "default": "claude"
+  "private_user_ids": {
+    "description": "② 允许私聊的 QQ 号（Private User IDs）",
+    "type": "list",
+    "hint": "私聊白名单；名单内成员权限档读取「白名单成员权限档」。不在名单且不是 owner/管理员时，私聊静默不回复。",
+    "default": [],
+    "items": { "type": "string" }
   },
-  "default_claude_model": {
-    "description": "Claude Code 默认模型（Default Claude Model）",
-    "type": "string",
-    "hint": "留空时使用 Claude Code CLI 自身默认模型。",
-    "default": ""
-  },
-  "default_codex_model": {
-    "description": "Codex 默认模型（Default Codex Model）",
-    "type": "string",
-    "hint": "留空时使用 Codex CLI 自身默认模型。",
-    "default": ""
-  },
-  "claude_command": {
-    "description": "Claude Code 可执行文件（Claude Command）",
-    "type": "string",
-    "hint": "桌面版 AstrBot 找不到 claude 时，填写其可执行文件绝对路径。",
-    "default": "claude"
-  },
-  "codex_command": {
-    "description": "Codex 可执行文件（Codex Command）",
-    "type": "string",
-    "hint": "桌面版 AstrBot 找不到 codex 时，填写其可执行文件绝对路径。",
-    "default": "codex"
-  },
+
   "guest_permission_profile": {
-    "description": "群内非白名单权限档（Guest Profile）",
+    "description": "③ 群内非白名单成员权限档（Guest Profile）",
     "type": "string",
     "options": ["readonly", "workspace", "full"],
     "default": "readonly",
-    "hint": "只读档（readonly）默认只提供 Read/Grep/Glob，不开放 Bash 与写入；不建议改成 full。"
+    "hint": "默认只读（readonly）。适用于已启用群里发言、但不在任何白名单的成员。可选：readonly 只能读当前工作目录，不能执行命令或写文件；workspace 可读写当前工作目录，目录外操作和危险命令需管理员 /approve；full 本机完全权限（不建议给群外成员）。按每轮发言者实时判定。"
   },
   "member_permission_profile": {
-    "description": "白名单成员权限档（Member Profile）",
+    "description": "③ 白名单成员权限档（Member Profile）",
     "type": "string",
     "options": ["readonly", "workspace", "full"],
     "default": "workspace",
-    "hint": "工作区档（workspace）只允许读写当前工作目录；目录外写入与危险命令走审批。"
+    "hint": "默认工作区（workspace）。适用于群白名单、全局白名单、私聊白名单成员。可选：readonly 只读；workspace 可读写当前工作目录，目录外操作与危险命令（rm、sudo、git push 等）需审批；full 本机完全权限。"
   },
   "owner_permission_profile": {
-    "description": "owner/管理员权限档（Owner Profile）",
+    "description": "③ owner/管理员权限档（Owner Profile）",
     "type": "string",
     "options": ["readonly", "workspace", "full"],
     "default": "full",
-    "hint": "完全权限档（full）不启用文件沙箱，但关键路径 deny 规则仍然生效。"
+    "hint": "默认完全权限（full），owner 与管理员共用此项。full 不启用文件沙箱，但凭据目录（~/.ssh、~/.aws）和系统目录（/etc 等）仍被硬拦截；需要更保守时改成 workspace 或 readonly。"
   },
-  "danger_approval_enabled": {
-    "description": "启用危险操作审批（Danger Approval）",
+  "readonly_mcp_enabled": {
+    "description": "③ 只读档允许 MCP 搜索（Readonly MCP）",
     "type": "bool",
     "default": true,
-    "hint": "关闭后，工作区档需要审批的操作会被直接拒绝。"
+    "hint": "默认开启。只读档（guest 等）允许使用 deepseek-web 的搜索与服务端抓取；本机 fetch MCP 在所有档位都禁用。关闭后只读档也不能使用任何 MCP 联网工具。原生 WebSearch/WebFetch 在所有档位禁用。需配合 claude_setting_sources=user 才能加载 MCP。"
+  },
+
+  "danger_approval_enabled": {
+    "description": "④ 启用危险操作审批（Danger Approval）",
+    "type": "bool",
+    "default": true,
+    "hint": "默认开启。工作区档的目录外操作和危险命令会发审批卡片，管理员回 /approve 或 /deny，超时自动拒绝；关闭后这类操作直接拒绝、不再询问。完全权限档不走逐次审批，只受关键路径拦截。"
   },
   "danger_approval_timeout_seconds": {
-    "description": "审批超时秒数（Approval Timeout）",
+    "description": "④ 审批超时秒数（Approval Timeout）",
     "type": "int",
     "default": 300,
-    "hint": "默认 300 秒，允许 30–3600；超时后自动拒绝。"
+    "hint": "默认 300，范围 30–3600。超时未审批自动拒绝，操作不会执行。"
   },
+
   "allowed_work_dirs": {
-    "description": "允许 /cd 的工作目录根（Allowed Work Directories）",
+    "description": "⑤ 允许 /cd 的根目录（Allowed Work Directories）",
     "type": "list",
     "default": [],
-    "hint": "只有 owner/管理员可以使用 /cd，且目标必须位于这些根目录内；留空表示禁用 /cd。",
+    "hint": "默认空，即禁用 /cd。填写允许切换的根目录，例如 /Users/you/projects；管理员 /cd 只能进入这些根目录的子目录。群聊和私聊的初始工作目录仍由「各群配置 JSON」和「私聊工作目录」决定。",
     "items": { "type": "string" }
   },
+  "private_work_dir": {
+    "description": "⑤ 私聊工作目录（Private Work Directory）",
+    "type": "string",
+    "hint": "启用私聊时必填。每位私聊用户自动使用子目录：<此目录>/<QQ号>。留空时私聊无法启动代理。",
+    "default": ""
+  },
+  "group_rules_json": {
+    "description": "⑤ 各群配置 JSON（Group Rules）",
+    "type": "string",
+    "hint": "以群号为键，每项至少写 work_dir，可选项：agent、model、allowed_user_ids、guest_permission_profile、member_permission_profile。示例：{\"123456789\": {\"work_dir\": \"/Users/you/workspace\"}}。留空或 {} 表示群没有工作目录，消息会被拒绝。",
+    "default": "{}"
+  },
+
+  "default_agent": {
+    "description": "⑥ 默认代理（Default Agent）",
+    "type": "string",
+    "options": ["claude", "codex"],
+    "default": "claude",
+    "hint": "新会话默认使用 Claude 还是 Codex；群规则里的 agent 可以逐群覆盖。"
+  },
+  "default_claude_model": {
+    "description": "⑥ Claude Code 默认模型（Default Claude Model）",
+    "type": "string",
+    "hint": "留空表示使用 Claude Code CLI 自身的默认模型。填写后对未单独指定模型的 Claude 会话生效；群规则的 model 优先级更高。",
+    "default": ""
+  },
+  "default_codex_model": {
+    "description": "⑥ Codex 默认模型（Default Codex Model）",
+    "type": "string",
+    "hint": "留空表示使用 Codex CLI 自身的默认模型；群规则的 model 优先级更高。",
+    "default": ""
+  },
+  "claude_command": {
+    "description": "⑥ Claude Code 可执行文件（Claude Command）",
+    "type": "string",
+    "hint": "默认 claude，要求它在 AstrBot 进程的 PATH 中。桌面版或 uv/pyenv 环境提示找不到命令时，填写绝对路径，例如 /Users/you/.local/bin/claude。",
+    "default": "claude"
+  },
+  "codex_command": {
+    "description": "⑥ Codex 可执行文件（Codex Command）",
+    "type": "string",
+    "hint": "默认 codex。找不到命令时填写绝对路径，例如 /Users/you/.local/bin/codex。",
+    "default": "codex"
+  },
+
   "claude_setting_sources": {
-    "description": "Claude 设置来源（Claude Setting Sources）",
+    "description": "⑦ Claude 设置来源（Claude Setting Sources）",
     "type": "string",
     "default": "",
-    "hint": "默认留空，屏蔽用户与仓库 settings，只使用插件注入的策略文件。若 Claude 依赖 settings 中的 apiKeyHelper，填写 user。"
+    "hint": "默认留空：屏蔽用户和仓库的 .claude settings，只使用插件注入的策略，最安全。若要使用 MCP（deepseek-web 搜索）或你的 Claude 依赖 ~/.claude/settings.json 里的鉴权（如 ANTHROPIC_AUTH_TOKEN、apiKeyHelper），必须改为 user。"
   },
   "stale_message_max_age_seconds": {
-    "description": "过期消息秒数（Stale Message Max Age）",
+    "description": "⑦ 过期消息秒数（Stale Message Max Age）",
     "type": "int",
-    "hint": "默认 180。消息原始发送时间早于这个秒数则忽略，不进入代理。填 0 表示不按时间忽略。",
+    "hint": "默认 180。消息原始发送时间早于该秒数会被忽略，避免机器人重启后补跑旧消息；填 0 表示不按时间过滤。",
     "default": 180
   }
 }

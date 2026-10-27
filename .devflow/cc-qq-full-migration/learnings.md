@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-30 15:38:00 +08:00
-- 更新时间（Updated At）：2026-10-23 00:00:00 +08:00
+- 更新时间（Updated At）：2026-10-27 15:45:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：留下这次排查里下次还会用到的判断，避免再走错证据。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -26,3 +26,10 @@
 - Codex 传统 `read-only` 只限制写入，不限制读取；权限档案（Permission Profiles，Beta）才能用 `:root = deny` + `:workspace_roots = read/write` 把读写收进工作区。`codex exec resume` 不接受 `-s`，要用 `-c` 覆盖。
 - Claude 沙箱只包 shell 子进程，不包内置 `Read/Edit/Write`；因此内置文件工具要用权限规则或 hook，不能只靠沙箱。
 - 审批回复要在进入会话串行队列之前处理，否则会与等待审批的代理进程死锁。
+- AstrBot 插件配置以内存对象为准：运行中直接改磁盘 JSON 会被下一次保存覆盖；配置必须走 WebUI，或在停进程后改文件。
+- AstrBot 的 `AstrBotConfig` 会按 `_conf_schema.json` 自动补齐缺失键；新增配置项无需手工写进 JSON，重载时补默认值。
+- Claude Code `--setting-sources ""` 不只屏蔽仓库 settings：用户 settings 里的 `env.ANTHROPIC_AUTH_TOKEN` 鉴权和用户级 MCP server 都不加载。需要 MCP 或 token 鉴权时必须用 `user`。
+- MCP 权限规则实测：精确工具名 `mcp__server__tool` 和服务器级 `mcp__server` 都能生效，`mcp__*` 通配不生效。
+- `permissions.deny` 会把工具直接从工具列表移除，PreToolUse hook 的 `allow` 不会把被 deny 的工具加回来；这与“hook allow 可以覆盖 dontAsk 默认拒绝”不矛盾，deny 优先级更高。
+- 群在 `enabled_group_ids` 但 `group_rules_json` 缺少条目时，`policy` 返回 `REASON_CONFIGURATION_INVALID`，用户看到的是「插件配置无效」，不是「未配置工作目录」；排查时先对这两个名单。
+- 服务端 MCP（deepseek-web）与本机 MCP（fetch）风险不同：前者在服务端抓取，碰不到 localhost/内网；后者在本机进程直连 URL，需要单独禁用。

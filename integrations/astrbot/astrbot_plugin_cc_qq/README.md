@@ -14,7 +14,7 @@
 
 ## 当前状态
 
-当前版本 `0.2.0` 已接通 QQ 文本准入、按角色的代理权限分级、危险操作审批、工作目录切换、基础模板、Claude Code／Codex 异步进程、SQLite 会话和基础命令。群聊只处理白名单内群号中明确 @ 当前机器人的消息；自然语言和命令均须 @，未 @ 时插件静默。私聊无需 @。不在 `private_user_ids` 且不是 owner／管理员的私聊不回复。同一私聊会话、同一发送者、同一正文在 10 秒内重复出现时只处理一次。`0.2.0` 起，群内非白名单成员不再被拒绝，而是以只读档参与对话；白名单成员为工作目录读写；owner／管理员为完全权限。权限主链路仍需真实 QQ 与双 CLI 验收。
+当前版本 `0.2.2` 已接通 QQ 文本准入、按角色的代理权限分级、危险操作审批、工作目录切换、基础模板、Claude Code／Codex 异步进程、SQLite 会话和基础命令。群聊只处理白名单内群号中明确 @ 当前机器人的消息；自然语言和命令均须 @，未 @ 时插件静默。私聊无需 @。不在 `private_user_ids` 且不是 owner／管理员的私聊不回复。同一私聊会话、同一发送者、同一正文在 10 秒内重复出现时只处理一次。`0.2.0` 起，群内非白名单成员不再被拒绝，而是以只读档参与对话；白名单成员为工作目录读写；owner／管理员为完全权限。权限主链路仍需真实 QQ 与双 CLI 验收。`0.2.1` 重排配置页分组并重写配置说明；`0.2.2` 放行 deepseek-web MCP 搜索、禁用原生 `WebSearch`／`WebFetch`，并新增只读档 `readonly_mcp_enabled` 开关。
 
 ## 配置准备
 
@@ -55,7 +55,8 @@ Claude Code 和 Codex 分别使用 `default_claude_model`、`default_codex_model
 - 审批卡片发到来源会话，并尽量发到 owner／管理员最近一次与机器人交互的会话；管理员需在本次插件加载后至少发言过一次，否则只在来源会话可见。群聊中其他成员也能看到命令摘要，不要把密钥写进命令。
 - 完全权限档不启用文件沙箱，改用 `dontAsk + 守护 hook`：默认放行所有工具，但 `~/.ssh`、`~/.aws`、`~/.gnupg`、`/etc`、`/usr`、`/System`、`/Library` 以及 `sudo`、关机、磁盘格式化、`rm -rf /` 等仍会被拒绝。Claude Code 2.1.202 实测 `bypassPermissions` 不执行 deny 规则，因此没有继续使用它。
 - 完全权限档的守护 hook 是应用层规则，无法拦截 `python -c` 等间接写入关键路径；需要强隔离时，请把 owner 档改为 `workspace`，或把 AstrBot 放进容器。
-- Claude Code 默认使用 `--setting-sources ""`，屏蔽用户和仓库的 settings，只加载插件注入的策略；如果现网 Claude 依赖 settings 中的 `apiKeyHelper`，把 `claude_setting_sources` 设为 `user`。
+- Claude Code 默认使用 `--setting-sources ""`，屏蔽用户和仓库的 settings，只加载插件注入的策略；如果现网 Claude 依赖 settings 中的 `apiKeyHelper`、`ANTHROPIC_AUTH_TOKEN` 等鉴权，或需要使用 MCP，把 `claude_setting_sources` 设为 `user`。实测 `""` 会导致用户级 MCP server 不加载。
+- MCP 联网工具：workspace／full 档放行 `mcp__deepseek-web`（服务端搜索与服务端抓取）；只读档由 `readonly_mcp_enabled`（默认开）控制，关闭后只读档也禁用；本机 `mcp__fetch` 在所有档位禁用，避免群成员借它访问 localhost 与内网。Claude Code 原生 `WebSearch`、`WebFetch` 在所有档位禁用。权限规则实测支持精确工具名与服务器级（`mcp__deepseek-web`），不支持 `mcp__*` 通配。
 - Codex `exec` 当前没有稳定的非交互审批通道，因此 Codex 只依赖 OS 沙箱硬边界：工作目录外读写直接失败，不会弹出 QQ 审批。逐次审批目前只对 Claude Code 生效。
 - Codex 的传统 `read-only` 只限制写入、不限制读取范围；插件改用 Codex 权限档案（Permission Profiles，Beta）收紧读取：`ccqq-readonly` 只读工作区，`ccqq-workspace` 只写工作区，二者都排除 `/tmp`。`/etc`、`/usr` 等运行工具所需的最小路径仍由 Codex 的 `:minimal` 放行。该配置在本机 `codex-cli 0.162.1` 验证；更旧版本不支持权限档案时需升级。
 - 沙箱技术栈：Claude Code 在 macOS 使用 Seatbelt，在 Linux／WSL2 使用 bubblewrap，网络经本机代理白名单；Codex 在 macOS 使用 Seatbelt，在 Linux 使用 Landlock + seccomp。沙箱覆盖 shell 及其子进程；内置 `Read/Edit/Write` 由权限规则约束。
@@ -82,7 +83,7 @@ Claude Code 和 Codex 分别使用 `default_claude_model`、`default_codex_model
 
 ## 版本与手动安装
 
-仓库源码位置：`integrations/astrbot/astrbot_plugin_cc_qq/`。用户选择自行在 AstrBot 中上传 ZIP；ZIP 根层必须直接包含 `metadata.yaml`、`_conf_schema.json`、`main.py`，并保留各 Python 包的相对结构；不要把整个 `astrbot_plugin_cc_qq/` 文件夹连同 macOS 的 `__MACOSX/` 一起压入 ZIP。打包时必须包含 `hooks/` 和 `templates/base/.claude/`、`templates/base/.codex/` 等隐藏目录，建议从插件目录内部执行 `zip -r ... .` 或显式加入隐藏文件。当前版本的安装包是 `integrations/astrbot/astrbot_plugin_cc_qq-v0.2.0-upload.zip`（需在用户确认后生成）。旧包 `integrations/astrbot/astrbot_plugin_cc_qq-v0.1.16-upload.zip` 与更早版本仍保留。
+仓库源码位置：`integrations/astrbot/astrbot_plugin_cc_qq/`。用户选择自行在 AstrBot 中上传 ZIP；ZIP 根层必须直接包含 `metadata.yaml`、`_conf_schema.json`、`main.py`，并保留各 Python 包的相对结构；不要把整个 `astrbot_plugin_cc_qq/` 文件夹连同 macOS 的 `__MACOSX/` 一起压入 ZIP。打包时必须包含 `hooks/` 和 `templates/base/.claude/`、`templates/base/.codex/` 等隐藏目录，建议从插件目录内部执行 `zip -r ... .` 或显式加入隐藏文件。当前版本的安装包是 `integrations/astrbot/astrbot_plugin_cc_qq-v0.2.2-upload.zip`（需在用户确认后生成）。旧包 `integrations/astrbot/astrbot_plugin_cc_qq-v0.1.16-upload.zip` 与更早版本仍保留。
 
 ## 后续阶段
 

@@ -1,7 +1,7 @@
 """插件标识、配置键与默认值（Plugin Constants）。"""
 
 PLUGIN_NAME = "astrbot_plugin_cc_qq"
-PLUGIN_VERSION = "0.2.0"
+PLUGIN_VERSION = "0.2.2"
 PLUGIN_DESCRIPTION = "通过 QQ 使用本机 Claude Code 与 Codex"
 LOG_PREFIX = "[cc-qq]"
 
@@ -28,6 +28,7 @@ DANGER_APPROVAL_ENABLED_KEY = "danger_approval_enabled"
 DANGER_APPROVAL_TIMEOUT_SECONDS_KEY = "danger_approval_timeout_seconds"
 ALLOWED_WORK_DIRS_KEY = "allowed_work_dirs"
 CLAUDE_SETTING_SOURCES_KEY = "claude_setting_sources"
+READONLY_MCP_ENABLED_KEY = "readonly_mcp_enabled"
 DEFAULT_CLAUDE_MODEL_KEY = "default_claude_model"
 DEFAULT_CODEX_MODEL_KEY = "default_codex_model"
 DEFAULT_MODEL_KEY_BY_AGENT = {
@@ -46,6 +47,11 @@ DEFAULT_DANGER_APPROVAL_TIMEOUT_SECONDS = 300
 MIN_DANGER_APPROVAL_TIMEOUT_SECONDS = 30
 MAX_DANGER_APPROVAL_TIMEOUT_SECONDS = 3600
 DEFAULT_CLAUDE_SETTING_SOURCES = ""
+DEFAULT_READONLY_MCP_ENABLED = True
+# deepseek-web 在服务端抓网页，碰不到本机与内网；本机 fetch 直连 URL，存在内网访问风险。
+MCP_DEEPSEEK_SERVER_RULE = "mcp__deepseek-web"
+MCP_LOCAL_FETCH_SERVER_RULE = "mcp__fetch"
+DENIED_NATIVE_WEB_TOOL_RULES = ("WebSearch", "WebFetch")
 APPROVAL_BROKER_HOST = "127.0.0.1"
 APPROVAL_HOOK_TIMEOUT_MARGIN_SECONDS = 30
 APPROVAL_ENV_HOST = "CC_QQ_APPROVAL_HOST"

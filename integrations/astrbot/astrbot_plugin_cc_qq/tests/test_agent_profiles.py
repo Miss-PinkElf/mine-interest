@@ -58,6 +58,39 @@ class CodexArgsTest(unittest.TestCase):
         self.assertEqual(args[-1], "-")
 
 
+class McpPermissionRulesTest(unittest.TestCase):
+    def _rules(self, profile, readonly_mcp_enabled=True):
+        return build_claude_settings(
+            profile,
+            Path("/tmp/hooks/approval_hook.py"),
+            300,
+            readonly_mcp_enabled=readonly_mcp_enabled,
+        )["permissions"]
+
+    def test_native_web_tools_and_local_fetch_denied_everywhere(self):
+        for profile in (PROFILE_READONLY, PROFILE_WORKSPACE, PROFILE_FULL):
+            rules = self._rules(profile)
+            self.assertIn("WebSearch", rules["deny"])
+            self.assertIn("WebFetch", rules["deny"])
+            self.assertIn("mcp__fetch", rules["deny"])
+
+    def test_workspace_and_full_allow_deepseek_search(self):
+        for profile in (PROFILE_WORKSPACE, PROFILE_FULL):
+            rules = self._rules(profile)
+            self.assertIn("mcp__deepseek-web", rules["allow"])
+            self.assertNotIn("mcp__deepseek-web", rules["deny"])
+
+    def test_readonly_allows_deepseek_by_default(self):
+        rules = self._rules(PROFILE_READONLY)
+        self.assertIn("mcp__deepseek-web", rules["allow"])
+        self.assertNotIn("mcp__deepseek-web", rules["deny"])
+
+    def test_readonly_switch_off_denies_deepseek(self):
+        rules = self._rules(PROFILE_READONLY, readonly_mcp_enabled=False)
+        self.assertNotIn("allow", rules)
+        self.assertIn("mcp__deepseek-web", rules["deny"])
+
+
 class ClaudeSettingsTest(unittest.TestCase):
     def test_workspace_settings_have_sandbox_and_hook(self):
         settings = build_claude_settings(
