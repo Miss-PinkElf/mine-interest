@@ -17,6 +17,7 @@ from .constants import (
     AGENT_ENV_ROLE,
     AGENT_ENV_SENDER_ID,
     AGENT_ENV_WORK_DIR,
+    AGENT_INTERRUPTED_REPLY,
     AGENT_NO_TEXT_REPLY,
     APPROVAL_HOOK_DIR_NAME,
     APPROVAL_HOOK_SCRIPT_NAME,
@@ -27,6 +28,7 @@ from .constants import (
     DANGER_APPROVAL_TIMEOUT_SECONDS_KEY,
     DEFAULT_DANGER_APPROVAL_TIMEOUT_SECONDS,
     DEFAULT_READONLY_MCP_ENABLED,
+    GOON_INTERRUPTED_PREFIX,
     MAX_DANGER_APPROVAL_TIMEOUT_SECONDS,
     MIN_DANGER_APPROVAL_TIMEOUT_SECONDS,
     NO_ACTIVE_SESSION_REPLY,
@@ -141,16 +143,21 @@ class SessionManager:
     async def goon(
         self, conversation: ConversationKey, settings: SessionSettings, prompt: str, message_id: str
     ) -> str:
-        await self.interrupt(conversation)
+        interrupted = await self.interrupt(conversation)
         async with self._lock(conversation):
             self._ensure_open()
             self.store.mark_message(conversation, message_id, RECEIPT_PROCESSING)
             record = self.store.active(conversation)
             if record is None or not record.agent_session_id:
                 return NO_ACTIVE_SESSION_REPLY
-            return await self._execute(
+            reply = await self._execute(
                 record, self._model_for_record(record, settings), prompt, message_id, settings
-            ) or ""
+            )
+        # 本轮被后续命令取消时不能静默：空字符串会被判成 done 且不发送，
+        # 用户既收不到回复、也看不出被中断。
+        if reply is None:
+            return AGENT_INTERRUPTED_REPLY
+        return f"{GOON_INTERRUPTED_PREFIX}{reply}" if interrupted else reply
 
     async def interrupt(self, conversation: ConversationKey) -> bool:
         key = conversation.storage_key()

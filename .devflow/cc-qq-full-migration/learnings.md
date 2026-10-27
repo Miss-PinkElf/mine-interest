@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-30 15:38:00 +08:00
-- 更新时间（Updated At）：2026-10-27 15:45:00 +08:00
+- 更新时间（Updated At）：2026-10-28 01:20:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：留下这次排查里下次还会用到的判断，避免再走错证据。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -36,3 +36,11 @@
 - 插件单测通过（Python 3.9.6）不等于运行时可用：AstrBot 跑 3.12.13。想在不重载的前提下验证真实运行时，可直接用 `/Users/mobius/.local/share/uv/tools/astrbot/bin/python3` 把安装目录加入 `sys.path` 再导入，能捕获版本相关的导入错误。
 - `/cd` 的三种形式（list／序号／路径）必须共用同一套边界校验；把原 `_change_work_dir` 的校验体抽成 `_apply_work_dir`，序号入口只负责选目标，避免为快捷方式开出免校验旁路。
 - 清单类命令的编号不要落库：配置顺序一变，历史序号就失效。每次实时读配置、在提示里说明「以当次顺序为准」，比维护一份映射表更简单可靠。
+- `/goon` 里 `return await self._execute(...) or ""` 是个隐形陷阱：`_execute` 被取消时返回 `None`，`or ""` 把它变成空串，`service` 判 `reply is not None` 标 `done`、`main` 判 `if reply:` 不发，形成「回执显示成功、用户完全无感知」。凡是 `None` 有语义（取消／失败）的返回值，禁止用 `or ""` 兜底。
+- 「哪些命令会启动代理」要有唯一判定函数（`commands/registry.py::will_run_agent`），不要在多处散写「命令都同步返回」这种假设。`/goon`、`/cc <msg>`、带参数的 `/new` 与 `/!` 都会跑代理，恰恰最需要执行回执。
+- NapCat 的 `onebot11_*.json` 和 AstrBot 插件配置同一类：运行中改磁盘文件会被内存快照覆盖，改完必须重启 QQ 才生效。
+- NapCat 的 `onebot11_*.json` 带 UTF-8 BOM，脚本读写必须用 `encoding="utf-8-sig"`，否则 `json.load` 直接抛 `Unexpected UTF-8 BOM`。
+- 用户在终端启动的是 `QQ.app`，NapCat 是注入进 QQ 的 Node 辅助进程（`QQ Helper`）里运行的，不是独立进程。NapCat 的连接日志出现在 QQ 侧属正常，不代表「用了另一种启动方式」。
+- 排查「消息没响应」先对三个名单：生产 `enabled_group_ids`、`group_rules_json`、以及 e2e 测试实例自己的配置。群 `701292201` 只在 `~/.astrbot-e2e`，不在生产，属于预期静默而非 bug。
+- 会话 JSONL（`~/.claude/projects/<cwd-slug>/*.jsonl`）里 `timestamp` 是 UTC，本地要 +8。同一 assistant 事件会重复落盘 3–4 次，统计工具调用次数必须按 `tool_use.id` 去重。
+- 排查耗时的主要来源不是「单条命令慢」，而是「往返次数多 + 完全不并行」。定量方法是配对 `tool_use.id` 与 `tool_result.tool_use_id` 算工具耗时，再用总时长相减得到模型生成耗时；并行度 = 每条 assistant 消息内的 `tool_use` 数量。详见 `2026-10-28-排查耗时分析与优化方案.md`。

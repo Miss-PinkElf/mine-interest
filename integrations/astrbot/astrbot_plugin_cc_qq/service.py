@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
-from .commands.registry import command_allowed, parse_command
+from .commands.registry import command_allowed, parse_command, will_run_agent
 from .commands.session import (
     cc_prompt,
     cd_list_text,
@@ -68,7 +68,11 @@ class ConversationService:
         self.approvals = approvals
 
     async def handle(
-        self, message: IncomingMessage, decision: AuthorizationDecision, claimed: bool = False
+        self,
+        message: IncomingMessage,
+        decision: AuthorizationDecision,
+        claimed: bool = False,
+        on_started=None,
     ) -> str | None:
         if self.sessions.is_closing:
             return None
@@ -77,6 +81,9 @@ class ConversationService:
         settings = decision.settings
         assert settings is not None
         command = parse_command(message.text)
+        # 回执必须在 claim 之后发，重复消息不会误回执。
+        if on_started is not None and will_run_agent(command):
+            await on_started()
         try:
             if command is None:
                 reply = await self.sessions.run(

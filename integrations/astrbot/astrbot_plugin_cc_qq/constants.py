@@ -1,7 +1,7 @@
 """插件标识、配置键与默认值（Plugin Constants）。"""
 
 PLUGIN_NAME = "astrbot_plugin_cc_qq"
-PLUGIN_VERSION = "0.2.3"
+PLUGIN_VERSION = "0.2.4"
 PLUGIN_DESCRIPTION = "通过 QQ 使用本机 Claude Code 与 Codex"
 LOG_PREFIX = "[cc-qq]"
 
@@ -107,6 +107,8 @@ INTERRUPTED_ON_RESTART_REPLY = (
 )
 NO_RUNNING_AGENT_REPLY = "当前没有正在执行的代理。"
 AGENT_INTERRUPTED_REPLY = "已中断当前代理执行。"
+GOON_INTERRUPTED_PREFIX = "已中断上一条执行。\n"
+EXECUTION_STARTED_REPLY = "已收到，正在处理，完成后会回复。期间可发送 /! 中断。"
 SESSION_ENDED_REPLY = "当前会话已结束。"
 NO_SESSION_TO_END_REPLY = "当前没有活跃会话。"
 NO_SESSION_TO_RESUME_REPLY = "当前范围没有可恢复的历史会话。"

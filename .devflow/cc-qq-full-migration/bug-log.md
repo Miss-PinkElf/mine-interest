@@ -91,3 +91,29 @@
 - 问题现象：为群 `432199252` 直接编辑 `~/.astrbot/data/config/astrbot_plugin_cc_qq_config.json` 后，几分钟后文件被重写，改动消失。
 - 问题原因：运行中的 AstrBot 使用内存中的 `AstrBotConfig`，保存配置时会把内存快照写回磁盘，覆盖外部编辑。
 - 解决方案：插件配置统一从 WebUI 修改并保存；直接改文件仅在停止进程后有效。本轮最终向用户提供完整 `group_rules_json`，由用户自行在 WebUI 配置。
+
+## 2026-10-28 — `/goon` 被取消后静默且误标完成
+
+- 问题现象：私聊发送 `/goon` 后长时间无任何回复；回执库显示 `done`，但用户什么都没收到。另有一次 `/goon` 回复在 9 分 48 秒后才到达，期间用户已发 `/end`。
+- 问题原因：
+  - `sessions.py::goon` 结尾 `return await self._execute(...) or ""`。`_execute` 在 `asyncio.CancelledError` 分支返回 `None`，`or ""` 把它变成空字符串。
+  - `service.py::handle` 用 `reply is not None` 判定状态 → 空串被判为 `done`（实际是取消）。
+  - `main.py::_send_reply` 用 `if reply:` 判定是否发送 → 空串一条都不发。
+  - 三者叠加形成「回执显示成功、用户完全无感知」。
+- 解决方案：
+  - 去掉 `or ""`；`_execute` 返回 `None` 时显式返回 `AGENT_INTERRUPTED_REPLY`，保证「done ⟺ 真的发出去了」。
+  - 利用 `SessionManager.interrupt()` 已有的 `bool` 返回值，中断了正在执行的上一轮时给回复加 `GOON_INTERRUPTED_PREFIX` 前缀。
+  - 新增执行回执：会启动代理的输入（普通文本、`/goon`、`/cc <消息>`、带参数的 `/new` 与 `/!`）先回一条「已收到，正在处理」，判定真相源为 `commands/registry.py::will_run_agent`；回执经 `service.handle(on_started=...)` 回调由 `main.py` 注入，service 不持有 AstrBot context。
+  - 105 个单元测试通过（新增 `tests/test_execution_feedback.py` 11 项）；真机 AstrBot/QQ 验收待重载后做。
+
+## 2026-10-28 — 群 `701292201` 内消息与命令无响应
+
+- 问题现象：在群 `701292201` 内 @bot 发消息、发命令，bot 完全无响应。
+- 问题原因：该群是 `astrbot-plugin-e2e` mission 的专用测试群，只配在测试实例 `~/.astrbot-e2e/data/config/astrbot_plugin_cc_qq_config.json` 的 `enabled_group_ids` 里；生产实例的 `enabled_group_ids` 只有 `836229427`、`209267585`、`432199252`。`policy.authorize()` 对不在名单的群返回 `REASON_OUT_OF_SCOPE`，`main.py::on_qq_message` 对群聊的 out_of_scope 是静默 `return`。
+- 解决方案：不加进生产配置（`astrbot-plugin-e2e` 的 `backlog.md` Q1 已把「测试群消息进入生产 bot」列为风险）。要验该群请在 e2e 实例内进行。若用户实际想日常使用该群，属新需求，需重新对齐。
+
+## 2026-10-28 — NapCat 每 30 秒报 `6198 ECONNREFUSED`
+
+- 问题现象：NapCat 控制台每 30 秒输出一条 `反向WebSocket (ws://127.0.0.1:6198/ws) 连接错误 Error: connect ECONNREFUSED 127.0.0.1:6198`，并提示「在 30 秒后尝试重新连接」。用户以为是自己终端启动 NapCat 导致的。
+- 问题原因：生产账号 `3254276668（17号）` 的 `onebot11_3254276668.json` 里有三个网络配置，其中 `AstrBot-E2E` 客户端指向 `ws://127.0.0.1:6198/ws`，属于 e2e 自动化测试的测试 AstrBot 实例（WebUI 6186 / 反向 WS 6198）。该测试实例已停止，端口无人监听。文件 mtime `2026-10-27 18:14`，由 e2e 的 Spike 0 写入。另需说明：用户在终端启动的是 `QQ --no-sandbox`，NapCat 注入在 QQ 的 Node 辅助进程（`QQ Helper`）内运行，不是独立进程，所以日志出现在 QQ 侧。
+- 解决方案：将该客户端的 `enable` 置为 `false`（保留条目以便 e2e 复用），备份为 `onebot11_3254276668.json.bak-20261028`；**需重启 QQ 生效**（NapCat 运行中会覆盖外部编辑，与插件配置同理）。文件带 UTF-8 BOM，读写必须用 `encoding="utf-8-sig"`。已知复发风险：e2e 用例重新 bootstrap 会再次写入，后续应在用例收尾自动回滚（对应 `astrbot-plugin-e2e` 的 `backlog.md` Q2）。

@@ -8,7 +8,7 @@
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
-- 当前状态（Status）：0.2.3 已覆盖安装目录，待重载与 AstrBot/QQ 真机验收
+- 当前状态（Status）：0.2.4 已覆盖安装目录，待重载与 AstrBot/QQ 真机验收
 - 文档边界（Scope / Boundary）：过程总览，不代替 `state.md`、`spec/` 或 `plans/`。
 
 ## 演进时间线
@@ -22,6 +22,7 @@
 | 2026-10-23 | `0.2.0` / `0ad479e` | 权限分级、危险操作审批、Codex 权限档案、`/cd`、`/pwd`、`/initbase`、审计与基础模板。 |
 | 2026-10-27 | `0.2.1` / `0.2.2` | 配置页按 ①–⑦ 分组重写文案；放行 deepseek-web MCP 搜索、禁用原生 `WebSearch`／`WebFetch` 与本机 `mcp__fetch`，只读档新增 `readonly_mcp_enabled`。 |
 | 2026-10-28 | `0.2.3` | 新增 `/cd list`（按 `allowed_work_dirs` 配置顺序编号并标记当前目录）与 `/cd <序号>` 切换；路径形式保持不变，三种入口共用同一套边界校验。 |
+| 2026-10-28 | `0.2.4` | 修 `/goon` 取消后被误标 `done` 且静默的问题；新增执行回执（会启动代理的输入先回一条）；首轮产出排查耗时分析文档，把「串行往返过多」与「长任务无中间输出」关联起来。 |
 
 ## 当前架构脉络
 

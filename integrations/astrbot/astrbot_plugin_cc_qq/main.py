@@ -15,6 +15,7 @@ from .constants import (
     APPROVAL_USAGE_REPLY,
     ENABLED_GROUP_IDS_KEY,
     CONFIGURATION_INVALID_REPLY,
+    EXECUTION_STARTED_REPLY,
     INTERRUPTED_ON_RESTART_REPLY,
     LOG_PREFIX,
     NO_COMMAND_PERMISSION_REPLY,
@@ -232,12 +233,18 @@ class CcQqPlugin(Star):
             reply = empty_text_reply(message.conversation.kind)
         else:
             try:
-                reply = await self.service.handle(message, decision)
+                reply = await self.service.handle(
+                    message, decision, on_started=lambda: self._notify_started(message)
+                )
             except Exception as exc:
                 self.logger.error("%s 消息处理失败：%s", LOG_PREFIX, type(exc).__name__)
                 reply = SERVICE_ERROR_REPLY
 
         await self._send_reply(message, reply, decision.allowed)
+
+    async def _notify_started(self, message) -> None:
+        """执行回执：长任务期间不给任何反馈会让用户以为没反应。"""
+        await send_text(self.context, message.origin, EXECUTION_STARTED_REPLY, self.logger)
 
     async def _handle_approval_command(self, message, decision, command) -> None:
         name, argument = command

@@ -77,6 +77,8 @@ Claude Code 和 Codex 分别使用 `default_claude_model`、`default_codex_model
 - `/help` 查看命令；`/info` 查看当前会话。
 - `/new [初始消息]` 创建新会话；`/resume [会话ID]` 恢复当前群或私聊的历史会话；`/end` 结束会话。
 - `/goon` 中断当前执行并用已保存的代理会话继续；`/cc <代理消息>` 透传代理命令；`/!` 中断当前执行。
+- 会启动代理的输入（普通文本、`/goon`、`/cc <消息>`、带参数的 `/new` 与 `/!`）会先回一条执行回执；`/help`、`/info`、`/pwd`、`/cd`、`/end`、`/resume`、`/initbase`、`/approve`、`/deny` 同步返回，不发回执。
+- `/goon` 若中断了正在执行的上一轮，回复带「已中断上一条执行」前缀；若本次执行被后续命令（如 `/!`、新的 `/goon`）取消，会明确回复已中断，不会静默。
 - `/pwd` 查看工作目录与权限档；`/cd list` 列出可切换目录；`/cd <序号>` 或 `/cd <目录>` 切换工作目录（owner／管理员）。
 - `/initbase` 补齐基础模板（owner／管理员）；`/approve <审批号>`、`/deny <审批号>` 处理危险操作审批（owner／管理员）。
 - 访客（guest）只能使用 `/help`、`/info` 和普通对话；管理命令会收到无权限提示。
@@ -85,7 +87,7 @@ Claude Code 和 Codex 分别使用 `default_claude_model`、`default_codex_model
 
 ## 版本与手动安装
 
-仓库源码位置：`integrations/astrbot/astrbot_plugin_cc_qq/`。用户选择自行在 AstrBot 中上传 ZIP；ZIP 根层必须直接包含 `metadata.yaml`、`_conf_schema.json`、`main.py`，并保留各 Python 包的相对结构；不要把整个 `astrbot_plugin_cc_qq/` 文件夹连同 macOS 的 `__MACOSX/` 一起压入 ZIP。打包时必须包含 `hooks/` 和 `templates/base/.claude/`、`templates/base/.codex/` 等隐藏目录，建议从插件目录内部执行 `zip -r ... .` 或显式加入隐藏文件。当前版本的安装包是 `integrations/astrbot/astrbot_plugin_cc_qq-v0.2.3-upload.zip`（需在用户确认后生成）。旧包 `integrations/astrbot/astrbot_plugin_cc_qq-v0.2.2-upload.zip` 与更早版本仍保留。
+仓库源码位置：`integrations/astrbot/astrbot_plugin_cc_qq/`。用户选择自行在 AstrBot 中上传 ZIP；ZIP 根层必须直接包含 `metadata.yaml`、`_conf_schema.json`、`main.py`，并保留各 Python 包的相对结构；不要把整个 `astrbot_plugin_cc_qq/` 文件夹连同 macOS 的 `__MACOSX/` 一起压入 ZIP。打包时必须包含 `hooks/` 和 `templates/base/.claude/`、`templates/base/.codex/` 等隐藏目录，建议从插件目录内部执行 `zip -r ... .` 或显式加入隐藏文件。当前版本的安装包是 `integrations/astrbot/astrbot_plugin_cc_qq-v0.2.4-upload.zip`（需在用户确认后生成）。旧包 `integrations/astrbot/astrbot_plugin_cc_qq-v0.2.3-upload.zip` 与更早版本仍保留。
 
 ## 后续阶段
 

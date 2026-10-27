@@ -81,6 +81,7 @@
 - [ ] T05.10 真机验收：guest 只读、member 工作区写入、目录外审批、管理员 `/cd`、`/initbase`；Claude 与 Codex 分别记录证据。当前 87 个单元测试通过；Claude 只读/审批/守护 hook、Codex 权限档案读写边界已在本机 CLI 实测，但尚未经 AstrBot/QQ。
 - [x] T05.11 MCP 搜索放行与原生联网禁用（`0.2.2`）：workspace／full 档放行服务器级 `mcp__deepseek-web`；只读档由 `readonly_mcp_enabled`（默认开）控制；原生 `WebSearch`／`WebFetch` 与本机 `mcp__fetch` 全档禁用；87 个单元测试与 CLI 实测通过。尚未经 QQ 真机验证，且需把 `claude_setting_sources` 设为 `user` 才会加载 MCP。
 - [x] T05.12 `/cd list` 与序号切换（`0.2.3`，需求 6）：`/cd list` 按 `allowed_work_dirs` 配置顺序编号列出并标记当前目录；`/cd <序号>` 切换到对应项；`/cd <目录>` 行为不变。序号切换复用原校验链路（越界／非目录／执行中拒绝），权限仍为 owner／管理员。94 个单元测试通过。待真机验证。
+- [x] T05.13 执行反馈修复（`0.2.4`）：`/goon` 去掉 `or ""`，取消时不再伪装成功，改为显式回「已中断当前代理执行」；中断了正在执行的上一轮时回复带「已中断上一条执行」前缀；会启动代理的输入先回一条执行回执，判定真相源为 `commands/registry.py::will_run_agent`。105 个单元测试通过。待真机验证（回执时效、`/goon` 前缀、`/!` 中断）。
 
 ## 每次插件代码变更的固定门禁
 
