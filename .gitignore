@@ -103,3 +103,6 @@ backend/.env
 实时字幕生成.docx
 astrbot_plugin_bilibili_ai_bot
 cc-ding
+
+# ===== 调研用外部仓库（不提交） =====
+zzz-prompt-debug/调研bridge/dsh-qq-plugins/
