@@ -1,0 +1,15 @@
+{
+  "name": "探针插件回显",
+  "plugin": "astrbot_plugin_e2e_probe",
+  "reload": true,
+  "send": {
+    "group_id": "{{group_id}}",
+    "text": "/e2e_echo hello-e2e",
+    "at_bot": true
+  },
+  "expect": {
+    "timeout_seconds": 30,
+    "messages": [{"contains": ["e2e_echo:hello-e2e"]}],
+    "logs": [{"contains": ["[e2e_probe] echo hello-e2e"]}]
+  }
+}

@@ -1,0 +1,7 @@
+name: astrbot_plugin_e2e_probe
+display_name: E2E Probe
+desc: 端到端测试探针插件，仅用于独立测试实例。
+version: 0.1.0
+author: Claude
+support_platforms:
+  - aiocqhttp
