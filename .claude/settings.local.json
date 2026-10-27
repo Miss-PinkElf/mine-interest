@@ -29,7 +29,12 @@
       "Bash(./.venv/Scripts/python.exe -B -m pytest tests/test_llm_service.py -v)",
       "Bash(./.venv/Scripts/python.exe -B -m pytest tests/test_llm_service.py tests/test_chat_agent_service.py tests/test_chat_orchestrator.py tests/test_chat_memory_write_service.py tests/test_agentic_recall_service.py tests/test_agentic_recall_retrievers.py -v)",
       "Bash(codex --version)",
-      "Read(//Users/mobius/.codex/**)"
+      "Read(//Users/mobius/.codex/**)",
+      "Read(//Users/mobius/.astrbot/data/plugins/astrbot_plugin_sourcehub_inspector/**)",
+      "Bash(git -C /Users/mobius/Documents/111AAA-code/mine-interest.worktrees/mine-interest-source-hub status --short)",
+      "Bash(git -C /Users/mobius/Documents/111AAA-code/mine-interest.worktrees/mine-interest-source-hub log --oneline -3)",
+      "Bash(brew --version)",
+      "Bash(HOMEBREW_NO_AUTO_UPDATE=1 brew info --cask sloth)"
     ]
   }
 }

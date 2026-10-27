@@ -106,3 +106,5 @@ cc-ding
 
 # ===== 调研用外部仓库（不提交） =====
 zzz-prompt-debug/调研bridge/dsh-qq-plugins/
+tools/astrbot_e2e/config.local.json
+tools/astrbot_e2e/reports/
