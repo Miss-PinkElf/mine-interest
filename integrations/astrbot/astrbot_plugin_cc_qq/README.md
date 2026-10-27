@@ -14,7 +14,7 @@
 
 ## 当前状态
 
-当前版本 `0.2.2` 已接通 QQ 文本准入、按角色的代理权限分级、危险操作审批、工作目录切换、基础模板、Claude Code／Codex 异步进程、SQLite 会话和基础命令。群聊只处理白名单内群号中明确 @ 当前机器人的消息；自然语言和命令均须 @，未 @ 时插件静默。私聊无需 @。不在 `private_user_ids` 且不是 owner／管理员的私聊不回复。同一私聊会话、同一发送者、同一正文在 10 秒内重复出现时只处理一次。`0.2.0` 起，群内非白名单成员不再被拒绝，而是以只读档参与对话；白名单成员为工作目录读写；owner／管理员为完全权限。权限主链路仍需真实 QQ 与双 CLI 验收。`0.2.1` 重排配置页分组并重写配置说明；`0.2.2` 放行 deepseek-web MCP 搜索、禁用原生 `WebSearch`／`WebFetch`，并新增只读档 `readonly_mcp_enabled` 开关。
+当前版本 `0.2.3` 已接通 QQ 文本准入、按角色的代理权限分级、危险操作审批、工作目录切换、基础模板、Claude Code／Codex 异步进程、SQLite 会话和基础命令。群聊只处理白名单内群号中明确 @ 当前机器人的消息；自然语言和命令均须 @，未 @ 时插件静默。私聊无需 @。不在 `private_user_ids` 且不是 owner／管理员的私聊不回复。同一私聊会话、同一发送者、同一正文在 10 秒内重复出现时只处理一次。`0.2.0` 起，群内非白名单成员不再被拒绝，而是以只读档参与对话；白名单成员为工作目录读写；owner／管理员为完全权限。权限主链路仍需真实 QQ 与双 CLI 验收。`0.2.1` 重排配置页分组并重写配置说明；`0.2.2` 放行 deepseek-web MCP 搜索、禁用原生 `WebSearch`／`WebFetch`，并新增只读档 `readonly_mcp_enabled` 开关；`0.2.3` 新增 `/cd list` 与 `/cd <序号>` 快速切换工作目录。
 
 ## 配置准备
 
@@ -64,6 +64,8 @@ Claude Code 和 Codex 分别使用 `default_claude_model`、`default_codex_model
 ## 工作目录与基础模板
 
 - `/pwd` 查看当前工作目录、角色和权限档。
+- `/cd list` 按 `allowed_work_dirs` 的配置顺序列出所有可切换目录并编号，当前生效目录带「← 当前」标记。
+- `/cd <序号>` 切换到列表里对应序号的目录；序号以当次配置顺序为准，配置调整后需重新 `/cd list` 查看。
 - `/cd <目录>` 仅 owner／管理员可用；目标必须位于 `allowed_work_dirs` 内，按 realpath 防符号链接逃逸。切换会结束当前会话，下一条消息在新目录开始。
 - `/initbase` 仅 owner／管理员可用；把插件自带的 `CLAUDE.md`、`AGENTS.md`、`.claude/settings.json`、`.claude/skills/...`、`.codex/config.toml`、`.codex/skills/...` 补到当前工作目录。只补缺失文件，不覆盖已有内容。
 - 模板里的 `.claude/settings.json` 供用户手动运行 Claude 时参考；插件会话默认 `--setting-sources ""`，不会加载工作区自带的 settings，实际策略以插件注入文件为准。
@@ -75,7 +77,7 @@ Claude Code 和 Codex 分别使用 `default_claude_model`、`default_codex_model
 - `/help` 查看命令；`/info` 查看当前会话。
 - `/new [初始消息]` 创建新会话；`/resume [会话ID]` 恢复当前群或私聊的历史会话；`/end` 结束会话。
 - `/goon` 中断当前执行并用已保存的代理会话继续；`/cc <代理消息>` 透传代理命令；`/!` 中断当前执行。
-- `/pwd` 查看工作目录与权限档；`/cd <目录>` 切换工作目录（owner／管理员）。
+- `/pwd` 查看工作目录与权限档；`/cd list` 列出可切换目录；`/cd <序号>` 或 `/cd <目录>` 切换工作目录（owner／管理员）。
 - `/initbase` 补齐基础模板（owner／管理员）；`/approve <审批号>`、`/deny <审批号>` 处理危险操作审批（owner／管理员）。
 - 访客（guest）只能使用 `/help`、`/info` 和普通对话；管理命令会收到无权限提示。
 
@@ -83,7 +85,7 @@ Claude Code 和 Codex 分别使用 `default_claude_model`、`default_codex_model
 
 ## 版本与手动安装
 
-仓库源码位置：`integrations/astrbot/astrbot_plugin_cc_qq/`。用户选择自行在 AstrBot 中上传 ZIP；ZIP 根层必须直接包含 `metadata.yaml`、`_conf_schema.json`、`main.py`，并保留各 Python 包的相对结构；不要把整个 `astrbot_plugin_cc_qq/` 文件夹连同 macOS 的 `__MACOSX/` 一起压入 ZIP。打包时必须包含 `hooks/` 和 `templates/base/.claude/`、`templates/base/.codex/` 等隐藏目录，建议从插件目录内部执行 `zip -r ... .` 或显式加入隐藏文件。当前版本的安装包是 `integrations/astrbot/astrbot_plugin_cc_qq-v0.2.2-upload.zip`（需在用户确认后生成）。旧包 `integrations/astrbot/astrbot_plugin_cc_qq-v0.1.16-upload.zip` 与更早版本仍保留。
+仓库源码位置：`integrations/astrbot/astrbot_plugin_cc_qq/`。用户选择自行在 AstrBot 中上传 ZIP；ZIP 根层必须直接包含 `metadata.yaml`、`_conf_schema.json`、`main.py`，并保留各 Python 包的相对结构；不要把整个 `astrbot_plugin_cc_qq/` 文件夹连同 macOS 的 `__MACOSX/` 一起压入 ZIP。打包时必须包含 `hooks/` 和 `templates/base/.claude/`、`templates/base/.codex/` 等隐藏目录，建议从插件目录内部执行 `zip -r ... .` 或显式加入隐藏文件。当前版本的安装包是 `integrations/astrbot/astrbot_plugin_cc_qq-v0.2.3-upload.zip`（需在用户确认后生成）。旧包 `integrations/astrbot/astrbot_plugin_cc_qq-v0.2.2-upload.zip` 与更早版本仍保留。
 
 ## 后续阶段
 

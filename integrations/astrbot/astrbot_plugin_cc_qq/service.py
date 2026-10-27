@@ -8,6 +8,7 @@ from pathlib import Path
 from .commands.registry import command_allowed, parse_command
 from .commands.session import (
     cc_prompt,
+    cd_list_text,
     cd_success_text,
     help_text,
     info_text,
@@ -21,6 +22,8 @@ from .constants import (
     APPROVAL_BROKER_ERROR_REPLY,
     APPROVAL_USAGE_REPLY,
     CC_USAGE_REPLY,
+    CD_INDEX_OUT_OF_RANGE_TEMPLATE,
+    CD_LIST_KEYWORD,
     CD_NOT_CONFIGURED_REPLY,
     CD_NOT_DIRECTORY_REPLY,
     CD_OUTSIDE_ROOTS_REPLY,
@@ -156,12 +159,27 @@ class ConversationService:
     ) -> str:
         if not argument:
             return CD_USAGE_REPLY
-        if not workspace_roots(self.config):
+        roots = workspace_roots(self.config)
+        if not roots:
             return CD_NOT_CONFIGURED_REPLY
-        raw = Path(argument.strip()).expanduser()
+        text = argument.strip()
+        # list 与序号都基于配置顺序，路径形式继续走原有校验。
+        if text.lower() == CD_LIST_KEYWORD:
+            return cd_list_text(roots, settings.work_dir)
+        if text.isdigit():
+            index = int(text)
+            if not 1 <= index <= len(roots):
+                return CD_INDEX_OUT_OF_RANGE_TEMPLATE.format(max_index=len(roots))
+            return self._apply_work_dir(conversation, roots[index - 1])
+        return self._apply_work_dir(conversation, self._resolve_work_dir_arg(settings, text))
+
+    def _resolve_work_dir_arg(self, settings: SessionSettings, text: str) -> Path:
+        raw = Path(text).expanduser()
         if not raw.is_absolute():
             raw = Path(settings.work_dir) / raw
-        target = resolve_path(raw)
+        return resolve_path(raw)
+
+    def _apply_work_dir(self, conversation: ConversationKey, target: Path) -> str:
         if not allowed_work_dir(str(target), self.config):
             return CD_OUTSIDE_ROOTS_REPLY
         if not target.is_dir():

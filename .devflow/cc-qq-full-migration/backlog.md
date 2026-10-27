@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-30 15:38:00 +08:00
-- 更新时间（Updated At）：2026-10-27 15:45:00 +08:00
+- 更新时间（Updated At）：2026-10-28 00:50:00 +08:00
 - 作者（Author）：Grok
 - 目的（Purpose）：用一句话记下还没展开的后续想法，方便交接引用。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -22,3 +22,6 @@
 - 确认 codex-cli 0.162.1 关闭原生 web search 的配置键，并在 `codex_args` 统一追加。
 - 评估只读档 MCP 是否需要进一步细分（搜索开、服务端抓取关），当前是一个总开关。
 - 群内 @bot 管理私聊白名单（候选）：先补齐 4 个待确认问题，见 `deferred/第一版边界与未讨论项.md`。
+- 需求 4.2：代码 diff 转 HTML 上传 GitHub Pages 或用语雀 MCP 展示长文本（QQ 不渲染 Markdown），见 `deferred/第一版边界与未讨论项.md`。
+- 需求 5：确认群内 guest 与白名单成员是否应该共享对话上下文，当前按会话共享。
+- 未来需求：长时间不对话时提示上下文长度并推荐 `/new`。

@@ -33,3 +33,6 @@
 - `permissions.deny` 会把工具直接从工具列表移除，PreToolUse hook 的 `allow` 不会把被 deny 的工具加回来；这与“hook allow 可以覆盖 dontAsk 默认拒绝”不矛盾，deny 优先级更高。
 - 群在 `enabled_group_ids` 但 `group_rules_json` 缺少条目时，`policy` 返回 `REASON_CONFIGURATION_INVALID`，用户看到的是「插件配置无效」，不是「未配置工作目录」；排查时先对这两个名单。
 - 服务端 MCP（deepseek-web）与本机 MCP（fetch）风险不同：前者在服务端抓取，碰不到 localhost/内网；后者在本机进程直连 URL，需要单独禁用。
+- 插件单测通过（Python 3.9.6）不等于运行时可用：AstrBot 跑 3.12.13。想在不重载的前提下验证真实运行时，可直接用 `/Users/mobius/.local/share/uv/tools/astrbot/bin/python3` 把安装目录加入 `sys.path` 再导入，能捕获版本相关的导入错误。
+- `/cd` 的三种形式（list／序号／路径）必须共用同一套边界校验；把原 `_change_work_dir` 的校验体抽成 `_apply_work_dir`，序号入口只负责选目标，避免为快捷方式开出免校验旁路。
+- 清单类命令的编号不要落库：配置顺序一变，历史序号就失效。每次实时读配置、在提示里说明「以当次顺序为准」，比维护一份映射表更简单可靠。

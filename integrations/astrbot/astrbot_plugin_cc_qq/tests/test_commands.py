@@ -7,7 +7,11 @@ from pathlib import Path
 
 from astrbot_plugin_cc_qq.commands.registry import command_allowed
 from astrbot_plugin_cc_qq.commands.session import help_text
-from astrbot_plugin_cc_qq.constants import CD_OUTSIDE_ROOTS_REPLY
+from astrbot_plugin_cc_qq.constants import (
+    CD_LIST_CURRENT_MARKER,
+    CD_NOT_CONFIGURED_REPLY,
+    CD_OUTSIDE_ROOTS_REPLY,
+)
 from astrbot_plugin_cc_qq.contracts import (
     ConversationKey,
     ConversationKind,
@@ -91,6 +95,85 @@ class WorkDirCommandTest(unittest.TestCase):
             self.conversation, self.settings, str(self.inside)
         )
         self.assertIn("allowed_work_dirs", result)
+
+
+class CdListCommandTest(unittest.TestCase):
+    """`/cd list` 按配置顺序编号，`/cd <序号>` 复用同一份顺序。"""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        base = Path(self.temp.name)
+        self.first = base / "mine-blog"
+        self.second = base / "mine-interest"
+        self.third = base / "person-config"
+        for directory in (self.first, self.second, self.third):
+            directory.mkdir()
+        self.store = SessionStore(base / "data")
+        self.config = {
+            "allowed_work_dirs": [str(self.first), str(self.second), str(self.third)]
+        }
+        self.sessions = SessionManager(self.store, self.config)
+        self.service = ConversationService(self.store, self.sessions, self.config)
+        self.conversation = ConversationKey("p", ConversationKind.GROUP, "1")
+        self.settings = SessionSettings(
+            work_dir=str(self.first),
+            agent_type="claude",
+            role="admin",
+            permission_profile="full",
+        )
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def test_list_follows_configured_order(self):
+        result = self.service._change_work_dir(self.conversation, self.settings, "list")
+        self.assertIn(f"1. {resolve_path(self.first)}", result)
+        self.assertIn(f"2. {resolve_path(self.second)}", result)
+        self.assertIn(f"3. {resolve_path(self.third)}", result)
+        self.assertLess(result.index("1. "), result.index("2. "))
+        self.assertLess(result.index("2. "), result.index("3. "))
+
+    def test_list_marks_current_work_dir(self):
+        result = self.service._change_work_dir(self.conversation, self.settings, "list")
+        current_line = next(
+            line for line in result.splitlines() if str(resolve_path(self.first)) in line
+        )
+        self.assertIn(CD_LIST_CURRENT_MARKER, current_line)
+
+    def test_list_keyword_is_case_insensitive(self):
+        result = self.service._change_work_dir(self.conversation, self.settings, "LIST")
+        self.assertIn("1. ", result)
+
+    def test_index_switches_to_matching_root(self):
+        result = self.service._change_work_dir(self.conversation, self.settings, "2")
+        self.assertIn("已切换", result)
+        self.assertEqual(
+            self.store.work_dir_override(self.conversation),
+            str(resolve_path(self.second)),
+        )
+
+    def test_index_out_of_range_is_rejected(self):
+        for argument in ("0", "4", "99"):
+            result = self.service._change_work_dir(
+                self.conversation, self.settings, argument
+            )
+            self.assertIn("1-3", result)
+            self.assertEqual(self.store.work_dir_override(self.conversation), "")
+
+    def test_list_without_configured_roots_is_rejected(self):
+        service = ConversationService(self.store, self.sessions, {})
+        result = service._change_work_dir(self.conversation, self.settings, "list")
+        self.assertEqual(result, CD_NOT_CONFIGURED_REPLY)
+
+    def test_path_argument_still_works(self):
+        result = self.service._change_work_dir(
+            self.conversation, self.settings, str(self.third)
+        )
+        self.assertIn("已切换", result)
+        self.assertEqual(
+            self.store.work_dir_override(self.conversation),
+            str(resolve_path(self.third)),
+        )
 
 
 class InitBaseTest(unittest.TestCase):
