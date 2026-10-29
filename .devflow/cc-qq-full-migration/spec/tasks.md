@@ -78,10 +78,10 @@
 - [x] T05.7 命令级权限：`/help`、`/info` 对 guest 可用；管理命令仅 owner／管理员；新增 `/cd`、`/pwd`、`/initbase`。
 - [x] T05.8 `/cd` 仅允许 `allowed_work_dirs` 的 realpath 子目录；覆盖值持久化；`/initbase` 只补缺失基础模板，不覆盖已有文件。
 - [x] T05.9 版本提升到 `0.2.0`，更新 `metadata.yaml`、`README.md`、`_conf_schema.json` 和本 mission 文档；代码提交为 `0ad479e`（未推送）。
-- [ ] T05.10 真机验收：guest 只读、member 工作区写入、目录外审批、管理员 `/cd`、`/initbase`；Claude 与 Codex 分别记录证据。当前 87 个单元测试通过；Claude 只读/审批/守护 hook、Codex 权限档案读写边界已在本机 CLI 实测，但尚未经 AstrBot/QQ。
-- [x] T05.11 MCP 搜索放行与原生联网禁用（`0.2.2`）：workspace／full 档放行服务器级 `mcp__deepseek-web`；只读档由 `readonly_mcp_enabled`（默认开）控制；原生 `WebSearch`／`WebFetch` 与本机 `mcp__fetch` 全档禁用；87 个单元测试与 CLI 实测通过。尚未经 QQ 真机验证，且需把 `claude_setting_sources` 设为 `user` 才会加载 MCP。
-- [x] T05.12 `/cd list` 与序号切换（`0.2.3`，需求 6）：`/cd list` 按 `allowed_work_dirs` 配置顺序编号列出并标记当前目录；`/cd <序号>` 切换到对应项；`/cd <目录>` 行为不变。序号切换复用原校验链路（越界／非目录／执行中拒绝），权限仍为 owner／管理员。94 个单元测试通过。待真机验证。
-- [x] T05.13 执行反馈修复（`0.2.4`）：`/goon` 去掉 `or ""`，取消时不再伪装成功，改为显式回「已中断当前代理执行」；中断了正在执行的上一轮时回复带「已中断上一条执行」前缀；会启动代理的输入先回一条执行回执，判定真相源为 `commands/registry.py::will_run_agent`。105 个单元测试通过。待真机验证（回执时效、`/goon` 前缀、`/!` 中断）。
+- [ ] T05.10 真机验收：guest 只读、member 工作区写入、目录外审批、管理员 `/cd`、`/initbase`；Claude 与 Codex 分别记录证据。当前 87 个单元测试通过；Claude 只读/审批/守护 hook、Codex 权限档案读写边界已在本机 CLI 实测。**2026-10-29 已完成命令与权限层验收（guest/member/owner 命令门禁、管理员 `/cd`、`/initbase`）**；**2026-10-30 已完成 Claude 侧工具级验收（guest 只读、workspace 写入、目录外审批 `/approve`/`/deny`）**；Codex 侧同项仍待测。证据：`plans/2026-10-29-cc-qq-0.2.4-命令与权限验收结果.md`。
+- [x] T05.11 MCP 搜索放行与原生联网禁用（`0.2.2`）：workspace／full 档放行服务器级 `mcp__deepseek-web`；只读档由 `readonly_mcp_enabled`（默认开）控制；原生 `WebSearch`／`WebFetch` 与本机 `mcp__fetch` 全档禁用；87 个单元测试与 CLI 实测通过。**2026-10-30 QQ 真机通过**：deepseek 搜索 1 次 `mcp__deepseek-web__deepseek_search`，原生 WebSearch／WebFetch 0 次；需把 `claude_setting_sources` 设为 `user` 才会加载 MCP。
+- [x] T05.12 `/cd list` 与序号切换（`0.2.3`，需求 6）：`/cd list` 按 `allowed_work_dirs` 配置顺序编号列出并标记当前目录；`/cd <序号>` 切换到对应项；`/cd <目录>` 行为不变。序号切换复用原校验链路（越界／非目录／执行中拒绝），权限仍为 owner／管理员。94 个单元测试通过。**2026-10-29 真机通过**：`/cd list` 当前目录标记、`/cd 2`、`/cd 99`、`/cd /tmp`、`/cd not-exist`、`/cd 1` 均符合预期。
+- [x] T05.13 执行反馈修复（`0.2.4`）：`/goon` 去掉 `or ""`，取消时不再伪装成功，改为显式回「已中断当前代理执行」；中断了正在执行的上一轮时回复带「已中断上一条执行」前缀；会启动代理的输入先回一条执行回执，判定真相源为 `commands/registry.py::will_run_agent`。105 个单元测试通过。**2026-10-29 发现 F1**（回执早于权限/参数校验）；**2026-10-30 `0.2.5` 修复并复验**：`will_run_agent` 增加 role 门禁、`/cc` 空参不触发回执、`/goon` 无活跃会话不回执；单测 113/113。C 阶段同时验证 `/goon` 前缀与执行中 `/!` 中断通过。
 
 ## 每次插件代码变更的固定门禁
 

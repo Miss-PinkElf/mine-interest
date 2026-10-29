@@ -68,3 +68,14 @@
 - 当前边界：Task 1 **未提交**；未触碰生产运行时；Task 2 未开始。
 - 下一步：Task 2 用例加载与校验；Task 1 提交等待用户确认。
 - 已知风险：native addon/FFmpeg 警告；测试 AstrBot `6198` 尚未实现；WebUI 重载与日志路径待实测。
+
+## 2026-10-27 21:24:11 CST — Task 2 完成
+
+- 阶段：`Apply` → Task 2 完成，进入 Task 3–5 批量。
+- 完成：
+  - `tools/astrbot_e2e/cases.py` 与 `tests/test_cases.py` 完成，13/13 测试通过。
+  - 规格复审与质量复审均通过；质量收紧（空 `messages`/`logs` 拒绝、`semantic` dict、`OSError` 包装、`render_case` 缺 `group_id` 抛 `CaseError`）已记录。
+  - 全量 33/33 测试通过（Task 1 的 20 + Task 2 的 13）。
+  - 未提交。
+- 下一步：Task 3–5 批量实现与复审；随后 Task 6。
+- 已知风险：native addon/FFmpeg 警告；测试 AstrBot `6198` 尚未实现；WebUI 重载与日志路径待实测。

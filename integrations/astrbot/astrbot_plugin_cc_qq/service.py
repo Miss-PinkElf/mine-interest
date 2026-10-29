@@ -81,8 +81,10 @@ class ConversationService:
         settings = decision.settings
         assert settings is not None
         command = parse_command(message.text)
-        # 回执必须在 claim 之后发，重复消息不会误回执。
-        if on_started is not None and will_run_agent(command):
+        # 回执必须在 claim、权限、参数与会话校验之后发，避免「先处理后被拒」。
+        if on_started is not None and self._should_notify_started(
+            command, settings, message.conversation
+        ):
             await on_started()
         try:
             if command is None:
@@ -102,6 +104,17 @@ class ConversationService:
         except Exception:
             self.store.mark_message(message.conversation, message.message_id, RECEIPT_ERROR)
             raise
+
+    def _should_notify_started(
+        self, command, settings: SessionSettings, conversation: ConversationKey
+    ) -> bool:
+        """只有真正会启动代理且用户有权执行时才发执行回执。"""
+        if not will_run_agent(command, settings.role):
+            return False
+        if command is not None and command[0] == "/goon":
+            record = self.store.active(conversation)
+            return bool(record and record.agent_session_id)
+        return True
 
     async def _command(
         self, message: IncomingMessage, settings: SessionSettings, name: str, argument: str

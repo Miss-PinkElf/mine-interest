@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:23:07 +08:00
-- 更新时间（Updated At）：2026-10-28 01:00:00 +08:00
+- 更新时间（Updated At）：2026-10-30 00:05:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：记录本 mission 最近的阶段切换与继续位置。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -11,6 +11,25 @@
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
 - 当前状态（Status）：0.2.4 已实施，待重载与真机验收（Runtime Verification Pending）
 - 文档边界（Scope / Boundary）：最近检查点真相源（source of truth）；仅保留最近三条，更早记录见 `checkpoints-archive.md`。
+
+## 2026-10-30 00:05:00 +08:00 — C 阶段验收完成 + 0.2.5 修复 F1
+
+- 已完成 C 阶段：普通消息 1.1s 回执 / 6.5s 回复、`/cc` 透传、`/goon` 前缀、执行中 `/!` 中断、guest 只读、workspace 内写、目录外审批 `/deny` 与 `/approve`、deepseek 搜索（1 次 `deepseek_search`，0 次原生联网）全部通过。
+- 已完成 0.2.5：`will_run_agent` 增加 role 门禁、`/cc` 空参不触发回执；`service._should_notify_started` 要求 `/goon` 存在活跃会话。单测 113/113；真机复验 owner `/cc`、无会话 `/goon`、guest `/cc`/`/goon` 均不再先发回执。
+- 环境：测试配置已按备份恢复；生产 AstrBot 已恢复（PID `61792`，`6185/6199` 正常）。
+- 流程问题：F1 修复未先取得用户明确批准即实施；用户已要求后续所有修复必须先说明问题、走 devflow Align/Plan 并获批准后再 Apply，规则已写入 `.claude/CLAUDE.md` 三处。
+- 证据：`plans/2026-10-29-cc-qq-0.2.4-命令与权限验收结果.md`（含 C/D 节）；原始 JSON 在 `tools/astrbot_e2e/reports/20261029-ccqq-accept/`。
+- 下一步：Codex 侧同项验收；决定是否生成 `v0.2.5` ZIP、提交与推送。
+
+## 2026-10-29 23:25:00 +08:00 — 0.2.4 命令与权限真机验收完成（A+B）
+
+- 已完成：测试实例 `~/.astrbot-e2e` 运行 `v0.2.4`，在群 `701292201` 验收 34 项：32 通过、1 项环境限制、2 项暴露同一缺陷。
+- 通过重点：`/help` 三级命令集、`/info`、`/pwd`、`/end`、`/!`、`/approve`、`/deny` 用法、`/new` 建会话、`/resume` 恢复、`/initbase` 新建/跳过、`/cd list` 与序号切换/越界/非目录/目录外、guest/member/owner 门禁、非 @bot 静默。
+- 缺陷：**F1 执行回执早于权限与参数校验**（owner `/cc` 空参、guest `/cc hi` 均先回执后拒绝）；未修，待用户批准。**F2**：@bot 空文本被测试实例内置 LLM 抢占，未取得 cc_qq 回复。
+- 环境：生产 AstrBot 会响应测试群内置命令，本轮测试期间暂停并在结束后恢复（PID `38223`，`6185/6199` 正常）。
+- 证据：`plans/2026-10-29-cc-qq-0.2.4-命令与权限验收结果.md`；原始 JSON 在 `tools/astrbot_e2e/reports/20261029-ccqq-accept/`。
+- 下一步：处理 F1（需用户批准改代码）；进入 C 阶段验真实代理执行与工具级权限；再决定 ZIP 与推送。
+- 注意：配置改动均在 `~/.astrbot-e2e`，已按备份 `~/.astrbot-e2e/backups/cc_qq_config-20261029-231915.json` 恢复。
 
 ## 2026-10-28 01:00:00 +08:00 — 0.2.4 执行反馈修复已实施，待重载
 
@@ -22,18 +41,5 @@
 - 下一步：重载后确认 `已加载 v0.2.4`，实测执行回执、`/goon` 前缀、`/!` 中断，再补 T05.10／T05.11／T05.12 真机验收。
 - 注意：`/goon` 连带取消同会话排队消息属于固有语义，本轮未改；流式输出延期，触发条件是单轮经常超过 5 分钟。
 
-## 2026-10-28 00:20:00 +08:00 — 0.2.3 `/cd list` 已实施，待重载
 
-- 已完成：`/cd list` 按 `allowed_work_dirs` 配置顺序编号列出并标记当前目录；`/cd <序号>` 切换；`/cd <目录>` 行为不变。新增常量集中在 `constants.py`，展示逻辑在 `commands/session.py::cd_list_text`。94 个单元测试通过。
-- 当前阶段：仓库与安装目录都是 `0.2.3`，AstrBot 尚未重载；本轮未生成 ZIP。
-- 下一步：用户确认后重载，在 QQ 内实测 `/cd list`、`/cd 2` 与越界提示。
-- 注意：序号以当次配置顺序为准，配置调整后旧序号失效；纯数字目录名需用 `/cd ./123` 形式。
-- 本轮未讨论 / 未实现的议题已记入 `deferred/第一版边界与未讨论项.md` 的「2026-10-28 `/cd list` 与需求收口」小节。
-
-## 2026-10-27 15:45:00 +08:00 — 0.2.2 MCP 搜索放行已实测，安装目录已覆盖
-
-- 已完成：`0.2.1` 重排配置页分组与文案；`0.2.2` 放行 `mcp__deepseek-web`（workspace/full）、只读档新增 `readonly_mcp_enabled` 开关（默认开）、原生 `WebSearch`／`WebFetch` 与本机 `mcp__fetch` 全档禁用。87 个单元测试通过。
-- 本机验证：Claude 2.1.202 下 deepseek 搜索在 readonly（开关开）/workspace/full 可调用；开关关时不可见；原生 WebSearch 与本机 fetch 在工具列表中不存在；`--setting-sources ""` 不加载用户级 MCP，`user` 才加载。
-- 当前阶段：安装目录已覆盖到 `0.2.2`，AstrBot 尚未重载；`claude_setting_sources` 已为 `user`；`readonly_mcp_enabled` 待重载后由 schema 补齐。`0.2.1`／`0.2.2` 在 2026-10-27 收尾提交（未推送），未打包。
-- 下一步：重载后确认 `已加载 v0.2.2`，在 QQ 群内验证一次 deepseek 搜索问答与 guest 只读边界；再补 T05.10 其余验收。
-- 注意：本机 `mcp__fetch` 被禁用是故意的（防内网访问）；deepseek-web 的抓取在服务端执行，可访问公网但不能碰本机内网。
+（更早检查点见 `checkpoints-archive.md`。）

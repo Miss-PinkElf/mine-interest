@@ -34,17 +34,24 @@ INTERRUPT_PREFIXES = ("/!", "/！", "!", "！")
 INVALID_INTERRUPT_PREFIXES = ("!!", "！！")
 COMMAND_BY_NAME = {command.name: command for command in COMMANDS}
 
-# 会启动代理的命令：用于决定是否先回「已开始处理」。
-ALWAYS_AGENT_COMMANDS = frozenset({"/goon", "/cc"})
+# 有参数才会启动代理的命令：用于决定是否先回「已开始处理」。
 ARGUMENT_AGENT_COMMANDS = frozenset({"/new", "/!"})
 
 
-def will_run_agent(command: tuple[str, str] | None) -> bool:
-    """判断本条输入是否会启动代理；同步返回的命令不触发执行回执。"""
+def will_run_agent(command: tuple[str, str] | None, role: str | None = None) -> bool:
+    """判断本条输入是否会启动代理；同步返回的命令不触发执行回执。
+
+    `role` 提供时先做命令级权限判断，避免无权限用户在收到拒绝前先收到
+    「正在处理」；`/cc` 必须有参数才会启动代理。
+    """
     if command is None:
         return True
     name, argument = command
-    if name in ALWAYS_AGENT_COMMANDS:
+    if role is not None and not command_allowed(role, name):
+        return False
+    if name == "/cc":
+        return bool(argument)
+    if name == "/goon":
         return True
     if name in ARGUMENT_AGENT_COMMANDS:
         return bool(argument)

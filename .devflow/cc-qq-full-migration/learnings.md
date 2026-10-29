@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-30 15:38:00 +08:00
-- 更新时间（Updated At）：2026-10-28 01:20:00 +08:00
+- 更新时间（Updated At）：2026-10-30 00:45:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：留下这次排查里下次还会用到的判断，避免再走错证据。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -44,3 +44,9 @@
 - 排查「消息没响应」先对三个名单：生产 `enabled_group_ids`、`group_rules_json`、以及 e2e 测试实例自己的配置。群 `701292201` 只在 `~/.astrbot-e2e`，不在生产，属于预期静默而非 bug。
 - 会话 JSONL（`~/.claude/projects/<cwd-slug>/*.jsonl`）里 `timestamp` 是 UTC，本地要 +8。同一 assistant 事件会重复落盘 3–4 次，统计工具调用次数必须按 `tool_use.id` 去重。
 - 排查耗时的主要来源不是「单条命令慢」，而是「往返次数多 + 完全不并行」。定量方法是配对 `tool_use.id` 与 `tool_result.tool_use_id` 算工具耗时，再用总时长相减得到模型生成耗时；并行度 = 每条 assistant 消息内的 `tool_use` 数量。详见 `2026-10-28-排查耗时分析与优化方案.md`。
+- 生产与测试共用同一个机器人账号时，测试群消息会同时进入生产 AstrBot：生产内置 `/help`、`/new` 与 @bot 空文本的 LLM 都会响应，污染观测。测试期间暂停生产最省事；长期应使用独立测试机器人账号。
+- AstrBot 内置 LLM agent 会抢占非命令消息。测试实例未配置模型时，@bot 空文本仍会被它消费，cc_qq 的 `empty_text_reply` 分支不会执行；同一个实例里的 cc_qq 普通消息正常，是因为 cc_qq 先命中并 `stop_event()`。
+- E2E 的 bootstrap 配置不覆盖两项：`allowed_work_dirs=[]`（`/cd` 只能测未配置负向）、`claude_setting_sources=""`（Claude 未登录、MCP 不加载）。要在测试实例验 `/cd` 与真实代理，必须临时改为三条测试目录与 `user`，测完恢复。
+- cc_qq 的重复回复抑制窗口是 10 秒（`PRIVATE_DUPLICATE_WINDOW_SECONDS`）。批量验收「相同拒绝文案」的用例必须间隔 ≥11 秒，否则第二条会被吞掉，误判为无回复。
+- `astrbot_e2e.onebot.collect_replies` 在收到第一条回复后只再等 1 秒；代理执行类用例会只抓到回执。验长任务要改用「固定时长持续采集」的驱动（本次用 `/tmp` 临时脚本）。
+- 执行回执的触发条件必须同时考虑角色、参数和会话状态：`/cc` 空参不启动代理、guest 无权执行、`/goon` 无活跃会话都不应回执。只判断「命令名属于会跑代理的集合」会把这三类误判成正在执行。

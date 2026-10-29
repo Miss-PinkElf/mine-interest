@@ -20,7 +20,8 @@
   - `cc_qq /help` E2E：**PASSED**，`tools/astrbot_e2e/reports/20261027-222837-285382-cc_qq-help`；消息断言 2/2，语义判定 `pass=true`，最终只有 1 条干净回复。
   - 增量重载验证：**PASSED**，`tools/astrbot_e2e/reports/20261027-223642-572604-case`；`--attach --reload` 后探针返回 `e2e_echo-v2:hello-e2e`，未重启整个测试实例。
   - 生产 AstrBot `6199` 连接正常；生产 QQ `6099` 正常；测试发送者 `6098/6201` 正常。
-  - 测试 AstrBot `6186/6198` 已停止，端口已释放；生产 bot 的 `6198` 测试客户端会每 30 秒重试，这是预期现象。
+  - 2026-10-29–30 实战：cc-qq `0.2.5` 验收期间测试 AstrBot 常驻运行（PID `31955`，`6186/6198`），生产 NapCat 的 `AstrBot-E2E`（`6198`）已启用，重试日志消失；测试期间暂停生产 AstrBot 避免干扰，测完恢复（PID `61792`）。
+  - 新增本地一键脚本 `~/.qq-e2e/start-e2e.sh`：iTerm2 单窗口三标签（生产 QQ / 测试 QQ / 测试 AstrBot），自动启用 6198、幂等启停测试实例；不入库。
   - 第一版相关文件已提交：`.devflow/astrbot-plugin-e2e/`、`tools/astrbot_e2e/`（不含 `config.local.json` 与 `reports/`）、原始需求文档。
   - `.gitignore` 本地已追加忽略规则，但按收尾约定**未提交**；提交时已显式排除 `config.local.json` 与 `reports/`。
 - 残留风险：
@@ -33,7 +34,7 @@
 - 下一步：
   1. 新对话先读 `state.md`、`checkpoints.md`、最新 handoff；
   2. 从 `backlog.md` 选择未决问题或从 `deferred/` 选择下一阶段；
-  3. 若要消除 `6198` 重试日志，可启动测试实例：`run` 或 `start-instance --plugin astrbot_plugin_cc_qq`。
+  3. 测试实例当前常驻；停用后生产 NapCat 的 `6198` 会恢复每 30 秒重试，可用 `start-e2e.sh` 重新拉起。
 - 交接：
   - `handoffs/2026-10-27-002-第一版完成交接.md`
   - `NEXT-SESSION-PROMPT-astrbot-plugin-e2e.md`

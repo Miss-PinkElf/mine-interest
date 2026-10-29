@@ -3,13 +3,22 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 17:10:00 CST。
-- 更新时间（Updated At）：2026-10-27 22:40:00 CST。
+- 更新时间（Updated At）：2026-10-30 00:45:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：记录当前 mission 的阶段检查点，只保留最近 3 条。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
 - 当前状态（Status）：已完成（Completed）。
 - 文档边界（Scope / Boundary）：恢复热路径的一部分；不替代 `state.md` 或 `handoff`。
+
+## 2026-10-30 00:45:00 CST — cc-qq 0.2.5 验收实战
+
+- 阶段：`Verify`（跨 mission 实战）。
+- 完成：用本工具在群 `701292201` 验收 cc-qq `0.2.5`，A+B+C 共 44 项；发现并协助修复 F1（回执早于权限/参数/会话校验），插件单测 113/113。
+- 运行：测试实例常驻 `6186/6198`（PID `31955`）；生产 NapCat `6198` 客户端启用；生产 AstrBot 测试期间暂停、测完恢复（PID `61792`）。
+- 新增：本地一键脚本 `~/.qq-e2e/start-e2e.sh`（iTerm2 单窗口三标签，自动启用 6198），不入库。
+- 下一步：需求 2「通用插件测试 skill」待 Align；Codex 侧验收待做。
+- 已知风险：测试实例内置 LLM 会抢占 @bot 空文本；相同回复 10 秒去重会影响批量断言；代理测试需 `claude_setting_sources=user`。
 
 ## 2026-10-27 22:40:00 CST — 收尾：重载增量验证 + 提交
 
@@ -39,13 +48,3 @@
 - 下一步：可选提交；下一阶段 cc_qq 长任务/审批/多轮；延期项见 `deferred/2026-10-27-post-mvp-deferred.md`。
 - 已知风险：native addon/FFmpeg 警告、共享 macOS 容器、富媒体未验证、`6198` 重试日志。
 
-## 2026-10-27 21:24:11 CST — Task 2 完成
-
-- 阶段：`Apply` → Task 2 完成，进入 Task 3–5 批量。
-- 完成：
-  - `tools/astrbot_e2e/cases.py` 与 `tests/test_cases.py` 完成，13/13 测试通过。
-  - 规格复审与质量复审均通过；质量收紧（空 `messages`/`logs` 拒绝、`semantic` dict、`OSError` 包装、`render_case` 缺 `group_id` 抛 `CaseError`）已记录。
-  - 全量 33/33 测试通过（Task 1 的 20 + Task 2 的 13）。
-  - 未提交。
-- 下一步：Task 3–5 批量实现与复审；随后 Task 6。
-- 已知风险：native addon/FFmpeg 警告；测试 AstrBot `6198` 尚未实现；WebUI 重载与日志路径待实测。

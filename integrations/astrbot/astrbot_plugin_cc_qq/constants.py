@@ -1,7 +1,7 @@
 """插件标识、配置键与默认值（Plugin Constants）。"""
 
 PLUGIN_NAME = "astrbot_plugin_cc_qq"
-PLUGIN_VERSION = "0.2.4"
+PLUGIN_VERSION = "0.2.5"
 PLUGIN_DESCRIPTION = "通过 QQ 使用本机 Claude Code 与 Codex"
 LOG_PREFIX = "[cc-qq]"
 

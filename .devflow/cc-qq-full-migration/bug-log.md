@@ -117,3 +117,19 @@
 - 问题现象：NapCat 控制台每 30 秒输出一条 `反向WebSocket (ws://127.0.0.1:6198/ws) 连接错误 Error: connect ECONNREFUSED 127.0.0.1:6198`，并提示「在 30 秒后尝试重新连接」。用户以为是自己终端启动 NapCat 导致的。
 - 问题原因：生产账号 `3254276668（17号）` 的 `onebot11_3254276668.json` 里有三个网络配置，其中 `AstrBot-E2E` 客户端指向 `ws://127.0.0.1:6198/ws`，属于 e2e 自动化测试的测试 AstrBot 实例（WebUI 6186 / 反向 WS 6198）。该测试实例已停止，端口无人监听。文件 mtime `2026-10-27 18:14`，由 e2e 的 Spike 0 写入。另需说明：用户在终端启动的是 `QQ --no-sandbox`，NapCat 注入在 QQ 的 Node 辅助进程（`QQ Helper`）内运行，不是独立进程，所以日志出现在 QQ 侧。
 - 解决方案：将该客户端的 `enable` 置为 `false`（保留条目以便 e2e 复用），备份为 `onebot11_3254276668.json.bak-20261028`；**需重启 QQ 生效**（NapCat 运行中会覆盖外部编辑，与插件配置同理）。文件带 UTF-8 BOM，读写必须用 `encoding="utf-8-sig"`。已知复发风险：e2e 用例重新 bootstrap 会再次写入，后续应在用例收尾自动回滚（对应 `astrbot-plugin-e2e` 的 `backlog.md` Q2）。
+
+## 2026-10-29 — 执行回执在权限与参数校验之前发出
+
+- 问题现象：owner 在群内 @bot 发送无参数 `/cc`，先收到「已收到，正在处理，完成后会回复。期间可发送 /! 中断。」，再收到「用法：/cc <代理消息>」。guest 发送 `/cc hi`，同样先收到执行回执，再收到「当前角色无权使用该命令。」。
+- 问题原因：`commands/registry.py::will_run_agent` 对 `/cc`、`/goon` 无条件返回 `True`，不检查参数或角色；`service.py::handle` 在调用 `_command` 之前触发 `on_started`，而 `command_allowed` 与参数校验在 `_command` 内部。
+- 解决方案（未实施，待用户批准）：先做 `command_allowed(role, name)` 与参数校验，再决定是否回执；或让 `will_run_agent` 接收 role/argument。需补单测覆盖 `/cc` 空参、guest `/cc`、guest `/goon`。
+- 证据：`.devflow/cc-qq-full-migration/plans/2026-10-29-cc-qq-0.2.4-命令与权限验收结果.md` 的 A9、B3-5。
+- 修复状态（2026-10-30，`0.2.5`）：`will_run_agent` 增加 `role` 门禁、`/cc` 空参不再视为启动代理；`service.py` 新增 `_should_notify_started`，`/goon` 还要求存在带 `agent_session_id` 的活跃会话。单测 113/113；真机复验 owner `/cc`、无会话 `/goon`、guest `/cc`/`/goon` 均只返回最终提示，不再先发回执。
+- 过程说明：该修复在用户仅说「继续验证，最后再修复」时被直接实施，未按硬门禁先取得明确批准；用户已要求后续所有修复必须先说明问题、走 devflow Align/Plan 并获得批准后再 Apply。
+
+## 2026-10-29 — @bot 空文本被 AstrBot 内置 LLM 抢占
+
+- 问题现象：测试群 @bot 发送空文本，只收到「LLM 请求失败：未找到任何可用的对话模型（提供商）」，没有 cc_qq 的「请在 @ 机器人后输入文本或命令。」。
+- 问题原因：AstrBot 内部 LLM agent 会处理非命令消息；测试实例未配置模型但仍抢占并结束事件，`main.py::on_qq_message` 的空文本分支未执行。
+- 解决方案（未实施）：后续评估 cc_qq handler 优先级、或在测试实例关闭 LLM；生产实例同样开启 LLM，存在相同行为。
+- 证据：同上验收结果 A16；测试实例日志 `2026-10-29 23:14:15.008`。

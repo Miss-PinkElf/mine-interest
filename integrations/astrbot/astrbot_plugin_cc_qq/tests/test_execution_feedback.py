@@ -7,7 +7,10 @@ from pathlib import Path
 from astrbot_plugin_cc_qq.commands.registry import parse_command, will_run_agent
 from astrbot_plugin_cc_qq.constants import (
     AGENT_INTERRUPTED_REPLY,
+    CC_USAGE_REPLY,
     GOON_INTERRUPTED_PREFIX,
+    NO_ACTIVE_SESSION_REPLY,
+    NO_COMMAND_PERMISSION_REPLY,
 )
 from astrbot_plugin_cc_qq.contracts import (
     AgentEvent,
@@ -57,8 +60,23 @@ class WillRunAgentTest(unittest.TestCase):
             "/deny 1",
             "/new",
             "/!",
+            "/cc",
         ):
             self.assertFalse(will_run_agent(parse_command(text)), text)
+
+    def test_cc_without_argument_does_not_run_agent(self):
+        self.assertFalse(will_run_agent(parse_command("/cc"), "owner"))
+
+    def test_guest_cannot_trigger_agent_commands(self):
+        for text in ("/goon", "/cc 你好", "/new 初始消息", "/! 重跑"):
+            self.assertFalse(will_run_agent(parse_command(text), "guest"), text)
+
+    def test_member_can_trigger_agent_commands(self):
+        for text in ("/goon", "/cc 你好", "/new 初始消息", "/! 重跑"):
+            self.assertTrue(will_run_agent(parse_command(text), "member"), text)
+
+    def test_guest_plain_text_runs_agent(self):
+        self.assertTrue(will_run_agent(None, "guest"))
 
 
 class GoonCancellationTest(unittest.IsolatedAsyncioTestCase):
@@ -182,6 +200,20 @@ class ExecutionStartedCallbackTest(unittest.IsolatedAsyncioTestCase):
             origin="origin-1",
         )
 
+    def _guest_decision(self) -> AuthorizationDecision:
+        return AuthorizationDecision(
+            allowed=True,
+            role="guest",
+            settings=SessionSettings(
+                work_dir=self.temp.name,
+                agent_type="claude",
+                role="guest",
+                permission_profile="readonly",
+                sender_id="1961618848",
+                origin="origin-1",
+            ),
+        )
+
     async def test_plain_text_triggers_callback(self):
         await self.service.handle(
             self._message("你好", "m1"), self.decision, on_started=self._on_started
@@ -201,6 +233,38 @@ class ExecutionStartedCallbackTest(unittest.IsolatedAsyncioTestCase):
             self._message("/help", "m1"), self.decision, on_started=self._on_started
         )
         self.assertEqual(self.started, 0)
+
+    async def test_cc_without_argument_does_not_trigger_callback(self):
+        reply = await self.service.handle(
+            self._message("/cc", "m1"), self.decision, on_started=self._on_started
+        )
+        self.assertEqual(self.started, 0)
+        self.assertEqual(reply, CC_USAGE_REPLY)
+
+    async def test_unauthorized_cc_does_not_trigger_callback(self):
+        reply = await self.service.handle(
+            self._message("/cc hi", "m1"),
+            self._guest_decision(),
+            on_started=self._on_started,
+        )
+        self.assertEqual(self.started, 0)
+        self.assertEqual(reply, NO_COMMAND_PERMISSION_REPLY)
+
+    async def test_unauthorized_goon_does_not_trigger_callback(self):
+        reply = await self.service.handle(
+            self._message("/goon", "m1"),
+            self._guest_decision(),
+            on_started=self._on_started,
+        )
+        self.assertEqual(self.started, 0)
+        self.assertEqual(reply, NO_COMMAND_PERMISSION_REPLY)
+
+    async def test_goon_without_session_does_not_trigger_callback(self):
+        reply = await self.service.handle(
+            self._message("/goon", "m1"), self.decision, on_started=self._on_started
+        )
+        self.assertEqual(self.started, 0)
+        self.assertEqual(reply, NO_ACTIVE_SESSION_REPLY)
 
     async def test_duplicate_message_does_not_trigger_callback(self):
         first = self._message("你好", "same-id")

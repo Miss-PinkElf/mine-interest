@@ -56,5 +56,9 @@
 - 报告生成 HTML 摘要，便于人工查看失败证据。
 - 用例支持标签与分组，按插件或风险级别筛选。
 - 报告自动脱敏 QQ 号、token 与长消息。
+- **需求 2（2026-10-29 用户新增）**：把「启动两个 QQ、暂停生产、按被测插件制定测试流程、产出报告、具备自愈能力、适配不同 NapCat/AstrBot/运行环境」做成通用测试 skill；来源 `zzz-prompt-debug/插件自动化测试验证/prompt-01.md`。候选项（Candidate），需先 Align。
+- E2E 期间自动暂停/恢复生产 AstrBot：当前靠人工暂停；单人使用可接受，高频回归前再自动化。
+- 一键启动脚本 `~/.qq-e2e/start-e2e.sh`（iTerm2 单窗口三标签、自动启用 6198）目前是本地脚本；是否收敛进仓库待定。
+- 测试期间需要临时修改测试实例配置（`allowed_work_dirs`、`claude_setting_sources=user`、角色字段）；可评估把这些作为 `run` 的参数或 bootstrap 选项。
 
 以上均为候选项（Candidate），不是已批准计划（Plan），也未进入实施（Apply）。

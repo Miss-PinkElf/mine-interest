@@ -8,7 +8,7 @@
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
-- 当前状态（Status）：0.2.4 已覆盖安装目录，待重载与 AstrBot/QQ 真机验收
+- 当前状态（Status）：0.2.5 已完成命令、权限与工具级真机验收（A+B+C），F1 已修复（Completed for A+B+C）
 - 文档边界（Scope / Boundary）：过程总览，不代替 `state.md`、`spec/` 或 `plans/`。
 
 ## 演进时间线
@@ -23,6 +23,7 @@
 | 2026-10-27 | `0.2.1` / `0.2.2` | 配置页按 ①–⑦ 分组重写文案；放行 deepseek-web MCP 搜索、禁用原生 `WebSearch`／`WebFetch` 与本机 `mcp__fetch`，只读档新增 `readonly_mcp_enabled`。 |
 | 2026-10-28 | `0.2.3` | 新增 `/cd list`（按 `allowed_work_dirs` 配置顺序编号并标记当前目录）与 `/cd <序号>` 切换；路径形式保持不变，三种入口共用同一套边界校验。 |
 | 2026-10-28 | `0.2.4` | 修 `/goon` 取消后被误标 `done` 且静默的问题；新增执行回执（会启动代理的输入先回一条）；首轮产出排查耗时分析文档，把「串行往返过多」与「长任务无中间输出」关联起来。 |
+| 2026-10-29–30 | `0.2.5` | 在专用测试群完成 A+B+C 真机验收：三级命令门禁、`/cd` 序号切换、真实代理执行、`/goon` 前缀、执行中 `/!` 中断、guest 只读、工作区写入、目录外审批、deepseek 搜索。修复 F1（执行回执必须晚于权限、参数与会话校验），113 个单测通过。 |
 
 ## 当前架构脉络
 
@@ -51,7 +52,9 @@ QQ/AstrBot 事件
 
 ## 当前未完成主线的边界
 
-- AstrBot/QQ 真机验收（T05.10、T05.12）与先前遗留 T03-M.4b、T04.4、T04.5；T05.11 的 MCP 搜索仅完成 CLI 实测。
+- Claude 侧 T05.10／T05.11／T05.12／T05.13 已完成真机验收；**Codex 侧同项验收**与先前遗留 T03-M.4b、T04.4、T04.5 仍待做。
+- `v0.2.5` 未生成 ZIP、未推送远端；测试机器人仍与生产共用 `17号`，第三个测试账号待有。
+- 需求 2（通用插件测试 skill：双 QQ、暂停生产、按插件生成测试流程与报告、自愈能力）已由用户提出并记录，未实施。
 - Codex 逐次审批、审批卡片可靠通知、私聊聚合、历史查询、多代理扩展、人格与图形化权限页。
 - 群内 @bot 管理私聊白名单（候选，4 个问题未确认）、群规则缺失的准确报错、Codex 原生 web search 关闭键、MCP 细粒度开关。
 - `/cd list` 的扩展能力（一级子目录、两级列表、分页、序号持久化）本轮明确不做；需求 4.2（diff 转 HTML）、需求 5（guest 与白名单是否共享上下文）、未来需求（上下文长度提示）本次未讨论。
