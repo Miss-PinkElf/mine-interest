@@ -30,7 +30,16 @@ from .constants import (
     CD_RUNNING_REPLY,
     CD_USAGE_REPLY,
     CONTINUE_PROMPT,
+    DEFAULT_LONG_TEXT_IMAGE_ENABLED,
+    IMAGE_FLAG_KEY,
+    IMG_DISABLED_REPLY,
+    IMG_ENABLED_REPLY,
+    IMG_STATE_OFF,
+    IMG_STATE_ON,
+    IMG_STATUS_TEMPLATE,
+    IMG_USAGE_REPLY,
     INITBASE_FAILED_REPLY,
+    LONG_TEXT_IMAGE_ENABLED_KEY,
     NO_COMMAND_PERMISSION_REPLY,
     NO_RUNNING_AGENT_REPLY,
     NO_SESSION_TO_END_REPLY,
@@ -48,7 +57,9 @@ from .contracts import (
     IncomingMessage,
     SessionSettings,
 )
+from .media import agent_images, build_agent_prompt
 from .permissions import allowed_work_dir, resolve_path, workspace_roots
+from .render import config_flag, threshold_from_config
 from .sessions import SessionManager
 from .storage import SessionStore
 from .templates import init_base_templates
@@ -89,7 +100,11 @@ class ConversationService:
         try:
             if command is None:
                 reply = await self.sessions.run(
-                    message.conversation, settings, message.text, message.message_id
+                    message.conversation,
+                    settings,
+                    build_agent_prompt(message),
+                    message.message_id,
+                    agent_images(message),
                 )
             else:
                 name, argument = command
@@ -129,6 +144,8 @@ class ConversationService:
             return info_text(self.store.active(conversation))
         if name == "/pwd":
             return pwd_text(settings)
+        if name == "/img":
+            return self._toggle_image(conversation, argument)
         if name == "/cd":
             return self._change_work_dir(conversation, settings, argument)
         if name == "/initbase":
@@ -219,3 +236,28 @@ class ConversationService:
         except OSError:
             return INITBASE_FAILED_REPLY
         return initbase_text(created, skipped)
+
+    def image_enabled(self, conversation: ConversationKey) -> bool:
+        """会话开关优先，未设置时回退全局配置。"""
+        raw = self.store.get_flag(conversation, IMAGE_FLAG_KEY)
+        if raw == "1":
+            return True
+        if raw == "0":
+            return False
+        return config_flag(
+            self.config, LONG_TEXT_IMAGE_ENABLED_KEY, DEFAULT_LONG_TEXT_IMAGE_ENABLED
+        )
+    def _toggle_image(self, conversation: ConversationKey, argument: str) -> str:
+        state = argument.strip().lower()
+        if not state:
+            enabled = self.image_enabled(conversation)
+            return IMG_STATUS_TEMPLATE.format(
+                state=IMG_STATE_ON if enabled else IMG_STATE_OFF,
+                threshold=threshold_from_config(self.config),
+            )
+        if state not in ("on", "off"):
+            return IMG_USAGE_REPLY
+        self.store.set_flag(
+            conversation, IMAGE_FLAG_KEY, "1" if state == "on" else "0"
+        )
+        return IMG_ENABLED_REPLY if state == "on" else IMG_DISABLED_REPLY

@@ -133,3 +133,27 @@
 - 问题原因：AstrBot 内部 LLM agent 会处理非命令消息；测试实例未配置模型但仍抢占并结束事件，`main.py::on_qq_message` 的空文本分支未执行。
 - 解决方案（未实施）：后续评估 cc_qq handler 优先级、或在测试实例关闭 LLM；生产实例同样开启 LLM，存在相同行为。
 - 证据：同上验收结果 A16；测试实例日志 `2026-10-29 23:14:15.008`。
+
+## 2026-10-30 — 需求 5 真机测试发现的缺陷（已修复）
+
+- **B1 配置为 null 导致媒体与长图默认关闭**
+  - 问题现象：测试实例 `astrbot_plugin_cc_qq_config.json` 中新增的 `media_enabled` 等字段是 `null`；`config.get(key, default)` 返回 `None`，`bool(None)` 为假，媒体与长图被当作关闭。
+  - 问题原因：AstrBot 会把未填写的配置键写成 `null`，而不是省略；`dict.get` 的默认值只在键缺失时生效。
+  - 解决方案：新增 `render.config_flag()`，`None` 时回退默认值；`main.py`、`service.py` 统一使用。新增 `test_null_global_value_uses_default_enabled` 等单测。
+
+- **B2 命令回复被自动转成长图**
+  - 问题现象：真机发送 `/help`，QQ 收到的是一张长图而不是文本，测试用例 `命令 /help` 失败。
+  - 问题原因：`/help` 的回复文本超过 360 字，`main._send_reply(..., allow_long_image=True)` 对所有回复生效，包括同步命令。
+  - 解决方案：长图开关改为 `will_run_agent(parse_command(text), role)`，只有会启动代理的输入（普通文本、`/cc`、`/goon`、带参数的 `/new`）才允许转图。新增 `test_sync_commands_do_not_trigger_long_image`。
+
+- **B3 NapCat 图片 URL 过期导致落盘失败**
+  - 问题现象：图片输入用例中插件提示「有 1 个图片未能读取」，代理实际只收到文本；代理随后自行 `ls` 工作目录读取了测试图，造成语义断言假绿。
+  - 问题原因：`_image_ref` 优先取 `url`，NapCat 的 gchat URL 很快返回 400 `download url has expired`；AstrBot 自带 `ImageResolver` 也优先返回 URL。
+  - 解决方案：`_image_ref` 改为优先取 `file`；`_store_image` 在原引用失败后调用 OneBot `get_image` 取本地文件路径再重试。真机验证媒体目录出现落盘文件。
+
+- **B4 `[[image:相对路径]]` 发送失败**
+  - 问题现象：代理回复 `[[image:test-output.png]]`，插件日志报 `FileNotFoundError`，图片未发出。
+  - 问题原因：`is_trusted_path` 只用相对路径做校验，发送时仍把相对路径交给 `Image.fromFileSystem`，后者按 AstrBot 进程 cwd 解析。
+  - 解决方案：新增 `resolve_trusted_path()` 返回 realpath 绝对路径，`parse_reply_parts` 使用绝对路径发送。
+
+- **测试设计教训**：工作目录内不要放可被代理偶然 `Read` 的测试素材；图片输入应通过 base64 发送，并在断言后检查插件媒体目录，避免语义断言被代理自主探索蒙混。

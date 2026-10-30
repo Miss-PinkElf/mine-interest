@@ -375,8 +375,13 @@ def classify_tool_call(
     tool_input: dict,
     profile: str,
     work_dir: str,
+    extra_read_roots: tuple[str, ...] = (),
 ) -> ToolDecision:
-    """判断一次工具调用是否可以直接放行、拒绝或需要管理员审批。"""
+    """判断一次工具调用是否可以直接放行、拒绝或需要管理员审批。
+
+    `extra_read_roots` 只给只读档增加额外的只读根（例如插件媒体目录），
+    写工具与执行命令仍然一律拒绝。
+    """
     tool_input = tool_input if isinstance(tool_input, dict) else {}
     profile = normalize_profile(profile, PROFILE_READONLY)
 
@@ -389,8 +394,21 @@ def classify_tool_call(
                 return ToolDecision(DECISION_NONE)
             root = resolve_path(work_dir) if work_dir else None
             target = resolve_path(raw_path, root)
-            if root is not None and not is_within(target, root):
-                return ToolDecision(DECISION_DENY, f"只读档位仅限工作目录：{target}")
+            read_roots = [
+                candidate
+                for candidate in (
+                    root,
+                    *(resolve_path(item) for item in extra_read_roots if item),
+                )
+                if candidate is not None
+            ]
+            if read_roots and not any(
+                is_within(target, candidate) for candidate in read_roots
+            ):
+                return ToolDecision(
+                    DECISION_DENY,
+                    f"只读档位仅限工作目录与插件媒体目录：{target}",
+                )
             hard = hard_denied_decision(tool_name, tool_input, work_dir)
             if hard is not None:
                 return hard

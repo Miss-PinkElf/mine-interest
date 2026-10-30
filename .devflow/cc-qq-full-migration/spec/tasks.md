@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:33:00 +08:00
-- 更新时间（Updated At）：2026-10-23 00:00:00 +08:00
+- 更新时间（Updated At）：2026-10-30 15:00:00 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：按计划跟踪第一阶段可独立核验的实施任务。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -83,7 +83,22 @@
 - [x] T05.12 `/cd list` 与序号切换（`0.2.3`，需求 6）：`/cd list` 按 `allowed_work_dirs` 配置顺序编号列出并标记当前目录；`/cd <序号>` 切换到对应项；`/cd <目录>` 行为不变。序号切换复用原校验链路（越界／非目录／执行中拒绝），权限仍为 owner／管理员。94 个单元测试通过。**2026-10-29 真机通过**：`/cd list` 当前目录标记、`/cd 2`、`/cd 99`、`/cd /tmp`、`/cd not-exist`、`/cd 1` 均符合预期。
 - [x] T05.13 执行反馈修复（`0.2.4`）：`/goon` 去掉 `or ""`，取消时不再伪装成功，改为显式回「已中断当前代理执行」；中断了正在执行的上一轮时回复带「已中断上一条执行」前缀；会启动代理的输入先回一条执行回执，判定真相源为 `commands/registry.py::will_run_agent`。105 个单元测试通过。**2026-10-29 发现 F1**（回执早于权限/参数校验）；**2026-10-30 `0.2.5` 修复并复验**：`will_run_agent` 增加 role 门禁、`/cc` 空参不触发回执、`/goon` 无活跃会话不回执；单测 113/113。C 阶段同时验证 `/goon` 前缀与执行中 `/!` 中断通过。
 
-## 每次插件代码变更的固定门禁
+## T06 需求 5：媒体输入输出与长文本渲染（0.3.1）
+
+计划：`plans/2026-10-30-cc-qq-需求5-媒体输入输出与长文本渲染实施计划.md`。
+
+- [x] T06.1 `constants.py` / `_conf_schema.json`：媒体数量、大小、保留期、转发展开上限、长图阈值（默认 360）、长图开关等常量与配置。
+- [x] T06.2 `contracts.py`：`IncomingMessage` 增加图片、引用、转发字段；`AgentRequest` 增加 `images`。
+- [x] T06.3 `platform/qq_events.py`：放行 `Image`、`Reply`、`Forward`、`Nodes`，收集图片与引用内容；仍拒绝 `Record`／`Video`／`File`。
+- [x] T06.4 新增 `media.py`：转发展开、图片下载、类型／大小／数量校验、落盘、过期清理、受信路径校验；`tests/test_media.py` 覆盖。
+- [x] T06.5 `permissions.py` + `hooks/readonly_hook.py`：只读档放行媒体根（`extra_read_roots`），写工具与 `Bash` 仍拒绝；单测覆盖。
+- [x] T06.6 `sessions.py` + `agents/codex.py` / `profiles.py`：媒体清单进入 prompt，Codex `-i` 传图；`codex exec resume` 是否接受 `-i` 仍需在 Codex 侧真机确认（本轮真机只验证了 Claude）。
+- [x] T06.7 `platform/replies.py` + `main.py`：解析 `[[image:<path>]]`，受信路径校验，图文混排发送。
+- [x] T06.8 新增 `render.py`：360 字／代码块触发、本地 T2I 渲染、线程执行、长图分页、失败回退；`/img on|off` 与 `conversation_flags` 存储；本地渲染已用 AstrBot Python 实测出图。
+- [x] T06.9 文档与版本：README 群会话语义与媒体说明、`metadata.yaml` 与版本常量升至 `0.3.1`。
+- [x] T06.10 真机验收：直接图片、引用、`[[image:]]` 发图、非法路径拒绝、长图、`/img off`、命令回归均通过；媒体 suite 6/6、基础命令 suite 4/4。**合并转发标记 SKIPPED**：群聊中合并转发无法与 @bot 同时发送，按设计静默；私聊场景本轮未开启。证据：`tools/astrbot_e2e/reports/20261030-164735-823213-astrbot_plugin_cc_qq-suite/`、`.../20261030-164654-829047-astrbot_plugin_cc_qq-suite/`。
+
+
 
 - [x] 同步提升 `metadata.yaml` 与 Python 版本常量至 `0.1.16`。覆盖安装目录后需用户重载才生效。
 - [x] 权限子变更提升 `metadata.yaml` 与 Python 版本常量至 `0.2.0`；仍须用户明确要求才覆盖安装目录。

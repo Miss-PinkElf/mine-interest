@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from astrbot_plugin_cc_qq.commands.registry import command_allowed
+from astrbot_plugin_cc_qq.commands.registry import command_allowed, will_run_agent
 from astrbot_plugin_cc_qq.commands.session import help_text
 from astrbot_plugin_cc_qq.constants import (
     CD_LIST_CURRENT_MARKER,
@@ -46,6 +46,13 @@ class CommandRoleTest(unittest.TestCase):
         self.assertIn("/help", guest_help)
         self.assertNotIn("/cd", guest_help)
         self.assertIn("/cd", admin_help)
+
+    def test_sync_commands_do_not_trigger_long_image(self):
+        # /help 的回复可能超过 360 字，但它不是代理回复，必须保持文本。
+        for name in ("/help", "/info", "/pwd", "/img", "/cd", "/approve"):
+            self.assertFalse(will_run_agent((name, ""), "owner"), name)
+        self.assertTrue(will_run_agent(None, "owner"))
+        self.assertTrue(will_run_agent(("/cc", "hi"), "owner"))
 
 
 class WorkDirCommandTest(unittest.TestCase):
@@ -213,6 +220,56 @@ class InitBaseTest(unittest.TestCase):
 
         second = self.service._init_base(self.settings)
         self.assertIn("跳过", second)
+
+
+class ImageCommandTest(unittest.TestCase):
+    """`/img on|off` 只对 owner／管理员开放，状态按会话保存。"""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.store = SessionStore(Path(self.temp.name) / "data")
+        self.config = {}
+        self.sessions = SessionManager(self.store, self.config)
+        self.service = ConversationService(self.store, self.sessions, self.config)
+        self.conversation = ConversationKey("p", ConversationKind.GROUP, "img")
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def test_only_admin_can_use_img(self):
+        self.assertTrue(command_allowed("admin", "/img"))
+        self.assertTrue(command_allowed("owner", "/img"))
+        self.assertFalse(command_allowed("member", "/img"))
+        self.assertFalse(command_allowed("guest", "/img"))
+
+    def test_status_defaults_to_enabled(self):
+        result = self.service._toggle_image(self.conversation, "")
+        self.assertIn("开启", result)
+        self.assertIn("360", result)
+
+    def test_off_persists_per_conversation(self):
+        result = self.service._toggle_image(self.conversation, "off")
+        self.assertIn("关闭", result)
+        self.assertFalse(self.service.image_enabled(self.conversation))
+        self.assertEqual(
+            self.store.get_flag(self.conversation, "image_enabled"), "0"
+        )
+
+    def test_global_disable_is_respected_without_override(self):
+        service = ConversationService(
+            self.store, self.sessions, {"long_text_image_enabled": False}
+        )
+        self.assertFalse(service.image_enabled(self.conversation))
+
+    def test_null_global_value_uses_default_enabled(self):
+        service = ConversationService(
+            self.store, self.sessions, {"long_text_image_enabled": None}
+        )
+        self.assertTrue(service.image_enabled(self.conversation))
+
+    def test_invalid_argument_returns_usage(self):
+        result = self.service._toggle_image(self.conversation, "maybe")
+        self.assertIn("用法", result)
 
 
 if __name__ == "__main__":

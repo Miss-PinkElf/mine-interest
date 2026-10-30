@@ -27,6 +27,7 @@ SESSION_TABLE = "sessions"
 MESSAGE_RECEIPT_TABLE = "message_receipts"
 TURN_TABLE = "turns"
 CONVERSATION_WORK_DIR_TABLE = "conversation_work_dirs"
+CONVERSATION_FLAGS_TABLE = "conversation_flags"
 PERMISSION_AUDIT_TABLE = "permission_audit"
 
 
@@ -107,6 +108,15 @@ class SessionStore:
                     conversation_key TEXT PRIMARY KEY,
                     work_dir TEXT NOT NULL,
                     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )"""
+            )
+            connection.execute(
+                f"""CREATE TABLE IF NOT EXISTS {CONVERSATION_FLAGS_TABLE} (
+                    conversation_key TEXT NOT NULL,
+                    flag_name TEXT NOT NULL,
+                    flag_value TEXT NOT NULL,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (conversation_key, flag_name)
                 )"""
             )
             connection.execute(
@@ -305,6 +315,27 @@ class SessionStore:
             connection.execute(
                 f"DELETE FROM {CONVERSATION_WORK_DIR_TABLE} WHERE conversation_key=?",
                 (conversation.storage_key(),),
+            )
+
+    def get_flag(self, conversation: ConversationKey, name: str) -> str:
+        with self._connection() as connection:
+            row = connection.execute(
+                f"""SELECT flag_value FROM {CONVERSATION_FLAGS_TABLE}
+                WHERE conversation_key=? AND flag_name=?""",
+                (conversation.storage_key(), name),
+            ).fetchone()
+        return str(row["flag_value"]) if row else ""
+
+    def set_flag(self, conversation: ConversationKey, name: str, value: str) -> None:
+        with self._connection() as connection:
+            connection.execute(
+                f"""INSERT INTO {CONVERSATION_FLAGS_TABLE}
+                (conversation_key, flag_name, flag_value)
+                VALUES (?, ?, ?)
+                ON CONFLICT(conversation_key, flag_name) DO UPDATE SET
+                    flag_value=excluded.flag_value,
+                    updated_at=CURRENT_TIMESTAMP""",
+                (conversation.storage_key(), name, value),
             )
 
     def record_permission_event(

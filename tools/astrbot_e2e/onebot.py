@@ -14,11 +14,30 @@ class OneBotError(RuntimeError):
     """OneBot 调用失败或连接异常。"""
 
 
-def build_group_message(text: str, at_qq: str) -> List[Dict[str, Any]]:
-    return [
-        {"type": "at", "data": {"qq": str(at_qq)}},
-        {"type": "text", "data": {"text": " " + str(text)}},
-    ]
+def build_group_message(
+    text: str,
+    at_qq: str,
+    image: Optional[str] = None,
+    reply_to: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """构造群消息；支持引用（reply）、@ 与图片（image 为文件路径或 URL）。"""
+    message: List[Dict[str, Any]] = []
+    if reply_to:
+        message.append({"type": "reply", "data": {"id": str(reply_to)}})
+    message.append({"type": "at", "data": {"qq": str(at_qq)}})
+    if str(text or "").strip():
+        message.append({"type": "text", "data": {"text": " " + str(text)}})
+    if image:
+        message.append({"type": "image", "data": {"file": str(image)}})
+    return message
+
+
+def count_images(event: Dict[str, Any]) -> int:
+    """统计消息中的图片段数量，用于长图与图片输出断言。"""
+    message = event.get("message")
+    if not isinstance(message, list):
+        return 0
+    return sum(1 for segment in message if segment.get("type") == "image")
 
 
 def extract_text(event: Dict[str, Any]) -> str:
@@ -153,33 +172,48 @@ class OneBotClient:
         return await asyncio.wait_for(self._events.get(), timeout=timeout)
 
 
+PROCESSING_HINT = "正在处理"
+
+
 async def collect_replies(
     client: OneBotClient,
     bot_qq: str,
     group_id: str,
     timeout: float,
+    since_time: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
+    """收集机器人回复。
+
+    插件会先回一条执行回执（含「正在处理」），代理结果稍后才到。收到回执后
+    必须继续等到 timeout，不能把回执当成最终回复；同步命令在收到一条后再等
+    一个很短的静默窗口即可结束。`since_time` 用于丢弃连接积压的旧消息。
+    """
     replies: List[Dict[str, Any]] = []
     loop = asyncio.get_running_loop()
     deadline = loop.time() + timeout
+    idle_window = 2.0
+    waiting_result = False
     while loop.time() < deadline:
         remaining = deadline - loop.time()
+        wait = remaining if waiting_result else min(idle_window, remaining)
         try:
-            event = await client.next_event(timeout=remaining)
+            event = await client.next_event(timeout=wait)
         except asyncio.TimeoutError:
             break
-        if is_bot_reply(event, bot_qq, group_id):
-            replies.append({"text": extract_text(event), "raw": event})
-            # 给插件连续多条回复留一个短窗口，并 clamp 到剩余 deadline。
-            window = min(1.0, max(0.0, deadline - loop.time()))
-            try:
-                extra = await client.next_event(timeout=window)
-            except asyncio.TimeoutError:
-                break
-            if is_bot_reply(extra, bot_qq, group_id):
-                replies.append({"text": extract_text(extra), "raw": extra})
-            else:
-                break
+        if not is_bot_reply(event, bot_qq, group_id):
+            continue
+        if since_time is not None:
+            event_time = event.get("time")
+            if event_time is not None and int(event_time) < since_time - 1:
+                continue
+        text = extract_text(event)
+        replies.append(
+            {"text": text, "images": count_images(event), "raw": event}
+        )
+        if PROCESSING_HINT in text:
+            waiting_result = True
+        elif waiting_result:
+            waiting_result = False
     return replies
 
 
@@ -212,5 +246,7 @@ async def history_bot_replies(
             if message_time is None or message_time < since_time:
                 continue
         if is_history_bot_message(event, bot_qq, group_id):
-            replies.append({"text": extract_text(event), "raw": event})
+            replies.append(
+                {"text": extract_text(event), "images": count_images(event), "raw": event}
+            )
     return replies

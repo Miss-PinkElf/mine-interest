@@ -84,3 +84,23 @@
 - 2026-10-29：测试实例按备份恢复配置；`/cd` 与工具级权限测试需要临时调整 `allowed_work_dirs`、`owner_qq_id`、`owner_permission_profile` 与 `claude_setting_sources=user`，全部只改 `~/.astrbot-e2e`。
 - 2026-10-30：F1 修复方案：`will_run_agent` 增加 `role` 门禁、`/cc` 必须有参数；`service._should_notify_started` 要求 `/goon` 存在带 `agent_session_id` 的活跃会话。落地 `0.2.5`，113 个单测通过。
 - 2026-10-30：**流程硬门禁**写入 `.claude/CLAUDE.md` 开头、工作流要求、结尾三处：修复前必须说明问题 → 讨论对齐 → 写 Plan → 用户明确批准 → 再 Apply；「继续验证」「最后再修复」不是授权。原因：本次 F1 修复在未取得明确批准时直接实施。
+
+## 2026-10-30 需求 5 媒体与长文本决策
+
+- 2026-10-30 14:42：需求 5 对齐完成。群内对话保持「整群共享一个 agent 会话、权限按每轮发言者计算」，不改会话键；只在 README 与配置说明写清楚语义。原因：用户确认现状符合预期，改会话键会影响现有使用。
+- 2026-10-30 14:52：媒体方案确认四项：M1（插件媒体目录 + 只读 hook 额外放行媒体根）、P1（`[[image:<path>]]` 行内标记）、自动转长图 + `/img on|off`（默认阈值 360 字，可配置）、只发长图不发全文。
+- 2026-10-30：图片输入复用 AstrBot 现有能力，不自造：引用消息复用 `OneBotClient` + `OneBotPayloadParser`，图片落盘用 `Image.convert_to_file_path()`。符合「复用现有、不造轮子」。
+- 2026-10-30：长图优先本地 T2I（AstrBot `LocalRenderStrategy`，Pillow 直接渲染 Markdown），不用 GitHub Pages／语雀 MCP。原因：本地零外部依赖、无每小时 10 次构建限制；GitHub Pages 官方软限制为每小时 10 次构建（自定义 Actions 发布除外）、每月 100GB 带宽。
+- 2026-10-30：图片来源与合理性（搜索图片、表情包）本轮不做，由用户后续单独写 skill；本轮只打通「能发图片」的通道。`[[image:]]` 路径必须 `realpath` 落在工作目录或插件媒体目录内。
+- 2026-10-30：`/img` 是 owner／管理员命令，状态按会话存 `conversation_flags` 表；未设置时回退全局 `long_text_image_enabled`。
+- 2026-10-30：T2I 本地渲染在非标准 cwd 下会因 AstrBot 临时目录不存在而失败；`render.py` 渲染前确保 `get_astrbot_temp_path()` 存在。已用 AstrBot Python 实测出图。
+- 2026-10-30：真机验收由用户本人执行，本轮只完成代码与单测（154/154）。
+
+## 2026-10-30 需求 5 真机测试决策
+
+- 2026-10-30 17:00：长图只对「会启动代理的输入」生效（`will_run_agent`），同步命令（`/help`、`/info`、`/pwd`、`/img`、`/cd`、审批命令）的回复永远保持文本。原因：`/help` 文本超过 360 字，真机被误转成长图。
+- 2026-10-30 17:00：配置读取统一用 `config_flag()`，`None` 视同未填写并回退默认值。原因：AstrBot 会把未填写项写成 `null`，`dict.get` 的默认值不生效。
+- 2026-10-30 17:00：图片引用优先取 `file`，失败后调用 OneBot `get_image` 取本地路径。原因：NapCat 的 gchat URL 会很快返回 400 expired；AstrBot 自带 `ImageResolver` 也优先返回 URL，不能直接用。
+- 2026-10-30 17:00：`[[image:]]` 路径在解析阶段就转为 realpath 绝对路径，发送不再依赖进程 cwd。
+- 2026-10-30 17:00：合并转发在群聊中无法与 @bot 同时发送（QQ 合并转发是独立消息），插件按群 @ 门禁会静默；本轮标记 SKIPPED，若要支持需重新对齐触发规则（例如允许引用 bot 消息触发或私聊场景）。
+- 2026-10-30 17:00：e2e 测试设计教训——工作目录内不要放可被代理偶然读取的测试素材；图片输入用 base64 发送，并检查媒体目录落盘，避免语义断言被代理自主探索蒙混。

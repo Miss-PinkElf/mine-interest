@@ -1,7 +1,7 @@
 """插件标识、配置键与默认值（Plugin Constants）。"""
 
 PLUGIN_NAME = "astrbot_plugin_cc_qq"
-PLUGIN_VERSION = "0.2.5"
+PLUGIN_VERSION = "0.3.1"
 PLUGIN_DESCRIPTION = "通过 QQ 使用本机 Claude Code 与 Codex"
 LOG_PREFIX = "[cc-qq]"
 
@@ -64,6 +64,7 @@ AGENT_ENV_WORK_DIR = "CC_QQ_WORK_DIR"
 AGENT_ENV_CONVERSATION_KEY = "CC_QQ_CONVERSATION_KEY"
 AGENT_ENV_SENDER_ID = "CC_QQ_SENDER_ID"
 AGENT_ENV_ORIGIN = "CC_QQ_ORIGIN"
+AGENT_ENV_MEDIA_ROOT = "CC_QQ_MEDIA_ROOT"
 AGENT_POLICY_DIR_NAME = "agent_policy"
 APPROVAL_HOOK_SCRIPT_NAME = "approval_hook.py"
 GUARD_HOOK_SCRIPT_NAME = "guard_hook.py"
@@ -97,7 +98,7 @@ REASON_WORK_DIR_MISSING = "work_dir_missing"
 
 CONFIGURATION_INVALID_REPLY = "当前会话的插件配置无效，请联系插件管理员检查群配置。"
 WORK_DIR_MISSING_REPLY = "当前会话尚未配置工作目录，请联系插件管理员。"
-UNSUPPORTED_SEGMENT_REPLY = "当前阶段只支持文本消息；图片、文件和引用将在后续阶段接入。"
+UNSUPPORTED_SEGMENT_REPLY = "当前阶段只支持文本、图片、引用与合并转发；语音、视频和文件暂不支持。"
 EMPTY_MESSAGE_REPLY = "请在 @ 机器人后输入文本或命令。"
 SERVICE_ERROR_REPLY = "处理消息时发生错误，请联系插件管理员查看日志。"
 AGENT_NO_TEXT_REPLY = "代理没有返回文本，请检查代理登录状态和插件日志。"
@@ -162,3 +163,57 @@ RECEIPT_CANCELLED = "cancelled"
 RECEIPT_ERROR = "error"
 RECEIPT_INTERRUPTED = "interrupted"
 RECEIPT_DELIVERY_FAILED = "delivery_failed"
+
+# 需求 5：媒体输入（Media Input）
+MEDIA_ENABLED_KEY = "media_enabled"
+MAX_INCOMING_IMAGES_KEY = "max_incoming_images"
+DEFAULT_MEDIA_ENABLED = True
+DEFAULT_MAX_INCOMING_IMAGES = 6
+MAX_IMAGE_BYTES = 10 * 1024 * 1024
+MEDIA_RETENTION_DAYS = 7
+MAX_FORWARD_MESSAGES = 30
+MAX_FORWARD_CHARS = 8000
+MEDIA_DIR_NAME = "media"
+MEDIA_IMAGE_EXTENSIONS = frozenset(
+    (".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp")
+)
+MEDIA_EXTENSION_BY_FORMAT = {
+    "JPEG": ".jpg",
+    "PNG": ".png",
+    "GIF": ".gif",
+    "WEBP": ".webp",
+    "BMP": ".bmp",
+}
+MEDIA_PARTIAL_FAILURE_TEMPLATE = "有 {failed} 个图片未能读取，已跳过。"
+MEDIA_TOO_MANY_REPLY_TEMPLATE = "图片过多：单条消息最多读取 {limit} 张，已忽略多余图片。"
+MEDIA_DOWNLOAD_FAILED_REPLY = "图片读取失败，请稍后重试或改用文字描述。"
+FORWARD_TOO_LARGE_REPLY = "转发内容过大，已截断到可处理范围。"
+IMAGE_ONLY_PROMPT = "用户只发送了图片，请先查看图片再回应。"
+
+# 需求 5：图片输出（Image Output）
+IMAGE_MARKER_PATTERN = r"\[\[image:(.+?)\]\]"
+IMAGE_MARKER_PREFIX = "[[image:"
+IMAGE_MARKER_MAX_COUNT = 10
+IMAGE_MARKER_IGNORED_REPLY = "有图片路径不在允许范围内，已忽略。"
+
+# 需求 5：长文本渲染（Long-text Rendering）
+LONG_TEXT_IMAGE_ENABLED_KEY = "long_text_image_enabled"
+LONG_TEXT_IMAGE_THRESHOLD_KEY = "long_text_image_threshold"
+LONG_TEXT_IMAGE_USE_NETWORK_KEY = "long_text_image_use_network"
+LONG_TEXT_IMAGE_MAX_HEIGHT_KEY = "long_text_image_max_height"
+DEFAULT_LONG_TEXT_IMAGE_ENABLED = True
+DEFAULT_LONG_TEXT_IMAGE_THRESHOLD = 360
+DEFAULT_LONG_TEXT_IMAGE_USE_NETWORK = False
+DEFAULT_LONG_TEXT_IMAGE_MAX_HEIGHT = 4000
+MIN_LONG_TEXT_IMAGE_THRESHOLD = 80
+MAX_LONG_TEXT_IMAGE_THRESHOLD = 4000
+CODE_FENCE_MARKER = "```"
+IMAGE_FLAG_KEY = "image_enabled"
+IMG_USAGE_REPLY = "用法：/img on 开启长文本转图片，/img off 关闭，/img 查看当前状态。"
+IMG_ENABLED_REPLY = "本会话长文本转图片已开启。"
+IMG_DISABLED_REPLY = "本会话长文本转图片已关闭。"
+IMG_STATUS_TEMPLATE = "本会话长文本转图片：{state}（阈值 {threshold} 字）。"
+IMG_STATE_ON = "开启"
+IMG_STATE_OFF = "关闭"
+LONG_IMAGE_FAILED_REPLY = "长文本渲染为图片失败，已改发文本。"
+LONG_IMAGE_CAPTION = "长内容已渲染为图片。"

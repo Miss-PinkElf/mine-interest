@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-30 15:38:00 +08:00
-- 更新时间（Updated At）：2026-10-30 00:45:00 +08:00
+- 更新时间（Updated At）：2026-10-30 17:10:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：留下这次排查里下次还会用到的判断，避免再走错证据。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -48,5 +48,10 @@
 - AstrBot 内置 LLM agent 会抢占非命令消息。测试实例未配置模型时，@bot 空文本仍会被它消费，cc_qq 的 `empty_text_reply` 分支不会执行；同一个实例里的 cc_qq 普通消息正常，是因为 cc_qq 先命中并 `stop_event()`。
 - E2E 的 bootstrap 配置不覆盖两项：`allowed_work_dirs=[]`（`/cd` 只能测未配置负向）、`claude_setting_sources=""`（Claude 未登录、MCP 不加载）。要在测试实例验 `/cd` 与真实代理，必须临时改为三条测试目录与 `user`，测完恢复。
 - cc_qq 的重复回复抑制窗口是 10 秒（`PRIVATE_DUPLICATE_WINDOW_SECONDS`）。批量验收「相同拒绝文案」的用例必须间隔 ≥11 秒，否则第二条会被吞掉，误判为无回复。
-- `astrbot_e2e.onebot.collect_replies` 在收到第一条回复后只再等 1 秒；代理执行类用例会只抓到回执。验长任务要改用「固定时长持续采集」的驱动（本次用 `/tmp` 临时脚本）。
+- `astrbot_e2e.onebot.collect_replies` 原来收到第一条回复后只再等 1 秒，代理执行类用例会只抓到回执。**2026-10-30 已修复**：识别含「正在处理」的执行回执后继续等到 timeout，并增加 `since_time` 过滤连接积压的旧消息。
 - 执行回执的触发条件必须同时考虑角色、参数和会话状态：`/cc` 空参不启动代理、guest 无权执行、`/goon` 无活跃会话都不应回执。只判断「命令名属于会跑代理的集合」会把这三类误判成正在执行。
+- AstrBot 会把未填写的插件配置写成 `null`，不是省略键；`config.get(key, default)` 遇到 `None` 仍返回 `None`，`bool(None)` 为假。凡是布尔或数值配置，都要显式把 `None` 当「未填写」处理（本次 `render.config_flag`）。
+- 长图类「按长度自动转换」的能力必须限定在代理回复上：`/help` 的命令列表也超过 360 字，真机上会被误转成长图。用 `will_run_agent` 做唯一判定，而不是对所有回复生效。
+- NapCat 消息里的图片 `url` 是短期签名地址，稍晚下载会返回 400 `download url has expired`；应优先用 `file` 标识调 OneBot `get_image` 拿本地绝对路径。AstrBot 自带的 `ImageResolver` 优先返回 URL，不能直接用来落盘。
+- `Image.fromFileSystem(相对路径)` 按 AstrBot 进程 cwd 解析，不是会话工作目录。代理输出的 `[[image:相对路径]]` 必须在解析阶段就转成 realpath 绝对路径再发送。
+- e2e 测试素材不要放在工作目录：代理在 full 权限下会自行 `ls` + `Read`，把「本来没收到图片」变成语义断言假绿。图片输入用 base64 发送，并额外检查插件媒体目录是否真的落盘。

@@ -12,6 +12,7 @@ from .agents.profiles import claude_setting_sources, ensure_claude_settings
 from .async_utils import aclosing
 from .constants import (
     AGENT_ENV_CONVERSATION_KEY,
+    AGENT_ENV_MEDIA_ROOT,
     AGENT_ENV_ORIGIN,
     AGENT_ENV_PROFILE,
     AGENT_ENV_ROLE,
@@ -30,6 +31,7 @@ from .constants import (
     DEFAULT_READONLY_MCP_ENABLED,
     GOON_INTERRUPTED_PREFIX,
     MAX_DANGER_APPROVAL_TIMEOUT_SECONDS,
+    MEDIA_DIR_NAME,
     MIN_DANGER_APPROVAL_TIMEOUT_SECONDS,
     NO_ACTIVE_SESSION_REPLY,
     READONLY_MCP_ENABLED_KEY,
@@ -56,6 +58,7 @@ class SessionManager:
         self.store = store
         self.config = config
         self.data_dir = Path(data_dir) if data_dir else Path(store.data_dir)
+        self.media_root = self.data_dir / MEDIA_DIR_NAME
         self.processes = ProcessRunner()
         claude_command = str(config.get(CLAUDE_COMMAND_KEY) or CLAUDE_COMMAND).strip()
         codex_command = str(config.get(CODEX_COMMAND_KEY) or CODEX_COMMAND).strip()
@@ -105,14 +108,24 @@ class SessionManager:
         return default_model_for_agent(self.config, record.agent_type)
 
     async def run(
-        self, conversation: ConversationKey, settings: SessionSettings, prompt: str, message_id: str
+        self,
+        conversation: ConversationKey,
+        settings: SessionSettings,
+        prompt: str,
+        message_id: str,
+        images: tuple[str, ...] = (),
     ) -> str | None:
         async with self._lock(conversation):
             self._ensure_open()
             self.store.mark_message(conversation, message_id, RECEIPT_PROCESSING)
             record = self.store.active(conversation) or self.store.create(conversation, settings)
             return await self._execute(
-                record, self._model_for_record(record, settings), prompt, message_id, settings
+                record,
+                self._model_for_record(record, settings),
+                prompt,
+                message_id,
+                settings,
+                images,
             )
 
     async def new(
@@ -184,6 +197,7 @@ class SessionManager:
         prompt: str,
         message_id: str,
         settings: SessionSettings,
+        images: tuple[str, ...] = (),
     ) -> str | None:
         key = record.conversation.storage_key()
         task = asyncio.current_task()
@@ -210,6 +224,7 @@ class SessionManager:
             AGENT_ENV_CONVERSATION_KEY: key,
             AGENT_ENV_SENDER_ID: settings.sender_id,
             AGENT_ENV_ORIGIN: settings.origin,
+            AGENT_ENV_MEDIA_ROOT: str(self.media_root),
         }
         if profile == PROFILE_WORKSPACE:
             process_env.update(self._approval_env)
@@ -225,6 +240,7 @@ class SessionManager:
             claude_settings_path=claude_settings_path,
             claude_setting_sources=claude_setting_sources(self.config),
             process_env=process_env,
+            images=images,
         )
         parts: list[str] = []
         final_text = ""

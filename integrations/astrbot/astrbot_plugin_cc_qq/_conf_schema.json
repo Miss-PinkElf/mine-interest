@@ -151,5 +151,42 @@
     "type": "int",
     "hint": "默认 180。消息原始发送时间早于该秒数会被忽略，避免机器人重启后补跑旧消息；填 0 表示不按时间过滤。",
     "default": 180
+  },
+
+  "media_enabled": {
+    "description": "⑧ 接收图片与转发（Media Input）",
+    "type": "bool",
+    "default": true,
+    "hint": "开启后代理可以读取直接发送的图片、引用消息（文本与图片）和合并转发；关闭后这些消息会被拒绝并提示不支持。需要 claude_setting_sources 等现有配置保持可用。"
+  },
+  "max_incoming_images": {
+    "description": "⑧ 单条消息图片上限（Max Incoming Images）",
+    "type": "int",
+    "default": 6,
+    "hint": "单条消息最多下载并交给代理的图片数量，超出部分忽略并提示。图片保存在插件数据目录 media/ 下，默认保留 7 天。"
+  },
+  "long_text_image_enabled": {
+    "description": "⑧ 长文本转图片（Long Text Image）",
+    "type": "bool",
+    "default": true,
+    "hint": "开启后，达到阈值的回复或包含代码块的回复会渲染成长图，只发图片不再发全文；发送失败自动回退文本。管理员可用 /img off 按会话关闭。"
+  },
+  "long_text_image_threshold": {
+    "description": "⑧ 长图触发字数（Long Text Threshold）",
+    "type": "int",
+    "default": 360,
+    "hint": "默认 360 字，范围 80–4000。回复长度达到该值即转长图；包含围栏代码块时无条件触发。"
+  },
+  "long_text_image_use_network": {
+    "description": "⑧ 长图优先网络渲染（Network T2I）",
+    "type": "bool",
+    "default": false,
+    "hint": "默认关闭，使用 AstrBot 内置本地渲染（Pillow，无需外网）。开启后优先调用 AstrBot T2I 网络端点以获得代码高亮，失败自动回退本地。"
+  },
+  "long_text_image_max_height": {
+    "description": "⑧ 长图单张最大高度（Max Image Height）",
+    "type": "int",
+    "default": 4000,
+    "hint": "渲染结果超过该高度会纵向切分成多张，避免 QQ 压缩后不可读。"
   }
 }

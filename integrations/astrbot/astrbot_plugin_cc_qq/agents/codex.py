@@ -62,6 +62,7 @@ class CodexAdapter:
             model=request.model,
             agent_session_id=request.agent_session_id or "",
             work_dir=request.work_dir,
+            images=request.images,
         )
         try:
             async with aclosing(self._process_runner.run(

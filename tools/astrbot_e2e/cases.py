@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 ALLOWED_TOP = frozenset({"name", "plugin", "reload", "send", "expect", "steps"})
-ALLOWED_SEND = frozenset({"group_id", "text", "at_bot"})
-ALLOWED_EXPECT = frozenset({"timeout_seconds", "messages", "logs", "semantic"})
+ALLOWED_SEND = frozenset({"group_id", "text", "at_bot", "image", "reply_to"})
+ALLOWED_EXPECT = frozenset({"timeout_seconds", "messages", "logs", "semantic", "images"})
 ALLOWED_STEP = frozenset({"send", "expect"})
-EXPECT_MATCHER_KEYS = ("messages", "logs", "semantic")
+EXPECT_MATCHER_KEYS = ("messages", "logs", "semantic", "images")
 EXPECT_LIST_KEYS = ("messages", "logs")
 MAX_STEPS = 50
 
@@ -43,8 +43,8 @@ def _validate_send(send: Any, label: str) -> None:
     unknown = set(send) - ALLOWED_SEND
     if unknown:
         raise CaseError("{} 未知字段: {}".format(label, sorted(unknown)))
-    if not str(send.get("text") or "").strip():
-        raise CaseError("{}.text 必填".format(label))
+    if not str(send.get("text") or "").strip() and not send.get("image"):
+        raise CaseError("{}.text 与 image 至少填一个".format(label))
 
 
 def _validate_expect(expect: Any, label: str) -> None:

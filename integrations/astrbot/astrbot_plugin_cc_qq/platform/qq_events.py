@@ -14,7 +14,55 @@ from ..constants import (
 from ..contracts import ConversationKey, ConversationKind, IncomingMessage
 
 
-SUPPORTED_TEXT_SEGMENTS = frozenset(("Plain", "At"))
+SUPPORTED_SEGMENTS = frozenset(("Plain", "At", "Image", "Reply", "Forward", "Nodes"))
+
+
+def _image_ref(segment) -> str:
+    """图片引用优先取 file：NapCat 的 url 会过期，file 可经 get_image 换成本地路径。"""
+    for attribute in ("file", "url", "path"):
+        value = str(getattr(segment, attribute, "") or "").strip()
+        if value:
+            return value
+    return ""
+
+
+def _collect_nodes(segment) -> tuple[str, list[str]]:
+    """合并转发节点可能是 Nodes 或单个 Node，统一提取文本与图片。"""
+    nodes = list(getattr(segment, "nodes", None) or [])
+    if not nodes:
+        nodes = [segment] if getattr(segment, "content", None) else []
+    texts: list[str] = []
+    images: list[str] = []
+    for node in nodes:
+        for child in getattr(node, "content", None) or []:
+            child_type = type(child).__name__
+            if child_type == "Plain":
+                texts.append(str(getattr(child, "text", "") or ""))
+            elif child_type == "Image":
+                ref = _image_ref(child)
+                if ref:
+                    images.append(ref)
+    return "".join(texts).strip(), images
+
+
+def _collect_chain(chain) -> tuple[str, list[str]]:
+    """提取被引用消息的文本与图片；嵌套转发节点也一并展开。"""
+    texts: list[str] = []
+    images: list[str] = []
+    for segment in chain or []:
+        segment_type = type(segment).__name__
+        if segment_type == "Plain":
+            texts.append(str(getattr(segment, "text", "") or ""))
+        elif segment_type == "Image":
+            ref = _image_ref(segment)
+            if ref:
+                images.append(ref)
+        elif segment_type in ("Node", "Nodes"):
+            node_text, node_images = _collect_nodes(segment)
+            if node_text:
+                texts.append(node_text)
+            images.extend(node_images)
+    return "".join(texts).strip(), images
 
 
 def onebot_event_time(event) -> int | None:
@@ -100,9 +148,35 @@ def parse_qq_event(event) -> Optional[IncomingMessage]:
     self_id = str(getattr(message_obj, "self_id", "") or "").strip()
     if self_id and sender_id == self_id:
         return None
-    has_unsupported_segments = any(
-        type(segment).__name__ not in SUPPORTED_TEXT_SEGMENTS for segment in segments
-    )
+    image_refs: list[str] = []
+    quoted_texts: list[str] = []
+    quoted_image_refs: list[str] = []
+    forward_ids: list[str] = []
+    has_unsupported_segments = False
+    for segment in segments:
+        segment_type = type(segment).__name__
+        if segment_type not in SUPPORTED_SEGMENTS:
+            has_unsupported_segments = True
+        elif segment_type == "Image":
+            ref = _image_ref(segment)
+            if ref:
+                image_refs.append(ref)
+        elif segment_type == "Reply":
+            quoted_text, quoted_images = _collect_chain(getattr(segment, "chain", None))
+            if not quoted_text:
+                quoted_text = str(getattr(segment, "message_str", "") or "").strip()
+            if quoted_text:
+                quoted_texts.append(quoted_text)
+            quoted_image_refs.extend(quoted_images)
+        elif segment_type == "Forward":
+            forward_id = str(getattr(segment, "id", "") or "").strip()
+            if forward_id:
+                forward_ids.append(forward_id)
+        elif segment_type == "Nodes":
+            node_text, node_images = _collect_nodes(segment)
+            if node_text:
+                quoted_texts.append(node_text)
+            quoted_image_refs.extend(node_images)
     text = _segment_text(segments, self_id) if segments else str(event.get_message_str() or "").strip()
 
     return IncomingMessage(
@@ -115,4 +189,8 @@ def parse_qq_event(event) -> Optional[IncomingMessage]:
         has_unsupported_segments=has_unsupported_segments,
         mentions_bot=not is_private and _mentions_bot(segments, self_id),
         event_time=onebot_event_time(event),
+        image_refs=tuple(image_refs),
+        quoted_text="\n".join(quoted_texts).strip(),
+        quoted_image_refs=tuple(quoted_image_refs),
+        forward_ids=tuple(forward_ids),
     )

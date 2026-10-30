@@ -50,6 +50,28 @@ class IncomingMessage:
     has_unsupported_segments: bool = False
     mentions_bot: bool = False
     event_time: int | None = None
+    # 需求 5：媒体输入先在解析层收集原始引用，落盘后替换为本地路径。
+    image_refs: tuple[str, ...] = ()
+    quoted_text: str = ""
+    quoted_image_refs: tuple[str, ...] = ()
+    forward_ids: tuple[str, ...] = ()
+    images: tuple[str, ...] = ()
+    quoted_images: tuple[str, ...] = ()
+    forward_text: str = ""
+    forward_images: tuple[str, ...] = ()
+
+    @property
+    def has_media(self) -> bool:
+        return bool(
+            self.image_refs
+            or self.images
+            or self.quoted_text
+            or self.quoted_image_refs
+            or self.quoted_images
+            or self.forward_ids
+            or self.forward_text
+            or self.forward_images
+        )
 
 
 @dataclass(frozen=True)
@@ -91,6 +113,7 @@ class AgentRequest:
     claude_settings_path: str = ""
     claude_setting_sources: str = ""
     process_env: dict = field(default_factory=dict)
+    images: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -25,6 +25,7 @@ COMMANDS = (
     Command("/cc", "/cc <代理消息>", "直接向代理发送内容", ROLE_MEMBER),
     Command("/!", "/!", "中断当前执行", ROLE_MEMBER),
     Command("/pwd", "/pwd", "查看当前工作目录、角色与权限档", ROLE_MEMBER),
+    Command("/img", "/img [on|off]", "开关本会话长文本转图片（owner/管理员）", ROLE_ADMIN),
     Command("/cd", "/cd <工作目录>", "切换当前会话工作目录（owner/管理员）", ROLE_ADMIN),
     Command("/initbase", "/initbase", "补齐基础 CLAUDE.md/AGENTS.md/skills 模板（owner/管理员）", ROLE_ADMIN),
     Command("/approve", "/approve <审批号>", "批准危险操作（owner/管理员）", ROLE_ADMIN),

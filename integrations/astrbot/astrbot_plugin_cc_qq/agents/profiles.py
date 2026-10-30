@@ -217,8 +217,12 @@ def codex_args(
     model: str,
     agent_session_id: str,
     work_dir: str,
+    images: tuple[str, ...] = (),
 ) -> list[str]:
     args = ["exec"]
+    # `-i` 属于 exec 层参数；resume 是否接受待真机确认，不支持时需改为首轮传图。
+    for image in images:
+        args.extend(("-i", image))
     if agent_session_id:
         args.append("resume")
     # resume 子命令不接受 -s，统一走 config 覆盖。

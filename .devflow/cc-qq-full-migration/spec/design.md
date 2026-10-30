@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:33:00 +08:00
-- 更新时间（Updated At）：2026-10-23 00:00:00 +08:00
+- 更新时间（Updated At）：2026-10-30 15:00:00 +08:00
 - 作者（Author）：Codex
 - 目的（Purpose）：约定第一阶段的模块边界、数据契约、调用顺序与异常处理。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -86,7 +86,51 @@ QQ 消息
 - 已开始执行的请求在关闭时中断；旧实例等待任务和子进程结束后保留 `processing` 回执，新实例标为 `interrupted` 并通知用户，不自动重复执行。
 - 关闭门禁之后才到达旧插件入口的全新消息是否会由 AstrBot 重投，取决于平台重载时序；该边缘窗口需在真实加载与重载验收中观察，不能用静态审查替代。
 
-## 复用点
+## 需求 5：媒体输入输出与长文本渲染（Media I/O & Long-text Rendering）
+
+### 数据流
+
+```
+QQ 事件
+  → qq_events.py 收集文本、Image、Reply、Forward(id)
+  → media.py 展开转发、下载图片、校验类型／大小／数量、落盘
+  → service.py 编排（媒体随消息进入会话）
+  → sessions.py 组装带媒体清单的 prompt
+  → Claude（Read 工具读图）或 Codex（-i 参数）
+  → 统一 AgentEvent
+  → render.py 判断是否需要长图
+  → replies.py 解析 [[image:path]] 并图文混排发送
+```
+
+### 媒体输入
+
+- `IncomingMessage` 增加 `images`、`quoted_text`、`quoted_images`、`forward_text`、`forward_images`。
+- 直接图片与引用图片复用 `Image.convert_to_file_path()` 落盘；合并转发复用 `OneBotClient.get_forward_msg` 与 `OneBotPayloadParser`。
+- 落盘目录：`<插件数据目录>/media/<会话键哈希>/<YYYYMMDD>/<message_id>/`；保留 7 天，启动时清理。
+- 上限：单条 6 张、单张 10 MB、转发 30 条／8000 字。
+- `parse_qq_event` 保持同步纯函数；转发展开与图片下载在 `media.materialize()` 中异步完成。
+
+### 只读档媒体根（M1）
+
+- `permissions.classify_tool_call()` 增加 `extra_read_roots` 参数；只读档的 `Read`／`Grep`／`Glob` 在 `work_dir` 或媒体根内放行，写工具与 `Bash` 仍拒绝。
+- `sessions.py` 通过环境变量 `CC_QQ_MEDIA_ROOT` 把媒体根注入 hook；`hooks/readonly_hook.py` 读取后传入分类函数。
+- 媒体根只包含插件自己下载的图片，`realpath` 严格校验。
+
+### 图片输出
+
+- 协议：回复文本中的 `[[image:<path>]]`。
+- 路径必须经 `media.is_trusted_path()` 校验（工作目录或媒体根内）；否则剔除该图片并记录日志。
+- `replies.send_reply()` 按原顺序构造 `MessageChain([Plain, Image, ...])`；文本段继续按 1500 字分段。
+
+### 长文本渲染
+
+- 判定：`len(text) >= 360`（可配置）或含围栏代码块；且本会话 `/img` 开关为开。
+- 渲染：复用 AstrBot `HtmlRenderer.render_t2i(..., use_network=False)` 的本地 Pillow 实现；在线程中执行，避免阻塞事件循环。
+- 输出：只发长图，不再发全文；高度超过 4000px 时垂直切分。
+- 回退：渲染或发送失败 → 退回文本分段。
+- 开关：`/img on|off`（owner／管理员），按会话存储在 `conversation_flags` 表；全局配置提供默认值与阈值。
+
+
 
 - AstrBot 事件、回复与插件数据目录的具体调用方式参考 `integrations/astrbot/astrbot_plugin_sourcehub_inspector/` 和 `integrations/astrbot/astrbot_plugin_sourcehub_bilibili/`。
 - `cc-ding/src/biz/cc-ding-cli.ts` 提供消息路由行为参考；`session.ts` 提供会话命令语义；`claude-process.ts`、`codex-agent.ts` 提供 CLI 参数与原生事件参考；`commands.ts` 提供命令名和帮助文案参考。

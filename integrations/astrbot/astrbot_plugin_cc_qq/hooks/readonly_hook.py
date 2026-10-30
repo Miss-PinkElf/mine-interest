@@ -32,11 +32,17 @@ def main() -> None:
     if not isinstance(tool_input, dict):
         tool_input = {}
     work_dir = os.environ.get(plugin_constants.AGENT_ENV_WORK_DIR, "")
+    media_root = os.environ.get(plugin_constants.AGENT_ENV_MEDIA_ROOT, "")
+    extra_read_roots = (media_root,) if media_root else ()
 
     try:
         permissions = load_permissions()
         decision = permissions.classify_tool_call(
-            tool_name, tool_input, permissions.PROFILE_READONLY, work_dir
+            tool_name,
+            tool_input,
+            permissions.PROFILE_READONLY,
+            work_dir,
+            extra_read_roots,
         )
     except Exception:
         emit("deny", "只读策略加载失败，已拒绝")

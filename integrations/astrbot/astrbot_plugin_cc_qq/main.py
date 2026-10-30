@@ -10,14 +10,26 @@ from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, StarTools, register
 
 from .approval import ApprovalBroker, approval_targets
-from .commands.registry import command_allowed, parse_command
+from .commands.registry import command_allowed, parse_command, will_run_agent
 from .constants import (
     APPROVAL_USAGE_REPLY,
+    DEFAULT_LONG_TEXT_IMAGE_MAX_HEIGHT,
+    DEFAULT_LONG_TEXT_IMAGE_USE_NETWORK,
+    DEFAULT_MAX_INCOMING_IMAGES,
+    DEFAULT_MEDIA_ENABLED,
     ENABLED_GROUP_IDS_KEY,
     CONFIGURATION_INVALID_REPLY,
     EXECUTION_STARTED_REPLY,
     INTERRUPTED_ON_RESTART_REPLY,
     LOG_PREFIX,
+    LONG_TEXT_IMAGE_MAX_HEIGHT_KEY,
+    LONG_TEXT_IMAGE_USE_NETWORK_KEY,
+    MAX_INCOMING_IMAGES_KEY,
+    MEDIA_DOWNLOAD_FAILED_REPLY,
+    MEDIA_ENABLED_KEY,
+    MEDIA_PARTIAL_FAILURE_TEMPLATE,
+    MEDIA_RETENTION_DAYS,
+    MEDIA_TOO_MANY_REPLY_TEMPLATE,
     NO_COMMAND_PERMISSION_REPLY,
     PLUGIN_DESCRIPTION,
     PLUGIN_NAME,
@@ -37,10 +49,17 @@ from .constants import (
     WORK_DIR_MISSING_REPLY,
 )
 from .contracts import ConversationKind, IncomingMessage
+from .media import agent_images, cleanup_old_media, materialize
 from .permissions import ROLE_ADMIN, ROLE_OWNER
 from .platform.duplicates import is_recent_duplicate
 from .platform.qq_events import empty_text_reply, parse_qq_event, should_ignore_as_stale, stale_max_age_from_config
-from .platform.replies import send_text
+from .platform.replies import send_images, send_reply, send_text
+from .render import (
+    config_flag,
+    render_long_images,
+    should_render_image,
+    threshold_from_config,
+)
 from .policy import authorize
 from .service import ConversationService
 from .sessions import SessionManager
@@ -56,6 +75,7 @@ class CcQqPlugin(Star):
         self.config = config or {}
         self.store = SessionStore(StarTools.get_data_dir(PLUGIN_NAME))
         self.sessions = SessionManager(self.store, self.config)
+        self.media_root = self.sessions.media_root
         self.approvals = ApprovalBroker(
             self.store, logging.getLogger(f"{PLUGIN_NAME}.approval"), self.config
         )
@@ -83,6 +103,7 @@ class CcQqPlugin(Star):
             # 启动失败时危险操作会被 hook 拒绝，但安全操作仍可用。
             self.logger.error("%s 审批服务启动失败：%s", LOG_PREFIX, type(exc).__name__)
         self.sessions.set_approval_env(self.approvals.hook_env())
+        cleanup_old_media(self.media_root, MEDIA_RETENTION_DAYS)
         for pending in self.store.queued_messages():
             decision = authorize(
                 pending,
@@ -155,11 +176,8 @@ class CcQqPlugin(Star):
         try:
             reply = await self.service.handle(message, decision, claimed=True)
             if reply:
-                delivered = await send_text(self.context, message.origin, reply, self.logger)
-                if not delivered:
-                    self.store.mark_message(
-                        message.conversation, message.message_id, RECEIPT_DELIVERY_FAILED
-                    )
+                work_dir = decision.settings.work_dir if decision.settings else ""
+                await self._send_reply(message, reply, True, work_dir, True)
         except Exception as exc:
             self.logger.error("%s 待处理消息恢复失败：%s", LOG_PREFIX, type(exc).__name__)
             self.store.mark_message(message.conversation, message.message_id, RECEIPT_ERROR)
@@ -221,6 +239,10 @@ class CcQqPlugin(Star):
             await self._handle_approval_command(message, decision, approval_command)
             return
         event.stop_event()
+        media_enabled = self._config_flag(MEDIA_ENABLED_KEY, DEFAULT_MEDIA_ENABLED)
+        max_images = self._positive_int(
+            MAX_INCOMING_IMAGES_KEY, DEFAULT_MAX_INCOMING_IMAGES
+        )
         if not decision.allowed:
             reason_replies = {
                 REASON_CONFIGURATION_INVALID: CONFIGURATION_INVALID_REPLY,
@@ -229,18 +251,75 @@ class CcQqPlugin(Star):
             reply = reason_replies.get(decision.reason, CONFIGURATION_INVALID_REPLY)
         elif message.has_unsupported_segments:
             reply = UNSUPPORTED_SEGMENT_REPLY
-        elif not message.text:
+        elif message.has_media and not media_enabled:
+            reply = UNSUPPORTED_SEGMENT_REPLY
+        elif not message.text and not message.has_media:
             reply = empty_text_reply(message.conversation.kind)
         else:
-            try:
-                reply = await self.service.handle(
-                    message, decision, on_started=lambda: self._notify_started(message)
-                )
-            except Exception as exc:
-                self.logger.error("%s 消息处理失败：%s", LOG_PREFIX, type(exc).__name__)
-                reply = SERVICE_ERROR_REPLY
+            result = await materialize(
+                event,
+                message,
+                self.media_root,
+                enabled=media_enabled,
+                max_images=max_images,
+            )
+            message = result.message
+            notes = self._media_notes(result, max_images)
+            if not self._has_usable_content(message):
+                reply = MEDIA_DOWNLOAD_FAILED_REPLY
+            else:
+                try:
+                    reply = await self.service.handle(
+                        message, decision, on_started=lambda: self._notify_started(message)
+                    )
+                except Exception as exc:
+                    self.logger.error("%s 消息处理失败：%s", LOG_PREFIX, type(exc).__name__)
+                    reply = SERVICE_ERROR_REPLY
+                reply = self._prepend_notes(reply, notes)
 
-        await self._send_reply(message, reply, decision.allowed)
+        work_dir = decision.settings.work_dir if decision.settings else ""
+        # 只有会启动代理的回复才转长图；/help 等同步命令必须保持文本。
+        allow_long_image = will_run_agent(
+            parse_command(message.text), decision.role
+        )
+        await self._send_reply(
+            message, reply, decision.allowed, work_dir, allow_long_image
+        )
+
+    def _positive_int(self, key: str, default: int) -> int:
+        raw = self.config.get(key)
+        if isinstance(raw, bool) or not isinstance(raw, int) or raw <= 0:
+            return default
+        return raw
+
+    def _config_flag(self, key: str, default: bool) -> bool:
+        """AstrBot 会把未填写的配置写成 null，不能把 None 当成 False。"""
+        return config_flag(self.config, key, default)
+
+    @staticmethod
+    def _has_usable_content(message: IncomingMessage) -> bool:
+        return bool(
+            message.text
+            or agent_images(message)
+            or message.quoted_text
+            or message.forward_text
+        )
+
+    @staticmethod
+    def _media_notes(result, max_images: int) -> list[str]:
+        notes: list[str] = []
+        if result.truncated:
+            notes.append(MEDIA_TOO_MANY_REPLY_TEMPLATE.format(limit=max_images))
+        if result.failed:
+            notes.append(MEDIA_PARTIAL_FAILURE_TEMPLATE.format(failed=result.failed))
+        return notes
+
+    @staticmethod
+    def _prepend_notes(reply: str | None, notes: list[str]) -> str | None:
+        if not notes:
+            return reply
+        prefix = "\n".join(notes)
+        return f"{prefix}\n{reply}" if reply else prefix
 
     async def _notify_started(self, message) -> None:
         """执行回执：长任务期间不给任何反馈会让用户以为没反应。"""
@@ -256,9 +335,17 @@ class CcQqPlugin(Star):
             reply = self.approvals.resolve(
                 argument.strip(), name == "/approve", message.sender_id
             )
-        await self._send_reply(message, reply, False)
+        work_dir = decision.settings.work_dir if decision.settings else ""
+        await self._send_reply(message, reply, False, work_dir)
 
-    async def _send_reply(self, message, reply: str, mark_failed: bool) -> None:
+    async def _send_reply(
+        self,
+        message,
+        reply: str,
+        mark_failed: bool,
+        work_dir: str = "",
+        allow_long_image: bool = False,
+    ) -> None:
         """统一回复与重复回复抑制；审批回复也走这里，但不写消息回执。"""
         if reply:
             outgoing_key = (message.origin, reply)
@@ -270,7 +357,9 @@ class CcQqPlugin(Star):
             ):
                 self.logger.info("%s 忽略重复回复 origin=%s", LOG_PREFIX, message.origin)
                 return
-            delivered = await send_text(self.context, message.origin, reply, self.logger)
+            delivered = await self._deliver(
+                message, reply, work_dir, allow_long_image
+            )
             if delivered:
                 is_recent_duplicate(
                     self._recent_outgoing,
@@ -282,3 +371,36 @@ class CcQqPlugin(Star):
                 self.store.mark_message(
                     message.conversation, message.message_id, RECEIPT_DELIVERY_FAILED
                 )
+
+    async def _deliver(
+        self, message, reply: str, work_dir: str, allow_long_image: bool
+    ) -> bool:
+        """长文本优先渲染成长图；渲染或发送失败时回退文本。"""
+        if allow_long_image and should_render_image(
+            reply,
+            self.service.image_enabled(message.conversation),
+            threshold_from_config(self.config),
+        ):
+            images = await render_long_images(
+                reply,
+                use_network=self._config_flag(
+                    LONG_TEXT_IMAGE_USE_NETWORK_KEY,
+                    DEFAULT_LONG_TEXT_IMAGE_USE_NETWORK,
+                ),
+                max_height=self._positive_int(
+                    LONG_TEXT_IMAGE_MAX_HEIGHT_KEY,
+                    DEFAULT_LONG_TEXT_IMAGE_MAX_HEIGHT,
+                ),
+            )
+            if images and await send_images(
+                self.context, message.origin, images, self.logger
+            ):
+                return True
+        return await send_reply(
+            self.context,
+            message.origin,
+            reply,
+            self.logger,
+            work_dir=work_dir,
+            media_root=self.media_root,
+        )
