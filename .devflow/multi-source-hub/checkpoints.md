@@ -1,14 +1,24 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-10-23 17:20:00 +08:00。
+- 更新时间（Updated At）：2026-10-30 18:45:00 +08:00。
 - 作者（Author）：rin（Claude 协助）。
 - 目的（Purpose）：记录最近三个检查点。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
-- 当前状态（Status）：需求 8 star/fork 已真实验收；需求 9 已部署，待真实列表归属验证。
+- 当前状态（Status）：QQ 接入已迁移到 Docker NapCat，转发 3 图验证通过；需求 8 star/fork 已真实验收；需求 9 已部署，待真实列表归属验证。
 - 文档边界（Scope / Boundary）：本任务记录；不代表需求 9 的真实列表归属已验证。
 
 # 最近检查点
+
+## 2026-10-30 18:45:00 +08:00：QQ 接入迁移到 Docker NapCat，转发 3 图验证通过
+
+- 根因：macOS QQ `6.9.89-45758` 缺 `disable-library-validation` → NapCat native Packet 不可用 → 占位 rkey → 腾讯 400；**不是代理（Proxy）问题**。
+- 处置：Docker NapCat（`mlikiowa/napcat-docker:latest`，NapCat `4.17.46`，17号 `3254276668`）接管；`Napi2NativeLoader`/`PacketHandler` 加载成功，`get_rkey` 返回真实签名。
+- 二次故障：切换同 `self_id` 账号后旧反向 WebSocket API 客户端残留，插件 `get_forward_msg` 静默失败；重启 AstrBot 后恢复。
+- 验证：`qq:forward:1747617391`，`attachments=3`、`gaps=[]`，3 个媒体均为有效 JPEG。
+- 端口：`13000/13001/16099`；`restart: unless-stopped`；备份 `~/napcat/compose.yaml.bak-20261030-181758`。
+- 延期：`fetch_forward_messages` 短重试 + `forward_unexpanded` gap（待 Plan，未批准）。
+- 详见 `handoffs/2026-10-30-021-Docker-NapCat迁移与rkey修复.md`。
 
 ## 2026-10-23 17:02:00 +08:00：需求 9 star 列表归类已实施
 
@@ -25,11 +35,3 @@
 - 版本与部署：B 站插件 `0.3.6`，现场目录已覆盖且 `diff -rq` 一致；新增 4 项日志测试，全量离线 **168 项通过**。
 - **下一步**：重载 B 站插件 → 在 B 站 @ 机器人 → 平台日志应出现「收到 N 条 B 站通知」「开始采集 B 站通知：…」「已保存 B 站条目：…」。
 
-## 2026-10-23 16:23:00 +08:00：修复 `/fork` 的 `--remote` 参数错误
-
-- 验收进展：`github_enabled` 已打开；16:19:13 真实 star 成功（`Blinue/Magpie`，状态文件记录 `已 star`）。
-- 缺陷：16:19:57 发送 `/fork` 失败，`gh` 报 `the --remote flag is unsupported when a repository argument is provided`。
-- 根因：`gh repo fork <repo>` 不接受 `--remote`，即使显式传 `--remote=false` 也算设置该 flag。
-- 修法：命令改为 `gh repo fork <repo> --clone=false --default-branch-only`；三副本同步；测试断言改为不包含 `--remote=false`。
-- 版本与部署：inspector `0.6.4`、B 站 `0.3.5`，现场目录已覆盖且 `diff -rq` 一致；全量离线 161 项通过。
-- **下一步**：重载 AstrBot → 再发 `https://github.com/Blinue/Magpie /fork` → 确认 fork 成功、工作流安装与 Actions 启用。

@@ -291,3 +291,11 @@
 - **列表按名称完全匹配，不自动创建**。理由：可预测、避免误建列表；名称不匹配时回退默认位置并在回复中说明。
 - **列表数量或单列表条目超过 100 时放弃归属**。理由：GitHub 没有反向查询「某仓库属于哪些列表」的接口，只能遍历列表条目；截断时无法安全保留原有归属，宁可不动。
 - **Lists 使用 `gh api graphql` 而非 REST**。理由：REST `/user/lists` 实测 404；GraphQL 的 `viewer.lists` 与 `updateUserListsForItem` 已验证可用。
+
+## 2026-10-30 18:45：QQ 接入迁移到 Docker NapCat
+
+- **QQ 接入从 macOS 原生注入切换到 Docker NapCat**。理由：macOS QQ `6.9.89-45758` 缺 `disable-library-validation`，NapCat native Packet 加载失败 → 占位 rkey → 腾讯 400；QQ `7.0.2` 在本机启动失败；Docker Linux 容器无库校验限制，Packet/rkey 正常。用户确认。
+- **Docker 只跑 17号（3254276668），个人号 C#（1961618848）留在原生 QQ**。理由：生产 bot 是 17号；个人号继续在原生客户端使用，避免两个账号都迁移。用户确认 17号 可被顶下线。
+- **端口 `13000/13001/16099`，`restart: unless-stopped`**。理由：避开 multica 占用的 3000；容器随 OrbStack 自启，登录态持久化在 `~/napcat/ntqq`。
+- **切换同 `self_id` 的 NapCat 后必须重启 AstrBot**。理由：aiocqhttp 反向 API 客户端按 `X-Self-ID` 键控，旧连接清理会删掉同名新连接，导致插件 `get_forward_msg` 静默失败；已实测重启后恢复。
+- **插件转发展开健壮性暂不实施**。候选方案：`fetch_forward_messages` 短重试 + 最终失败写入 `forward_unexpanded` gap；理由：属于代码改动，需先写 Plan 并获用户批准。已记录为延期项。

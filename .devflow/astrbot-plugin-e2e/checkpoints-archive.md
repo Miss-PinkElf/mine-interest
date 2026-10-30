@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 18:22:00 CST。
-- 更新时间（Updated At）：2026-10-27 22:40:00 CST。
+- 更新时间（Updated At）：2026-10-31 02:31:26 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：归档 `checkpoints.md` 中超过最近 3 条的旧检查点。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
@@ -138,3 +138,14 @@
 - 当前边界：只写计划与文档；未改任何代码，未启动/停止服务。
 - 下一步：用户批准 Plan → 产出 `spec/` 三件套 → Apply Task 0。
 - 已知风险：多轮步骤可能影响旧用例；run-suite 状态串扰；报告脱敏；自愈误杀；person-config 与副本漂移。
+
+## 2026-10-30 14:30:00 CST — 需求 2 spec 三件套完成
+
+- 阶段：`Propose/Tasks`（需求 2）。
+- 完成：
+  - 第一版 spec 归档到 `spec/archive/2026-10-27-v1/`。
+  - 新 `spec/proposal.md`、`spec/design.md`、`spec/tasks.md` 落盘，与 Plan 的 Task 0–13 一致。
+  - 执行方式已定：子代理驱动（Subagent-Driven），任务间复审。
+- 当前边界：只写文档；未改代码、未启动服务、未提交。
+- 下一步：用户批准 spec 三件套 → Apply Task 0 基线校验。
+- 已知风险：多轮步骤回归、批量执行状态串扰、报告脱敏、自愈误杀、person-config 副本漂移。

@@ -3,13 +3,21 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 17:10:00 CST。
-- 更新时间（Updated At）：2026-10-30 15:55:00 CST。
+- 更新时间（Updated At）：2026-10-31 02:31:26 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：记录当前 mission 的阶段检查点，只保留最近 3 条。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
-- 当前状态（Status）：已完成（Completed）。
+- 当前状态（Status）：Docker 双容器 E2E 启动脚本完成并验证；测试资产待修。
 - 文档边界（Scope / Boundary）：恢复热路径的一部分；不替代 `state.md` 或 `handoff`。
+
+## 2026-10-31 02:31:26 CST — Docker 双容器 E2E 启动脚本完成
+
+- 新增 `tools/napcat_e2e/`：两个 NapCat 容器（`napcat-e2e-bot` 17号 / `napcat-e2e-sender` C#）+ 测试 AstrBot；`start-all` 打开 iTerm 三标签，另有分开启动、停止、状态脚本。
+- 关键修复：`start-astrbot` 先等待 6200/6201，并用 `wait_onebot.py` 调 `get_login_info` 确认账号就绪；`start-instance` 失败重试 3 次；支持 `--detach`、`--restart`、`--force-tabs`；iTerm AppleScript 应用名改为 `iTerm`。
+- 验证：`doctor OK`；`/pwd` PASSED；`/info` 实际回复「当前会话 #5，代理：claude，状态：active。」，用例仍期望 `/new`（断言过期）；`probe_echo` 被 cc-qq 回执拦截。
+- 收尾：旧原生 e2e 数据归档到 `~/.qq-e2e/archive-20261031/`；生产容器 `napcat` 当前停止，恢复用 `stop-all.sh`。
+- 下一步：新会话更新 `/info` 断言、隔离 probe/cc-qq、决定专用测试 bot 账号与 Docker 镜像升级。
 
 ## 2026-10-30 15:55:00 CST — 需求 2 真机验收与收尾完成
 
@@ -36,14 +44,4 @@
 - 下一步：环境恢复后执行 Task 12（doctor、多轮、suite、脱敏、自愈演练），再 Task 13 收尾。
 - 已知风险：不要对 NapCat 注入后的 QQ 使用 `--deep` 重签；App 管理权限会阻止 xattr/codesign。
 
-## 2026-10-30 14:30:00 CST — 需求 2 spec 三件套完成
-
-- 阶段：`Propose/Tasks`（需求 2）。
-- 完成：
-  - 第一版 spec 归档到 `spec/archive/2026-10-27-v1/`。
-  - 新 `spec/proposal.md`、`spec/design.md`、`spec/tasks.md` 落盘，与 Plan 的 Task 0–13 一致。
-  - 执行方式已定：子代理驱动（Subagent-Driven），任务间复审。
-- 当前边界：只写文档；未改代码、未启动服务、未提交。
-- 下一步：用户批准 spec 三件套 → Apply Task 0 基线校验。
-- 已知风险：多轮步骤回归、批量执行状态串扰、报告脱敏、自愈误杀、person-config 副本漂移。
 

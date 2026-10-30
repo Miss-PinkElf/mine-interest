@@ -1,11 +1,11 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-10-23 17:20:00 +08:00。
+- 更新时间（Updated At）：2026-10-30 18:45:00 +08:00。
 - 作者（Author）：rin（Claude 协助）。
 - 目的（Purpose）：给新对话的可复制恢复提示。
 - 关联仓库（Related Repository / Project）：`.`。
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
-- 当前状态（Status）：恢复入口（Resume Prompt）。
+- 当前状态（Status）：QQ 接入已迁移到 Docker NapCat，转发 3 图验证通过；需求 8/9 进度见下。
 - 文档边界（Scope / Boundary）：提示词，不是任务真相源。以 `state.md`、`checkpoints.md`、`spec/2026-10-23-需求8/tasks.md` 和 `spec/2026-10-23-需求9/tasks.md` 为准。
 
 # 下次对话提示
@@ -22,6 +22,17 @@
   `PYTHONPATH=backend/src backend/.venv/bin/python -m unittest discover -s tests -t . -p 'test_*.py'`
 - 现场配置：owner `1961618848`、admin `2844973553`，`github_enabled=true`，代理 `http://127.0.0.1:7897`；`github_star_list` 尚未填写。
 - 代码提交：`b9ef0fc` 为需求 8 首版；本轮修复与需求 9 已在收尾时提交，未推送（提交号见 `git log`）。
+
+## 环境变化（2026-10-30）
+
+- QQ 接入已迁移到 Docker NapCat：容器 `napcat`（`~/napcat`，linux/arm64，NapCat `4.17.46`，登录 17号 `3254276668`）。
+- AstrBot `Test-01`（6199）只连 Docker 的 17号；个人号 C# `1961618848` 仍在原生 QQ。
+- 端口：`13000/13001/16099`；`restart: unless-stopped`；登录态在 `~/napcat/ntqq`。
+- 启停：`cd ~/napcat && docker compose up -d` / `docker compose down` / `docker restart napcat`；OrbStack 启动后容器自动恢复。
+- **切换同 `self_id` 的 NapCat 后必须重启 AstrBot**，否则插件 `get_forward_msg` 会静默失败；重启后等 30 秒让 NapCat 重连。
+- 当前生产容器 `napcat` 被 E2E 的 `--stop-production` 停止；恢复用 `tools/napcat_e2e/stop-all.sh`，不要手动 `docker start napcat`（会抢 17号）。
+- E2E 双容器启动脚本归属 `.devflow/astrbot-plugin-e2e/`，见 `tools/napcat_e2e/README.md`；本 mission 不重复维护。
+- 详见 `handoffs/2026-10-30-021-Docker-NapCat迁移与rkey修复.md` 与 `notes/2026-10-31-Rkey与Docker-NapCat原理说明.md`。
 
 ## 下一步（按顺序）
 

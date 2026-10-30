@@ -1,0 +1,79 @@
+# AstrBot 插件 E2E：两个 NapCat 容器（Docker Compose）
+#
+# 拓扑：
+#   napcat-e2e-bot     测试机器人 17号（3254276668）
+#                      - OneBot WS 6200 给 E2E 工具观察回复
+#                      - 反向 WS 连接测试 AstrBot（host.docker.internal:6198）
+#   napcat-e2e-sender  测试发送者 C#（1961618848）
+#                      - OneBot WS 6201 给 E2E 工具发送消息
+#                      - 不连接 AstrBot
+#
+# 注意：
+#   1. 两个 service 共用同一个镜像，但数据卷、端口、容器文件系统互相隔离。
+#   2. 同一 QQ 账号不能同时在线；生产容器 napcat 也使用 17号，测试前必须停止。
+#   3. 运行数据放在仓库外（默认 ~/.qq-e2e-docker），避免把登录态提交进 Git。
+#   4. 本文件由 tools/napcat_e2e/start-*.sh 调用；脚本会导出 E2E_ROOT 等变量。
+#   5. restart 设为 "no"：测试容器不应在开机时自动拉起，避免干扰生产 bot。
+
+services:
+  # ============================================================
+  # 测试机器人：17号
+  # ============================================================
+  napcat-e2e-bot:
+    image: mlikiowa/napcat-docker:latest
+    container_name: napcat-e2e-bot
+
+    # 测试容器不自动重启；需要时用脚本启动。
+    restart: "no"
+
+    environment:
+      # 容器内写文件时使用宿主机用户 UID/GID，避免 root 属主。
+      - NAPCAT_UID=${NAPCAT_UID:-501}
+      - NAPCAT_GID=${NAPCAT_GID:-20}
+      - TZ=${TZ:-Asia/Shanghai}
+      # WebUI 固定 token（仅本机 127.0.0.1 可访问）。
+      - WEBUI_TOKEN=${BOT_WEBUI_TOKEN:-e2e-bot-webui}
+
+    ports:
+      # OneBot WebSocket：E2E 工具从这里观察机器人回复。
+      - "127.0.0.1:6200:6200"
+      # NapCat WebUI：宿主机 16299 -> 容器 6099，避开生产容器的 16099。
+      - "127.0.0.1:16299:6099"
+
+    volumes:
+      # QQ 登录态（扫码后持久化，删容器不丢登录）。
+      - ${E2E_ROOT:?set E2E_ROOT via start scripts}/bot/QQ:/app/.config/QQ
+      # NapCat 配置（onebot11_<qq>.json、napcat_<qq>.json、webui.json）。
+      - ${E2E_ROOT:?set E2E_ROOT via start scripts}/bot/config:/app/napcat/config
+      # NapCat 插件目录（可选）。
+      - ${E2E_ROOT:?set E2E_ROOT via start scripts}/bot/plugins:/app/napcat/plugins
+
+  # ============================================================
+  # 测试发送者：C#
+  # ============================================================
+  napcat-e2e-sender:
+    image: mlikiowa/napcat-docker:latest
+    container_name: napcat-e2e-sender
+
+    # 测试容器不自动重启；需要时用脚本启动。
+    restart: "no"
+
+    environment:
+      - NAPCAT_UID=${NAPCAT_UID:-501}
+      - NAPCAT_GID=${NAPCAT_GID:-20}
+      - TZ=${TZ:-Asia/Shanghai}
+      # 发送者 WebUI 使用独立 token。
+      - WEBUI_TOKEN=${SENDER_WEBUI_TOKEN:-e2e-sender-webui}
+
+    ports:
+      # OneBot WebSocket：E2E 工具从这里冒充 C# 给群里发消息。
+      - "127.0.0.1:6201:6201"
+      # NapCat WebUI：宿主机 16398 -> 容器 6099。
+      - "127.0.0.1:16398:6099"
+
+    volumes:
+      # 发送者的 QQ 登录态必须与机器人分开。
+      - ${E2E_ROOT:?set E2E_ROOT via start scripts}/sender/QQ:/app/.config/QQ
+      # 发送者的 NapCat 配置必须与机器人分开。
+      - ${E2E_ROOT:?set E2E_ROOT via start scripts}/sender/config:/app/napcat/config
+      - ${E2E_ROOT:?set E2E_ROOT via start scripts}/sender/plugins:/app/napcat/plugins

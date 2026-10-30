@@ -61,3 +61,9 @@
 | 2026-10-30 15:40:00 CST | 禁止对 NapCat 注入后的 QQ 使用 `codesign --deep` | 只用 `--force --sign -` 或交给 NapCat 安装器 | QQ Helper 有独立签名；`--deep` 会重签所有嵌套代码，导致 Code Signature Invalid（SIGKILL） | 仅外层签名或使用安装器；保留 Helper 原始签名 |
 | 2026-10-30 15:55:00 CST | 需求 2 真机验收通过；Task 0–13 完成 | 继续扩展富媒体/CI | `doctor OK`；多轮与 suite PASSED；脱敏与两项自愈演练通过 | 等待用户批准提交；Q11/Q12 进入后续 |
 | 2026-10-30 15:55:00 CST | 返回图片卡片的命令标记 `testability=rich_media`，不自动生成文本用例 | 强行用文本断言；忽略该功能 | cc-qq `/help` 实测返回图片帮助卡片，文本提取为空；强行断言会假失败 | `gen_cases` 跳过 manual/config/rich_media；文档与 backlog Q11 记录 |
+| 2026-10-31 02:31:26 CST | E2E 改为 Docker 双容器：`napcat-e2e-bot`（17号）+ `napcat-e2e-sender`（C#） | 继续原生双 QQ；一个容器塞两个 QQ | Docker Linux 容器 Packet/rkey 稳定；一容器一账号隔离数据与端口，便于重启与复用 | 新增 `tools/napcat_e2e/`；生产容器与 E2E 抢 17号，用 `--stop-production` / `stop-all.sh` 成对处理 |
+| 2026-10-31 02:31:26 CST | 启动 AstrBot 前先做 OneBot 账号就绪探测 + 失败重试 | 只看端口；直接 start-instance | 端口监听不等于账号 WS 稳定；刚重启/扫码时 start-instance 会 `Server disconnected` | 新增 `wait_onebot.py`；`start-instance` 失败重试 3 次；保留 `--restart` |
+| 2026-10-31 02:31:26 CST | 容器重启用 `docker restart`，不进容器 `kill` QQ | exec pkill；自定义 supervisor | 入口脚本没有守护进程，kill 后容器可能退出；restart 保留数据卷与登录态 | 写入 README 与脚本；禁止手动 exec kill |
+| 2026-10-31 02:31:26 CST | 测试 AstrBot 用 `--detach` 后台启动 | 前台 tab；launchd | 关闭终端不应杀掉测试实例；后台启动简单，仍由 `stop-instance` 管理 | `start-all` 的 AstrBot 标签使用 `--detach`；前台模式保留给调试 |
+| 2026-10-31 02:31:26 CST | iTerm AppleScript 使用 `tell application "iTerm"` | `iTerm2` | iTerm2 3.6.7 的脚本应用名是 `iTerm`；`iTerm2` 报 -2741/-1728 | 已修复并实跑打开三标签 |
+| 2026-10-31 02:31:26 CST | `cc_qq_multi_turn` 的 `/info` 断言待更新 | 改插件文案；删用例 | 实际回复「当前会话 #N…状态」，旧断言期望 `/new`；插件行为正确 | 新会话更新断言并复跑；不把测试资产问题误判为插件缺陷 |

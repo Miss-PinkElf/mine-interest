@@ -1,7 +1,7 @@
 # Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-22 18:35:00 +08:00
-- 更新时间（Updated At）：2026-09-29 13:56:00 +08:00。
+- 更新时间（Updated At）：2026-10-30 18:45:00 +08:00。
 - 作者（Author）：Codex。
 - 目的（Purpose）：存放不再位于最近三个检查点中的历史检查点。
 - 关联仓库（Related Repository）：`.`。
@@ -256,3 +256,12 @@
 - 运行中是 `0.3.2`，已登录且可刷新，两个仓库仍是 10:24 的私有、可读、可推记录。
 - 本轮没有改代码、没有重载、没有重采、没有再推告警。最新交接改为 013。
 - 下一步仍是用户点名后再重采；T5、T7 和需求 4 的 Verify 继续开着。
+
+## 2026-10-23 16:23:00 +08:00：修复 `/fork` 的 `--remote` 参数错误
+
+- 验收进展：`github_enabled` 已打开；16:19:13 真实 star 成功（`Blinue/Magpie`，状态文件记录 `已 star`）。
+- 缺陷：16:19:57 发送 `/fork` 失败，`gh` 报 `the --remote flag is unsupported when a repository argument is provided`。
+- 根因：`gh repo fork <repo>` 不接受 `--remote`，即使显式传 `--remote=false` 也算设置该 flag。
+- 修法：命令改为 `gh repo fork <repo> --clone=false --default-branch-only`；三副本同步；测试断言改为不包含 `--remote=false`。
+- 版本与部署：inspector `0.6.4`、B 站 `0.3.5`，现场目录已覆盖且 `diff -rq` 一致；全量离线 161 项通过。
+- **下一步**：重载 AstrBot → 再发 `https://github.com/Blinue/Magpie /fork` → 确认 fork 成功、工作流安装与 Actions 启用。

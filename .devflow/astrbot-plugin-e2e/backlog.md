@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 22:40:00 CST。
-- 更新时间（Updated At）：2026-10-30 15:52:00 CST。
+- 更新时间（Updated At）：2026-10-31 02:31:26 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：记录本次对话中未讨论完的问题、首版限定与轻量后续想法，避免只留在聊天里。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
@@ -27,6 +27,11 @@
 | Q10 | 日志断言的稳定性？ | 断言依赖插件日志文案与格式；插件改日志会直接破坏用例 | 实现 | 第二版 |
 | Q11 | 返回图片卡片的命令如何验证？ | 实测 cc-qq `/help` 返回图片帮助卡片，首版文本断言无法验证；已约定标记 `testability=rich_media` 并跳过自动用例，需要人工确认或实现富媒体断言 | 用户/实现 | 富媒体阶段 |
 | Q12 | QQ 7.0.2 + NapCat 的稳定启动方式？ | 实测应用注入后外层签名失效；`codesign --deep` 会破坏 Helper 导致 Worker `SIGKILL`。需要固定「仅外层签名 + 保留 entitlements」或 NapCat 安装器标准流程，并处理 App 管理权限 | 用户/实现 | 环境收尾 |
+| Q13 | E2E 是否改用独立测试 bot 账号，允许生产 bot 与测试并行？ | 当前 17号 只能二选一；测试时用 `--stop-production` 停生产容器，测完 `stop-all.sh` 恢复 | 用户 | 需要并行回归时 |
+| Q14 | probe 与 cc-qq 如何隔离？ | 测试实例同时加载两个插件时，cc-qq 先回执行回执，`probe_echo` 被拦截；需要 probe-only 测试根或测试群禁用 cc-qq | 实现 | 下次跑 probe 前 |
+| Q15 | `cc_qq_multi_turn` 的 `/info` 断言何时更新？ | 实际回复「当前会话 #N…状态」，用例仍期望 `/new`；属于测试资产过期 | 实现 | 下次会话优先 |
+| Q16 | Docker 镜像何时升级？ | 本地 `mlikiowa/napcat-docker:latest` 为 2026-03 构建 / NapCat 4.17.46；升级需重验 Packet/rkey/图片下载 | 用户/实现 | 镜像更新时 |
+| Q17 | 微信/其他平台 E2E 驱动？ | 当前只有 OneBot/NapCat；微信适配器（`weixin_oc`/`wecom`/公众号）没有 OneBot 驱动，需单独 Align | 用户 | 确定微信渠道后 |
 
 ## 首版限定（First-Version Only，不计划在本版扩展）
 
@@ -35,13 +40,13 @@
 | 能力 | 首版边界 | 说明 |
 | --- | --- | --- |
 | 交互方式 | 只提供 CLI | 没有 WebUI 页面；报告为 JSON/文本证据 |
-| 用例模型 | 单次 `send` + 单组 `expect` | 不支持多轮 `steps`；多轮延期 |
+| 用例模型 | 支持单次 `send` 与多轮 `steps` | 多轮已实现；复杂断言/条件分支仍延期 |
 | 执行方式 | 串行 | 不支持并行用例；并行延期 |
-| 账号与群 | 单测试群、双账号 | 测试机器人 + 测试发送者；更多账号未支持 |
-| 消息类型 | 文本 | 图片、文件、语音、引用等富媒体延期 |
+| 账号与群 | 单测试群、双账号 | 测试机器人 + 测试发送者；专用测试 bot 未定（Q13） |
+| 消息类型 | 文本为主，已有图片/长图用例 | 语音、文件、合并转发等富媒体断言仍延期（Q11） |
 | 登录 | 人工扫码 | 不承诺自动登录；QQ 风控与人工确认 |
-| 平台 | macOS | 双开 QQ 与 NapCat 工作目录隔离按 macOS 验证 |
-| 插件生命周期 | 每个非 attach 用例重启测试实例 | `--attach` + `--reload` 可增量验证；常驻策略未定 |
+| 平台 | macOS 宿主 + Docker Linux 容器 | 原生双 QQ 仍作为回退；Windows 未验证 |
+| 插件生命周期 | 每轮启动独立测试 AstrBot | `--attach` + `--reload` 可增量验证；常驻策略见 Q3 |
 
 ## 明确延期（Deferred）
 
@@ -60,7 +65,8 @@
 - 报告自动脱敏 QQ 号、token 与长消息。
 - **需求 2（2026-10-29 用户新增）**：把「启动两个 QQ、暂停生产、按被测插件制定测试流程、产出报告、具备自愈能力、适配不同 NapCat/AstrBot/运行环境」做成通用测试 skill；来源 `zzz-prompt-debug/插件自动化测试验证/prompt-01.md`。**已实施并验证（2026-10-30）**：引擎 127/127；cc-qq 多轮用例 PASSED；文本 suite 2/2 PASSED；报告脱敏通过；端口占用与残留实例两项自愈演练通过。skill 真源在 person-config，本仓库副本已同步。
 - E2E 期间自动暂停/恢复生产 AstrBot：当前靠人工暂停；单人使用可接受，高频回归前再自动化。
-- 一键启动脚本 `~/.qq-e2e/start-e2e.sh`（iTerm2 单窗口三标签、自动启用 6198）目前是本地脚本；是否收敛进仓库待定。
+- Docker 版一键启动脚本已入库：`tools/napcat_e2e/start-all.sh`（iTerm 三标签、`--restart`、`--force-tabs`、`--detach`）；旧原生 `~/.qq-e2e/start-e2e.sh` 保留作回退参考，旧数据已归档到 `~/.qq-e2e/archive-20261031/`。
+- Docker 镜像升级、专用测试 bot 账号、微信/其他平台驱动、probe/cc-qq 隔离、`cc_qq_multi_turn` `/info` 断言更新：见 Q13–Q17，均为候选/待办，不是已批准实施项。
 - 测试期间需要临时修改测试实例配置（`allowed_work_dirs`、`claude_setting_sources=user`、角色字段）；可评估把这些作为 `run` 的参数或 bootstrap 选项。
 
 以上均为候选项（Candidate），不是已批准计划（Plan），也未进入实施（Apply）。
