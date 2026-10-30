@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -27,8 +28,11 @@ SAFE_REPLY_PATTERN = r"\S"
 
 
 def _slugify(value: str) -> str:
-    slug = re.sub(r"[^0-9A-Za-z_-]+", "-", value).strip("-")
-    return slug or "case"
+    text = str(value).strip()
+    slug = re.sub(r"[^0-9A-Za-z_\-一-鿿]+", "-", text).strip("-")
+    if not slug:
+        slug = "case-" + hashlib.sha1(text.encode("utf-8")).hexdigest()[:8]
+    return slug
 
 
 def _generatable(feature: Dict[str, Any]) -> Tuple[bool, str]:

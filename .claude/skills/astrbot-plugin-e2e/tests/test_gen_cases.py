@@ -77,6 +77,36 @@ class GenCasesTest(unittest.TestCase):
         self.assertIn("/resume", skipped)
         self.assertIn("事件", skipped)
 
+    def test_chinese_command_filenames_are_distinct(self):
+        features = {
+            "plugin": "demo_plugin",
+            "features": [
+                {
+                    "id": "command-整理",
+                    "title": "命令 /整理",
+                    "kind": "command",
+                    "trigger": "/整理",
+                    "testability": "text",
+                    "risk": "medium",
+                },
+                {
+                    "id": "command-总结",
+                    "title": "命令 /总结",
+                    "kind": "command",
+                    "trigger": "/总结",
+                    "testability": "text",
+                    "risk": "medium",
+                },
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            result = generate_cases(features, out, timeout=30)
+            files = sorted(path.name for path in out.glob("*.json"))
+        self.assertEqual(result["generated"], 2)
+        self.assertEqual(len(files), 2)
+        self.assertIn("command-整理.json", files)
+
     def test_skips_features_marked_rich_media(self):
         features = {
             "plugin": "demo_plugin",

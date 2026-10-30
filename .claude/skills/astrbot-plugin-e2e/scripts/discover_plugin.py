@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -20,7 +21,7 @@ EVENT_PATTERN = re.compile(
 HOOK_PATTERN = re.compile(
     r"@filter\.(on_llm_request|on_decorating_result|on_after_message_sent)"
 )
-README_COMMAND_PATTERN = re.compile(r"`(/[A-Za-z0-9_!]+)(?:\s+[^`]*)?`")
+README_COMMAND_PATTERN = re.compile(r"`(/[^`\s]+)(?:\s+[^`]*)?`")
 DANGEROUS_COMMANDS = frozenset(
     {
         "/cc",
@@ -81,8 +82,11 @@ def parse_metadata(text: str) -> Dict[str, Any]:
 
 
 def _slugify(value: str) -> str:
-    slug = re.sub(r"[^0-9A-Za-z_-]+", "-", value).strip("-")
-    return slug or "feature"
+    text = str(value).strip()
+    slug = re.sub(r"[^0-9A-Za-z_\-一-鿿]+", "-", text).strip("-")
+    if not slug:
+        slug = "feature-" + hashlib.sha1(text.encode("utf-8")).hexdigest()[:8]
+    return slug
 
 
 def scan_python(plugin_dir: Path) -> Tuple[List[Dict[str, str]], List[Dict[str, str]], List[Dict[str, str]]]:

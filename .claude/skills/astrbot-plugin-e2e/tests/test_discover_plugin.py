@@ -82,6 +82,22 @@ class DiscoverPluginTest(unittest.TestCase):
         }
         self.assertIn("/cc", commands)
 
+    def test_keeps_chinese_commands_distinct(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            plugin = self._make_plugin(Path(tmp))
+            (plugin / "README.md").write_text(
+                "# demo\n\n- `/整理` 整理\n- `/总结` 总结\n",
+                encoding="utf-8",
+            )
+            result = build_features(plugin)
+        ids = [
+            item["id"]
+            for item in result["features"]
+            if item["kind"] == "command" and item["trigger"] in ("/整理", "/总结")
+        ]
+        self.assertEqual(len(set(ids)), 2)
+        self.assertTrue(all("feature" not in item for item in ids))
+
     def test_ignores_system_paths_and_supports_arguments(self):
         with tempfile.TemporaryDirectory() as tmp:
             plugin = self._make_plugin(Path(tmp))
