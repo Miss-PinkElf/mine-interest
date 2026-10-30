@@ -27,3 +27,5 @@
 - 本次会话补充：插件最终在 Windows／macOS 原生运行，不以 Ubuntu／WSL 为前置条件；CLI 原生只读可作为候选，但工作目录外拒读仍是硬要求。
 - 本次会话补充：允许测试 Codex elevated Windows 沙箱；测试结果已写入 `spec/permission-matrix.md`，授权不等于同意放宽文件权限。
 - 本次会话收尾指令：根目录 `devflow-handoff.md` 只读作为指导；只提交本 mission 相关文件，默认不提交 `.gitignore`、`config.ts`、`tsconfig.json`；下一对话继续未解决的设计与实施。
+- 2026-10-30 会话：用户要求调研腾讯官方 dsh 插件（`@tencent-connect/dsh-qqbot`，https://github.com/tencent-connect/dsh-qqbot），克隆到 `tmp/refs/dsh-qqbot`（gitignore），并与本 mission 及 `cc-qq` 对比；结论吸收至 `spec/2026-10-30-腾讯dsh-qqbot对比调研.md`。
+- 2026-10-30 会话收尾指令：上下文过长，用户将新开对话继续；未讨论/可能只做首版/可能明确延期的问题须落文档；先提交本 mission 相关文件再收尾，不提交 `config.ts`、`.gitignore`、`tsconfig.json`，也不提交与本次对话无关的既有改动（如 `.devflow/astrbot-plugin-e2e/`、`zzz-prompt-debug/接入agent/prompt-01.md`）。

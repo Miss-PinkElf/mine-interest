@@ -3,7 +3,8 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 00:21:05 +08:00
-- 作者（Author）：Codex
+- 更新时间（Updated At）：2026-10-30 14:40:00 +08:00
+- 作者（Author）：Codex / Claude
 - 目的（Purpose）：记录尚未对齐的首版细节，避免将开放问题误写成已批准延期。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/astrbot-claude-bridge/`
@@ -22,3 +23,11 @@
 - 私聊默认允许的用户范围和首次工作目录配置方式；全局白名单、群级上限及工具允许集的管理入口。
 - 群共享历史下，前一位成员的消息、工具结果与工作目录路径是否对群内下一位成员可见；需要结合安全验收明确展示边界。
 - AstrBot 插件页面（Plugin Page）如何承载原 Web Console 的远程管理体验，以及钉钉专属命令的用户可见替代文案。
+
+## 2026-10-30 新增（来自官方 dsh-qqbot 对比调研）
+
+- **T02 选型**：A（需求降级为"非白名单不服务"）还是 B（维持需求、Windows 不开放 Codex）由用户决定；C 与原生运行要求冲突，仅作对照。未决定前不动设计与代码。
+- **8 项借鉴项分级**：流式双轨、审批按钮 nonce、被动回复三级兜底、交付物投递、扫码绑定即授权、空闲会话回收、命令 per-scope 可见性、节流而非防抖——需逐项判定"进本 mission 首版 / 进 `cc-qq` 排期 / 仅记录"。
+- **图片理解与视觉**：官方插件有 `qqbot_describe_image`，但其路径校验存在绕过；本 mission 是否要做图片理解、如何做，尚未讨论。
+- **跨 mission 观察（未登记）**：`cc-qq` 存在三条缺口——群级与用户级未取交集、`allowed_work_dirs` 不约束群规则初始 `work_dir`、Codex 无逐次审批。是否写入 `.devflow/cc-qq-full-migration/backlog.md` 需用户决定；本文不擅自修改另一 mission 的真相源。
+- **macOS 实机验证**：调研未涉及，T02 仍无 macOS 证据，不得宣称通过。

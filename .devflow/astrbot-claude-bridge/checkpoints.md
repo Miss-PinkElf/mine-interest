@@ -8,14 +8,8 @@
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/astrbot-claude-bridge/`
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/接入agent/prompt-01.md`
-- 当前状态（Status）：设计回退中（Propose Revision）
+- 当前状态（Status）：交接暂停，待设计选型（Awaiting Decision）
 - 文档边界（Scope / Boundary）：最近三条阶段记录真相源（source of truth）；恢复时先读当前状态与本文件。
-
-## 2026-09-28 23:58:41 +08:00｜平台目标修正并重定 T02
-
-- 用户明确 Windows／macOS 原生运行，不以 WSL／Ubuntu 为插件依赖；先前 WSL 实验不算产品验收。
-- T01 功能清单落盘；T02 改为 Claude Code／Codex × 平台 × 工具组合的权限验证。未经验证的 Shell、MCP、Hooks 等组合默认禁用。
-- 仍未修改插件代码或提交；macOS 缺少实机时标记待验证，不得假称通过。
 
 ## 2026-09-29 00:10:27 +08:00｜T02 发现设计缺陷并回退提案（Propose）
 
@@ -28,3 +22,10 @@
 - 用户要求新对话继续；本轮只收束文档并提交当前 mission，不宣称实施（Apply）完成。
 - 交接入口为 `handoffs/2026-09-29-002-t02-design-revision.md` 与 `NEXT-SESSION-PROMPT-astrbot-claude-bridge.md`；T02 仍未通过，T03 尚未开始。
 - 下次先恢复 `state.md` 和本文件，再核对权限矩阵、候选设计与未讨论项。
+
+## 2026-10-30 14:40:00 +08:00｜完成官方 dsh-qqbot 对比调研并交接
+
+- 完成腾讯官方 `@tencent-connect/dsh-qqbot` 0.5.4 源码级调研（克隆 `tmp/refs/dsh-qqbot`，已 gitignore），产出 `spec/2026-10-30-腾讯dsh-qqbot对比调研.md`（候选项，非批准方案、不触发实施）。
+- 核心结论：官方实现无只读档、无工具级白名单、无进程级目录外拒读；靠「白名单准入 + 独立 workspace + 审批卡片」兜底，**不能为 T02 提供技术方案**，只提供需求取舍先例。
+- T02 现有三个候选项 A（需求降级为"非白名单不服务"）/ B（维持需求、缩小可开放面）/ C（引入外部隔离），**均未获批准**；未选型前不进入 T03。
+- 本轮未修改插件代码、未升版本、未覆盖本机插件；未提交 `.devflow/astrbot-plugin-e2e/` 与 `zzz-prompt-debug/` 的既有改动（与本次对话无关）。

@@ -14,4 +14,5 @@
 | 顺序 | 文件 | 状态 | 内容 |
 | --- | --- | --- | --- |
 | 001 | `handoffs/2026-09-28-001-plan-complete-before-apply.md` | 历史（Superseded） | 需求对齐与计划完成、实施前交接。 |
-| 002 | `handoffs/2026-09-29-002-t02-design-revision.md` | 最新（Latest） | T01 完成、T02 Windows Codex 权限失败、回退设计与新对话恢复步骤。 |
+| 002 | `handoffs/2026-09-29-002-t02-design-revision.md` | 历史（Superseded） | T01 完成、T02 Windows Codex 权限失败、回退设计与新对话恢复步骤。 |
+| 003 | `handoffs/2026-10-30-003-dsh-qqbot-research.md` | 最新（Latest） | 官方 dsh-qqbot 对比调研结论、T02 三个候选项、未讨论项与恢复步骤。 |

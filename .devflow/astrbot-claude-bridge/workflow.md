@@ -14,7 +14,7 @@
 ## 路径与阶段
 
 - 路径：重型路径（Heavy Route）。
-- 当前阶段：提案修订（Propose Revision）并交接暂停；T01 已完成，T02 因 Codex 原生 Windows 严格拒读配置无法启动而回退。
+- 当前阶段：提案修订（Propose Revision）并交接暂停；T01 已完成，T02 因 Codex 原生 Windows 严格拒读配置无法启动而回退。2026-10-30 完成官方 dsh-qqbot 对比调研，T02 待用户在 A/B 方案间选型。
 - 顺序：需求对齐（Align）→ 计划（Plan）→ 开放规格（OpenSpec）提案、设计、任务 → 实施（Apply）→ 审查（Review）→ 验证（Verify）→ 收尾（Close）。
 - 门禁：用户确认设计后才写计划；计划落盘后才写规格与任务；规格与任务齐备后才修改插件代码。
 
@@ -24,4 +24,4 @@
 
 ## 下一步
 
-下次先读 `state.md`、`checkpoints.md` 与最新交接；修订 Codex 原生 Windows 执行隔离设计，重新验证 T02；通过前不进入 T03。
+下次先读 `state.md`、`checkpoints.md` 与最新交接；由用户确认 T02 走 A（需求降级为"非白名单不服务"）还是 B（维持需求、缩小可开放面），再修订执行隔离设计与需求边界，重新验证 T02；通过前不进入 T03。
