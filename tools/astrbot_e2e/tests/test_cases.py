@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from astrbot_e2e.cases import CaseError, load_case, render_case
+from astrbot_e2e.cases import CaseError, case_steps, load_case, render_case
 
 
 class CaseTest(unittest.TestCase):
@@ -94,3 +94,83 @@ class CaseTest(unittest.TestCase):
         case = load_case(self.path)
         with self.assertRaisesRegex(CaseError, "group_id"):
             render_case(case, {})
+
+    def test_accepts_multi_step_case(self):
+        self.write(
+            {
+                "name": "multi",
+                "plugin": "astrbot_plugin_e2e_probe",
+                "steps": [
+                    {
+                        "send": {"group_id": "{{group_id}}", "text": "/help"},
+                        "expect": {"messages": [{"contains": ["帮助"]}]},
+                    },
+                    {
+                        "send": {"group_id": "{{group_id}}", "text": "/info"},
+                        "expect": {"messages": [{"regex": r"\S"}]},
+                    },
+                ],
+            }
+        )
+        case = load_case(self.path)
+        rendered = render_case(case, {"group_id": "123456789"})
+        self.assertEqual(rendered["steps"][0]["send"]["group_id"], "123456789")
+        self.assertEqual(rendered["steps"][1]["send"]["group_id"], "123456789")
+
+    def test_rejects_steps_with_top_level_send(self):
+        self.write_case(
+            steps=[
+                {
+                    "send": {"group_id": "{{group_id}}", "text": "/help"},
+                    "expect": {"messages": [{"contains": ["帮助"]}]},
+                }
+            ]
+        )
+        with self.assertRaisesRegex(CaseError, "不能同时出现"):
+            load_case(self.path)
+
+    def test_rejects_empty_steps(self):
+        self.write(
+            {
+                "name": "multi",
+                "plugin": "astrbot_plugin_e2e_probe",
+                "steps": [],
+            }
+        )
+        with self.assertRaisesRegex(CaseError, "steps 必须是非空数组"):
+            load_case(self.path)
+
+    def test_rejects_step_without_expect(self):
+        self.write(
+            {
+                "name": "multi",
+                "plugin": "astrbot_plugin_e2e_probe",
+                "steps": [{"send": {"group_id": "{{group_id}}", "text": "/help"}}],
+            }
+        )
+        with self.assertRaisesRegex(CaseError, "send 与 expect"):
+            load_case(self.path)
+
+    def test_rejects_unknown_step_key(self):
+        self.write(
+            {
+                "name": "multi",
+                "plugin": "astrbot_plugin_e2e_probe",
+                "steps": [
+                    {
+                        "send": {"group_id": "{{group_id}}", "text": "/help"},
+                        "expect": {"messages": [{"contains": ["帮助"]}]},
+                        "sleep": 1,
+                    }
+                ],
+            }
+        )
+        with self.assertRaisesRegex(CaseError, "未知字段"):
+            load_case(self.path)
+
+    def test_case_steps_returns_legacy_as_single_step(self):
+        self.write_case()
+        case = load_case(self.path)
+        steps = case_steps(case)
+        self.assertEqual(len(steps), 1)
+        self.assertEqual(steps[0]["send"]["text"], "/e2e_echo hello")

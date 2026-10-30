@@ -188,3 +188,13 @@ class ConfigTest(unittest.TestCase):
         cfg = minimal_config(self.root)
         validate_config(cfg)
         self.assertEqual(cfg["test_root"], str(self.root.resolve()))
+
+    def test_accepts_plugin_sources(self):
+        self.write(plugin_sources={"demo": "~/plugins/demo"})
+        cfg = load_config(self.path)
+        self.assertTrue(cfg["plugin_sources"]["demo"].endswith("plugins/demo"))
+
+    def test_rejects_non_object_plugin_sources(self):
+        self.write(plugin_sources=["demo"])
+        with self.assertRaisesRegex(ConfigError, "plugin_sources 必须是对象"):
+            load_config(self.path)

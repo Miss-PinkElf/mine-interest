@@ -3,7 +3,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from astrbot_e2e.bootstrap import patch_config, sync_plugins, write_cc_qq_config
+from astrbot_e2e.bootstrap import (
+    patch_config,
+    resolve_plugin_source,
+    sync_plugins,
+    write_cc_qq_config,
+)
 
 
 class BootstrapTest(unittest.TestCase):
@@ -111,3 +116,28 @@ class BootstrapTest(unittest.TestCase):
         )
         target = self.root / "data" / "plugins" / "fixture_plugin"
         self.assertTrue((target / "main.py").exists())
+
+
+class ResolvePluginSourceTest(unittest.TestCase):
+    def test_prefers_configured_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            configured = tmp_path / "custom-plugin"
+            configured.mkdir()
+            cfg = {"plugin_sources": {"demo": str(configured)}}
+            source = resolve_plugin_source(cfg, tmp_path / "repo", "demo")
+            self.assertEqual(source, configured)
+
+    def test_falls_back_to_repo_integrations(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source_dir = tmp_path / "repo" / "integrations" / "astrbot" / "demo"
+            source_dir.mkdir(parents=True)
+            source = resolve_plugin_source({}, tmp_path / "repo", "demo")
+            self.assertEqual(source, source_dir)
+
+    def test_raises_with_all_candidates(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            with self.assertRaisesRegex(RuntimeError, "插件源目录不存在"):
+                resolve_plugin_source({}, tmp_path / "repo", "missing")

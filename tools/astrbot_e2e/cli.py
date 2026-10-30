@@ -8,11 +8,13 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .bootstrap import prepare_instance
+from .bootstrap import prepare_instance, resolve_plugin_source
+from .cases import load_case
 from .config import ConfigError, load_config
 from .onebot import OneBotClient
-from .orchestrator import AstrBotInstance
+from .orchestrator import AstrBotInstance, port_open
 from .runner import run_case
+from .suite import run_suite
 
 DEFAULT_CONFIG = "tools/astrbot_e2e/config.local.json"
 
@@ -36,6 +38,13 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--case", required=True)
     run.add_argument("--reload", action="store_true")
     run.add_argument("--attach", action="store_true")
+    suite = _add_subcommand(sub, "run-suite")
+    suite.add_argument("--cases-dir", required=True)
+    suite.add_argument("--plugin", default=None)
+    suite.add_argument("--reload", action="store_true")
+    suite.add_argument("--attach", action="store_true")
+    suite.add_argument("--keep-running", action="store_true")
+    suite.add_argument("--no-redact", action="store_true")
     return parser
 
 
@@ -55,11 +64,42 @@ async def _check_login(name: str, section: Dict[str, Any]) -> int:
     return 0
 
 
+def _check_plugin_sources(cfg: Dict[str, Any]) -> int:
+    repo_root = Path(__file__).resolve().parents[2]
+    for name in cfg["astrbot"]["plugins"]:
+        try:
+            source = resolve_plugin_source(cfg, repo_root, name)
+        except RuntimeError as exc:
+            print("插件源不可用: {}".format(exc))
+            return 2
+        print("插件源 OK: {} -> {}".format(name, source))
+    return 0
+
+
+def _check_test_ports(cfg: Dict[str, Any]) -> int:
+    instance = AstrBotInstance(cfg, Path(cfg["test_root"]) / "bootstrap-run")
+    running = instance.is_running()
+    for label, host, port in instance.port_endpoints():
+        if port_open(host, port):
+            if running:
+                print("{} {} 由测试实例占用（已运行）".format(label, port))
+            else:
+                print("{} {} 被未知进程占用；请先排查，不自动终止".format(label, port))
+                return 2
+    return 0
+
+
 async def _doctor(cfg: Dict[str, Any]) -> int:
     code = await _check_login("机器人号", cfg["bot"])
     if code:
         return code
     code = await _check_login("发送者号", cfg["sender"])
+    if code:
+        return code
+    code = _check_plugin_sources(cfg)
+    if code:
+        return code
+    code = _check_test_ports(cfg)
     if code:
         return code
     root = Path(cfg["test_root"])
@@ -96,6 +136,57 @@ async def _run(cfg: Dict[str, Any], case_path: str, reload: bool, attach: bool) 
     if summary["status"] == "ERROR":
         return 2
     if summary["status"] == "SKIPPED":
+        return 3
+    return 1
+
+
+def _case_paths(cases_dir: str, plugin: Optional[str]) -> List[str]:
+    directory = Path(cases_dir).expanduser()
+    if not directory.is_dir():
+        raise ValueError("用例目录不存在: {}".format(directory))
+    paths = sorted(
+        str(path)
+        for path in directory.glob("*.json")
+        if not path.name.startswith("_")
+    )
+    if not paths:
+        raise ValueError("用例目录为空: {}".format(directory))
+    if plugin:
+        keep = []
+        for path in paths:
+            if load_case(path)["plugin"] != plugin:
+                raise ValueError(
+                    "用例 {} 的插件不是 {}".format(path, plugin)
+                )
+            keep.append(path)
+        paths = keep
+    return paths
+
+
+async def _run_suite(args: argparse.Namespace, cfg: Dict[str, Any]) -> int:
+    try:
+        paths = _case_paths(args.cases_dir, args.plugin)
+        suite = await run_suite(
+            cfg,
+            paths,
+            reload=args.reload,
+            attach=args.attach,
+            keep_running=args.keep_running,
+            redact=not args.no_redact,
+        )
+    except Exception as exc:
+        print("批量执行异常: {}".format(exc), file=sys.stderr)
+        return 2
+    print(
+        "{}: {} ({})".format(
+            suite["plugin"], suite["status"], suite["suite_dir"]
+        )
+    )
+    if suite["status"] == "PASSED":
+        return 0
+    if suite["status"] == "ERROR":
+        return 2
+    if suite["status"] == "SKIPPED":
         return 3
     return 1
 
@@ -137,6 +228,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
     if args.command == "run":
         return asyncio.run(_run(cfg, args.case, args.reload, args.attach))
+    if args.command == "run-suite":
+        return asyncio.run(_run_suite(args, cfg))
     return 2
 
 

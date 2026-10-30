@@ -79,3 +79,62 @@
   - 未提交。
 - 下一步：Task 3–5 批量实现与复审；随后 Task 6。
 - 已知风险：native addon/FFmpeg 警告；测试 AstrBot `6198` 尚未实现；WebUI 重载与日志路径待实测。
+
+## 2026-10-27 22:29:58 CST — Task 15 / 第一版完成
+
+- 阶段：`Verify/Close` → 第一版收口。
+- 完成：
+  - 单元测试 106/106 通过。
+  - 探针 E2E PASSED：`reports/20261027-222915-643515-case`。
+  - `cc_qq /help` E2E PASSED：`reports/20261027-222837-285382-cc_qq-help`；语义判定 pass，最终 1 条干净回复。
+  - 生产 `6199` 连接正常；生产 QQ `6099`、测试 `6098/6201` 正常。
+  - 测试实例关闭内置命令，避免与 `cc_qq` 的 `/help` 叠加。
+  - 端口释放竞态已修复，非 attach 用例可稳定 stop/start。
+- 当前边界：当时所有代码与文档未提交；测试 AstrBot 在用例结束后停止。
+- 下一步：可选提交；下一阶段 cc_qq 长任务/审批/多轮；延期项见 `deferred/2026-10-27-post-mvp-deferred.md`。
+- 已知风险：native addon/FFmpeg 警告、共享 macOS 容器、富媒体未验证、`6198` 重试日志。
+
+## 2026-10-27 22:40:00 CST — 收尾：重载增量验证 + 提交
+
+- 阶段：`Verify/Close` → 第一版收尾。
+- 完成：
+  - 补做 Task 14 Step 4 的增量重载验证：启动测试实例 → 修改测试实例副本为 `e2e_echo-v2` → `--attach --reload` → 收到 `e2e_echo-v2:hello-e2e`，未重启整个实例。
+  - 证据：`tools/astrbot_e2e/reports/20261027-223642-572604-case`；临时 v2 用例与插件副本已清理。
+  - 单元测试 106/106 通过；探针与 `cc_qq /help` 两条 E2E PASSED。
+  - 测试 AstrBot 已停止，`6186/6198` 已释放；生产 `6199`、`6200`、`6201` 正常。
+  - 第一版相关文件已提交；`config.local.json`、`reports/`、无关脏文件未提交；`.gitignore` 按约定未提交。
+  - 未决问题与首版限定落盘：`backlog.md`；延期项：`deferred/2026-10-27-post-mvp-deferred.md`。
+- 当前边界：第一版闭环完成；cc_qq 长任务、审批、多轮、富媒体等未覆盖。
+- 下一步：从 `backlog.md` 或 `deferred/` 选择下一阶段。
+- 已知风险：native addon/FFmpeg 警告、共享 macOS 容器、富媒体未验证、`6198` 重试日志、生产 bot 兼任测试机器人。
+
+## 2026-10-30 00:45:00 CST — cc-qq 0.2.5 验收实战
+
+- 阶段：`Verify`（跨 mission 实战）。
+- 完成：用本工具在群 `701292201` 验收 cc-qq `0.2.5`，A+B+C 共 44 项；发现并协助修复 F1（回执早于权限/参数/会话校验），插件单测 113/113。
+- 运行：测试实例常驻 `6186/6198`（PID `31955`）；生产 NapCat `6198` 客户端启用；生产 AstrBot 测试期间暂停、测完恢复（PID `61792`）。
+- 新增：本地一键脚本 `~/.qq-e2e/start-e2e.sh`（iTerm2 单窗口三标签，自动启用 6198），不入库。
+- 下一步：需求 2「通用插件测试 skill」待 Align；Codex 侧验收待做。
+- 已知风险：测试实例内置 LLM 会抢占 @bot 空文本；相同回复 10 秒去重会影响批量断言；代理测试需 `claude_setting_sources=user`。
+
+## 2026-10-30 14:02:15 CST — 需求 2 Align 完成
+
+- 阶段：`Align`（需求 2：通用 AstrBot 插件测试 skill）。
+- 完成：
+  - 恢复 mission 上下文，确认第一版已完成、需求 2 在 backlog 中待 Align。
+  - 与用户逐项确认 9 个决策：混合形态、测试侧自愈、自动分析 + 人工确认、macOS 优先、JSON + Markdown 脱敏报告、person-config 真源 + 本仓库副本、多轮 steps、生产操作需确认、功能清单默认必确认。
+  - Align 设计落盘：`plans/2026-10-30-通用插件测试skill-align.md`；决策同步到 `decision-log.md`。
+- 当前边界：只完成对齐与设计文档；未修改任何代码，未启动/停止任何服务。
+- 下一步：用户审阅 Align 文档 → 产出 Plan → 评审后进入 spec 三件套 → Apply。
+- 已知风险：skill 真源跨仓库同步；报告脱敏与保留策略未定；生产 bot 兼任测试机器人（Q1）。
+
+## 2026-10-30 14:20:00 CST — 需求 2 Plan 完成
+
+- 阶段：`Plan`（需求 2：通用 AstrBot 插件测试 skill）。
+- 完成：
+  - Plan 落盘：`plans/2026-10-30-通用插件测试skill-plan.md`；14 个 Task、95 个步骤。
+  - 覆盖：多轮 `steps`、`run-suite`、插件源解析、报告聚合与脱敏、doctor 增强、探测/分析/生成脚本、vendor 快照、安装登记、端到端验收。
+  - 已通过自检：无占位符；接口命名一致（`execute_case`、`case_steps`、`write_suite_report`、`resolve_plugin_source`）。
+- 当前边界：只写计划与文档；未改任何代码，未启动/停止服务。
+- 下一步：用户批准 Plan → 产出 `spec/` 三件套 → Apply Task 0。
+- 已知风险：多轮步骤可能影响旧用例；run-suite 状态串扰；报告脱敏；自愈误杀；person-config 与副本漂移。

@@ -106,13 +106,16 @@ class AstrBotInstance:
             return False
         return pid_belongs_to_instance(pid, self.root)
 
-    def _port_endpoints(self):
+    def port_endpoints(self):
         webui = self.cfg.get("webui") or {}
         reverse_host = str(self.cfg["astrbot"].get("reverse_ws_host", "127.0.0.1"))
         return [
             ("WebUI", "127.0.0.1", int(webui.get("port", 6186))),
             ("OneBot 反向 WS", reverse_host, int(self.cfg["astrbot"].get("reverse_ws_port", 6198))),
         ]
+
+    def _port_endpoints(self):
+        return self.port_endpoints()
 
     def start(self) -> subprocess.Popen:
         self.root.mkdir(parents=True, exist_ok=True)

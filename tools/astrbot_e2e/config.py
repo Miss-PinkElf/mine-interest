@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 PRODUCTION_ROOT = (Path.home() / ".astrbot").resolve()
 PRODUCTION_PORTS = frozenset({6185, 6199, 6099})
 SECRET_KEYS = frozenset({"password", "token", "api_key", "jwt_secret", "secret"})
+SECRET_KEYWORDS = ("password", "token", "api_key", "secret", "jwt")
 
 
 class ConfigError(ValueError):
@@ -102,14 +103,29 @@ def validate_config(cfg: Dict[str, Any]) -> None:
     if not group_id.isdigit():
         raise ConfigError("group_id 必须是数字字符串")
     cfg["group_id"] = group_id
+    sources = cfg.get("plugin_sources")
+    if sources is not None:
+        if not isinstance(sources, dict):
+            raise ConfigError("plugin_sources 必须是对象")
+        normalized: Dict[str, str] = {}
+        for name, path in sources.items():
+            if not str(path or "").strip():
+                raise ConfigError("plugin_sources.{} 不能为空".format(name))
+            normalized[str(name)] = str(Path(path).expanduser())
+        cfg["plugin_sources"] = normalized
     cfg["bot"]["qq"] = bot_qq
     cfg["sender"]["qq"] = sender_qq
+
+
+def _is_secret_key(key: Any) -> bool:
+    lowered = str(key).lower()
+    return lowered in SECRET_KEYS or any(word in lowered for word in SECRET_KEYWORDS)
 
 
 def mask_config(value: Any) -> Any:
     if isinstance(value, dict):
         return {
-            key: ("***" if key.lower() in SECRET_KEYS else mask_config(item))
+            key: ("***" if _is_secret_key(key) else mask_config(item))
             for key, item in value.items()
         }
     if isinstance(value, list):

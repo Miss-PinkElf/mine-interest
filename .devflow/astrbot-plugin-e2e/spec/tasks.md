@@ -1,131 +1,171 @@
-# AstrBot 插件端到端自动化测试任务清单（Tasks）
+# 通用 AstrBot 插件自动化测试 skill 任务清单（Tasks）
 
 ## Metadata（元数据）
 
-- 创建时间（Created At）：2026-10-27 17:41:14 CST。
-- 更新时间（Updated At）：2026-10-27 17:41:14 CST。
+- 创建时间（Created At）：2026-10-30 14:30:00 CST。
+- 更新时间（Updated At）：2026-10-30 14:30:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：把实施计划拆成可独立验证、可勾选的任务，作为 Apply 阶段的追踪真相源。
-- 关联项目（Related Repository / Project）：当前仓库 `.`。
+- 关联项目（Related Repository / Project）：当前仓库 `.`；skill 真源仓库 `/Users/mobius/Documents/111AAA-code/person-config`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
 - 关联提案（Related Proposal）：`./proposal.md`。
 - 关联设计（Related Design）：`./design.md`。
-- 关联计划（Related Plan）：`../plans/2026-10-27-astrbot-plugin-e2e-plan.md`。
+- 关联计划（Related Plan）：`../plans/2026-10-30-通用插件测试skill-plan.md`。
 - 当前状态（Status）：待用户确认（Pending Approval）。
 - 文档边界（Scope / Boundary）：任务与验收追踪；详细代码步骤以 Plan 对应 Task 为准。
+- 归档：第一版任务清单已归档到 `./archive/2026-10-27-v1/tasks.md`。
+
+## 执行方式
+
+- 子代理驱动（Subagent-Driven）：每个 Task 派一个子代理实现，任务间做规格与质量复审。
+- 每个 Task 完成后：跑测试 → 记录证据 → 进入下一个。
+- **不得擅自 commit**；每个 Task 结束向用户申请提交许可。
 
 ## 任务清单
 
-- [x] **Task 0：Spike 0 — 同机双开 QQ 可行性**
-  - 产出：`.devflow/astrbot-plugin-e2e/plans/2026-10-27-spike-0-dual-qq-result.md`。
-  - 验收：两个 QQ 号在线；两个 NapCat 配置隔离；`6200/6201/6198/6186` 可用；测试群收发成功；生产实例未被触碰。
-  - 失败：按设计稿 6.4 回退，并写回 `decision-log.md`，暂停后续任务。
+### 阶段 A：执行引擎
 
-- [x] **Task 1：Runner 包骨架与配置加载**
-  - 文件：`tools/astrbot_e2e/__init__.py`、`config.py`、`config.example.json`、`tests/test_config.py`。
-  - 验收：5 个配置测试通过；`.gitignore` 已加入 `config.local.json` 与 `reports/`。
-  - 对应 Plan：Task 1。
+- [x] **Task 0：基线校验**
+  - 产出：现有单测数量与 HEAD 哈希记录。
+  - 验证：`PYTHONPATH=tools backend/.venv/bin/python -m unittest discover -s tools/astrbot_e2e/tests -t tools` 全量通过。
+  - 退出条件：基线为 106/106 或记录差异原因。
+  - 结果：2026-10-30；HEAD `7f3fe3b`；106/106 OK。
 
-- [x] **Task 2：用例加载与校验**
+- [x] **Task 1：用例模型支持多轮 steps**
   - 文件：`tools/astrbot_e2e/cases.py`、`tests/test_cases.py`。
-  - 验收：3 个用例测试通过；`{{group_id}}` 可渲染；未知字段被拒绝。
-  - 对应 Plan：Task 2。
+  - 产出：`steps` 校验、`case_steps()`、全步骤 group_id 渲染。
+  - 验证：新增 6 个用例测试通过；全量单测通过。
+  - 结果：2026-10-30；19/19 用例测试 OK；全量 112/112 OK。
 
-- [x] **Task 3：断言模块**
-  - 文件：`tools/astrbot_e2e/assertions.py`、`tests/test_assertions.py`。
-  - 验收：5 个断言测试通过；失败结果保留实际值。
-  - 对应 Plan：Task 3。
+- [x] **Task 2：执行器支持多轮步骤**
+  - 文件：`tools/astrbot_e2e/runner.py`、`tests/test_runner.py`。
+  - 产出：`execute_case()`、`_run_semantic()`、步骤级目录与断言、失败即停。
+  - 验证：多轮成功与失败两条测试通过；旧用例行为不变。
+  - 结果：2026-10-30；test_runner 11/11 OK；全量 122/122 OK。
 
-- [x] **Task 4：报告与失败证据**
-  - 文件：`tools/astrbot_e2e/reports.py`、`tests/test_reports.py`。
-  - 验收：4 个报告测试通过；运行目录唯一；`summary.json` 含状态与断言。
-  - 对应 Plan：Task 4。
+- [x] **Task 3：插件源解析**
+  - 文件：`bootstrap.py`、`config.py`、`test_bootstrap.py`、`test_config.py`。
+  - 产出：`resolve_plugin_source()`、`plugin_sources` 校验。
+  - 验证：配置优先、仓库回退、缺失报错三条测试通过。
+  - 结果：2026-10-30；bootstrap + config 31/31 OK；全量 122/122 OK。
 
-- [x] **Task 5：日志窗口采集**
-  - 文件：`tools/astrbot_e2e/log_capture.py`、`tests/test_log_capture.py`。
-  - 验收：2 个日志测试通过；只读取新增行；`wait_for` 可等待关键字。
-  - 对应 Plan：Task 5。
+- [x] **Task 4：批量执行 run-suite**
+  - 文件：`suite.py`（新增）、`cli.py`、`tests/test_suite.py`、`test_cli.py`。
+  - 产出：`run_suite()`、`run-suite` 子命令、suite 目录与汇总。
+  - 验证：两用例单实例执行、混插件拒绝、CLI 分发测试通过。
+  - 结果：2026-10-30；test_suite + test_cli 5/5 OK；全量 122/122 OK。
 
-- [x] **Task 6：OneBot 消息构造与 WebSocket 客户端**
-  - 文件：`tools/astrbot_e2e/onebot.py`、`tests/test_onebot.py`。
-  - 验收：5 个 OneBot 测试通过；`call` 能匹配 echo；历史回填函数可用。
-  - 对应 Plan：Task 6。
+- [x] **Task 5：报告聚合与脱敏**
+  - 文件：`reports.py`、`tests/test_reports.py`。
+  - 产出：`sanitize()`、`write_suite_report()`、Markdown 摘要。
+  - 验证：QQ/Token 脱敏、长文本截断、`redact=False` 三条测试通过。
+  - 结果：2026-10-30；test_reports 9/9 OK；全量 127/127 OK。
+  - 复核修复：键名包含 `token`/`secret`/`api_key`/`password`/`jwt` 时也脱敏（覆盖 `reverse_ws_token`），`config.mask_config` 同步加固。
 
-- [x] **Task 7：测试实例引导（Bootstrap）**
-  - 文件：`tools/astrbot_e2e/bootstrap.py`、`tests/test_bootstrap.py`。
-  - 验收：4 个 Bootstrap 测试通过；平台/端口/插件配置正确；`cc_qq` 可启用/禁用；插件复制忽略 `tests/`。
-  - 对应 Plan：Task 7。
+- [x] **Task 6：doctor 增强与自愈可见性**
+  - 文件：`orchestrator.py`、`cli.py`、`test_orchestrator.py`、`test_cli.py`。
+  - 产出：`port_endpoints()`、插件源检查、端口占用检查。
+  - 验证：公开端口方法测试、缺失插件源返回 2 测试通过。
+  - 结果：2026-10-30；orchestrator + cli 11/11 OK；全量 127/127 OK。
 
-- [x] **Task 8：测试实例编排（Orchestrator）**
-  - 文件：`tools/astrbot_e2e/orchestrator.py`、`tests/test_orchestrator.py`。
-  - 验收：2 个编排测试通过；PID 归属校验；端口预检；停止只杀自己启动的实例。
-  - 对应 Plan：Task 8。
+### 阶段 B：skill 脚本与文档
 
-- [x] **Task 9：插件重载（WebUI 登录 + Reload）**
-  - 文件：`tools/astrbot_e2e/reloader.py`、`tests/test_reloader.py`。
-  - 验收：2 个重载测试通过；登录 Cookie 与 `plugin_id` 正确；错误密码被拒绝。
-  - 对应 Plan：Task 9。
+- [x] **Task 7：skill 骨架与环境探测**
+  - 文件：`scripts/engine_path.py`、`scripts/probe_env.py`、`tests/test_probe_env.py`。
+  - 产出：环境画像 JSON；不泄露密钥。
+  - 验证：两项单测通过；本机探测 AstrBot `4.29.3`、NapCat `4.18.28`。
+  - 结果：2026-10-30；test_probe_env 2/2 OK；真实探测版本与密钥检查通过。
 
-- [x] **Task 10：探针插件（Probe Plugin）**
-  - 文件：`tools/astrbot_e2e/fixtures/astrbot_plugin_e2e_probe/main.py`、`metadata.yaml`、`tests/test_probe_fixture.py`。
-  - 验收：3 个静态测试通过；`e2e_echo`、`e2e_sleep`、`e2e_log` 三个命令存在。
-  - 对应 Plan：Task 10。
+- [x] **Task 8：插件功能清单提取**
+  - 文件：`scripts/discover_plugin.py`、`tests/test_discover_plugin.py`。
+  - 产出：`features.json`；命令/事件/钩子/配置分类与风险分级。
+  - 验证：三项单测通过；cc-qq 提取 ≥10 个命令。
+  - 结果：2026-10-30；5/5 OK；cc-qq 13 个命令、1 个事件、23 个配置、24 个需人工项。
+  - 复核修复：支持 `/cc <参数>`；排除 `/tmp`、`/etc` 等系统路径；目录不存在时报错，不静默返回空清单。
 
-- [x] **Task 11：LLM 语义判定**
-  - 文件：`tools/astrbot_e2e/llm_judge.py`、`tests/test_llm_judge.py`。
-  - 验收：2 个判定测试通过；未配置时抛 `JudgeError`；返回 `pass/reason`。
-  - 对应 Plan：Task 11。
+- [x] **Task 9：用例草案生成**
+  - 文件：`scripts/gen_cases.py`、`tests/test_gen_cases.py`。
+  - 产出：安全命令用例 JSON、`SKIPPED.md`。
+  - 验证：两项单测通过；cc-qq 高风险命令进入跳过清单。
+  - 结果：2026-10-30；gen_cases 2/2 + discover_plugin 6/6 OK；cc-qq 生成 3 个只读命令用例（`/help`、`/info`、`/pwd`），34 项跳过。
+  - 复核修复：`/cd`、`/resume` 纳入高风险；修正“事件”断言。
 
-- [x] **Task 12：Runner 与 CLI**
-  - 文件：`tools/astrbot_e2e/runner.py`、`cli.py`、`tests/test_cli.py`。
-  - 验收：2 个 CLI 测试通过；`doctor`、`init-instance`、`start-instance`、`stop-instance`、`run`、`--attach`、`--reload` 可用；退出码符合设计。
-  - 对应 Plan：Task 12。
+- [x] **Task 10：skill 文档与模板**
+  - 文件：`SKILL.md`、`README.md`、`references/` 6 份、`templates/` 3 份、`scripts/aggregate_report.py`。
+  - 产出：S0–S7 主流程、安全规则、探测/兼容/自愈/覆盖/报告参考。
+  - 验证：必需文件清单检查无缺失。
+  - 结果：2026-10-30；12 个文件齐全；`missing: []`；JSON 模板与 `aggregate_report.py` 编译通过。
 
-- [x] **Task 13：端到端验证 — 探针用例**
-  - 文件：`tools/astrbot_e2e/cases/probe_echo.json`。
-  - 验收：探针用例 `PASSED`；消息与日志证据齐全；生产端口未变。
-  - 证据：`tools/astrbot_e2e/reports/20261027-222915-643515-case`。
-  - 对应 Plan：Task 13。
+- [x] **Task 11：vendor 快照与安装登记**
+  - 文件：`scripts/sync_vendor.py`、`tests/test_sync_vendor.py`、`vendor/`、本仓库副本、`catalog.json`。
+  - 产出：可移植引擎快照；catalog 条目与 `categories.custom`。
+  - 验证：同步测试通过；`sync/sync.py --only astrbot-plugin-e2e --dry-run` 无 schema 错误。
+  - 结果：2026-10-30；sync_vendor 1/1 OK；vendor 无 reports/tests/config.local.json；仓库副本 45 个文件与真源一致；dry-run 无 WARN/COPY-MISS。
+  - 说明：`copies` 仅支持 person-config 内部路径，外部仓库副本记录在 `external_copies`。
 
-- [x] **Task 14：端到端验证 — `cc_qq /help` 与重载**
-  - 文件：`tools/astrbot_e2e/cases/cc_qq_help.json`。
-  - 验收：`cc_qq /help` `PASSED`（语义判定需配置 judge）；`--attach` 增量重载验证通过；临时 v2 用例与改动已清理。
-  - 证据：`tools/astrbot_e2e/reports/20261027-222837-285382-cc_qq-help`；重载验证 `tools/astrbot_e2e/reports/20261027-223642-572604-case`。
-  - 对应 Plan：Task 14。
+### 阶段 C：验收与收尾
 
-- [x] **Task 15：Verify / Close**
-  - 验收：单元测试全通过；两条 E2E 通过；生产影响检查通过；`state.md`、`checkpoints.md`、`decision-log.md`、`deferred/` 已更新。
-  - 收尾补充：`backlog.md`（未决问题与首版限定）、`development-overview.md`、最终 handoff 与 `NEXT-SESSION-PROMPT`。
-  - 对应 Plan：Task 15。
+- [x] **Task 12：端到端验收**
+  - 前置：用户启动三服务并扫码登录两个 QQ。
+  - 产出：多轮示例用例；cc-qq suite 报告；自愈演练记录。
+  - 验证：
+    - `run --case cc_qq_multi_turn.json` PASSED。
+    - `run-suite` 生成 `report.json` + `report.md`。
+    - 报告不含完整 QQ/Token。
+    - 未知端口占用不误杀；残留实例自动停止。
+  - 结果：2026-10-30。
+    - `doctor OK`：bot `3254276668`、sender `1961618848`。
+    - 多轮 PASSED：`reports/20261030-154828-636210-cc-qq`（`/pwd` → `/info`）。
+    - suite PASSED：`reports/20261030-154847-882152-astrbot_plugin_cc_qq-suite`，2/2 用例。
+    - 脱敏：`report.json` + `report.md` 无完整 QQ/Token/password。
+    - 自愈：未知端口占用只报错不误杀；残留实例自动停止并重启，`reports/20261030-155012-908540-astrbot_plugin_cc_qq-suite` 的 ops 含“已停止残留测试实例”。
+    - 发现：cc-qq `/help` 返回图片帮助卡片，已标记 `rich_media` 并移出文本 suite。
 
-## 验证
+- [x] **Task 13：文档与收尾**
+  - 文件：`tools/astrbot_e2e/README.md`、`backlog.md`、`state.md`、`checkpoints.md`、`decision-log.md`。
+  - 产出：使用说明、未决项、验收证据、阶段检查点。
+  - 验证：引擎与 skill 两套测试全部通过；文档无占位符。
+  - 结果：2026-10-30；README 补充 `run-suite`/`steps`/`plugin_sources`/报告脱敏/富媒体边界；backlog 标记需求 2 已验证并新增 Q11/Q12；两套测试全绿；未提交。
 
-```bash
-# 单元测试
-PYTHONPATH=tools backend/.venv/bin/python -m unittest discover -s tools/astrbot_e2e/tests -t tools -v
+## 完成定义（Definition of Done）
 
-# 环境自检
-PYTHONPATH=tools backend/.venv/bin/python -m astrbot_e2e.cli doctor --config tools/astrbot_e2e/config.local.json
+1. 引擎全量单测通过，新增能力均有测试。
+2. skill 脚本与测试全部通过。
+3. cc-qq 功能清单、用例草案、suite 报告可复现。
+4. 多轮用例真实跑通。
+5. 自愈演练通过，生产未被误操作。
+6. skill 真源、仓库副本、catalog 三者一致。
+7. 文档更新完成；未擅自 commit。
 
-# 探针闭环
-PYTHONPATH=tools backend/.venv/bin/python -m astrbot_e2e.cli run \
-  --config tools/astrbot_e2e/config.local.json \
-  --case tools/astrbot_e2e/cases/probe_echo.json
+## 依赖关系
 
-# 真实插件闭环
-PYTHONPATH=tools backend/.venv/bin/python -m astrbot_e2e.cli run \
-  --config tools/astrbot_e2e/config.local.json \
-  --case tools/astrbot_e2e/cases/cc_qq_help.json --reload
-
-# 生产影响检查
-lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(6185|6199|6099)' || true
+```text
+Task 0
+  ├→ Task 1 → Task 2 → Task 4 → Task 5
+  ├→ Task 3 → Task 6
+  └→ Task 7 → Task 8 → Task 9 → Task 10
+                              Task 11（依赖 4/5/7/8/9/10）
+                              Task 12（依赖 4/5/6/9/11）
+                              Task 13（依赖 12）
 ```
 
-## 进入 Apply 前的检查清单
+## 执行记录
 
-- [x] 用户已确认 `proposal.md`、`design.md`、`tasks.md`。
-- [x] Plan 已落盘且与三件套一致。
-- [x] 用户已选择执行方式（子代理驱动）。
-- [x] Spike 0 明确排在第一项，未通过不进入 Runner 实现。
-- [x] 本地配置、账号、测试群与 LLM judge 配置由用户提供，未写入仓库。
-- [x] 生产隔离检查项已写入任务。
+由执行代理在每个 Task 完成后追加：
+
+```text
+Task 0：2026-10-30 基线 106/106 OK；HEAD 7f3fe3b
+Task 1：2026-10-30 多轮 steps；19/19 用例测试 OK；全量 112/112 OK
+Task 2：2026-10-30 多轮执行器；test_runner 11/11 OK；全量 122/122 OK
+Task 3：2026-10-30 插件源解析；bootstrap+config 31/31 OK；全量 122/122 OK
+Task 4：2026-10-30 run-suite；test_suite+test_cli 5/5 OK；全量 122/122 OK
+Task 5：2026-10-30 报告脱敏；9/9 OK；全量 127/127 OK；复核修复 reverse_ws_token 脱敏
+Task 6：2026-10-30 doctor 增强；11/11 OK；全量 127/127 OK
+Task 7：2026-10-30 环境探测；2/2 OK；AstrBot 4.29.3 / NapCat 4.18.28
+Task 8：2026-10-30 功能清单；5/5 OK；cc-qq 13 命令/1 事件/23 配置
+Task 9：2026-10-30 用例生成；8/8 OK；cc-qq 生成 3 个只读用例、34 项跳过
+Task 10：2026-10-30 skill 文档；12 文件齐全；missing []
+Task 11：2026-10-30 vendor+安装；sync_vendor 1/1 OK；副本 45 文件一致；dry-run 干净
+Task 12：2026-10-30 真机验收；doctor OK；多轮 PASSED；suite 2/2 PASSED；脱敏通过；两项自愈通过；/help 标记 rich_media
+Task 13：2026-10-30 文档收尾；引擎 127/127；skill 12/12；未提交
+```

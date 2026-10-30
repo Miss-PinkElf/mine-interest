@@ -1,0 +1,14 @@
+{
+  "name": "cc-qq 多轮安全命令",
+  "plugin": "astrbot_plugin_cc_qq",
+  "steps": [
+    {
+      "send": {"group_id": "{{group_id}}", "text": "/pwd", "at_bot": true},
+      "expect": {"timeout_seconds": 30, "messages": [{"regex": "\\S"}]}
+    },
+    {
+      "send": {"group_id": "{{group_id}}", "text": "/info", "at_bot": true},
+      "expect": {"timeout_seconds": 30, "messages": [{"contains": ["/new"]}]}
+    }
+  ]
+}

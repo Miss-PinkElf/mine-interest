@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from .assertions import AssertionResult, evaluate_logs, evaluate_messages
 from .bootstrap import prepare_instance
-from .cases import load_case, render_case
+from .cases import case_steps, load_case, render_case
 from .llm_judge import JudgeError, judge
 from .log_capture import LogCapture
 from .onebot import OneBotClient, build_group_message, collect_replies, history_bot_replies
@@ -40,19 +40,68 @@ def _status_from_results(results: List[AssertionResult]) -> str:
 
 
 def _write_assertions(run_dir: Path, results: List[AssertionResult]) -> None:
-    write_json(
-        run_dir / "assertions.json",
-        [
-            {
-                "kind": item.kind,
-                "ok": item.ok,
-                "expected": item.expected,
-                "actual": item.actual,
-                "detail": item.detail,
-            }
-            for item in results
-        ],
-    )
+    write_json(run_dir / "assertions.json", [_result_dict(item) for item in results])
+
+
+def _result_dict(item: AssertionResult) -> Dict[str, Any]:
+    return {
+        "kind": item.kind,
+        "ok": item.ok,
+        "expected": item.expected,
+        "actual": item.actual,
+        "detail": item.detail,
+    }
+
+
+async def _run_semantic(
+    cfg: Dict[str, Any],
+    semantic: Dict[str, Any],
+    texts: List[str],
+    run_dir: Path,
+) -> AssertionResult:
+    judge_cfg = cfg.get("judge") or {}
+    criteria = semantic.get("criteria", "")
+    if not judge_cfg.get("base_url") or not judge_cfg.get("model"):
+        write_json(
+            run_dir / "judge.json",
+            {"pass": False, "reason": "LLM 判定未配置", "skipped": True},
+        )
+        return AssertionResult(
+            kind="semantic",
+            ok=False,
+            expected=criteria,
+            actual="\n".join(texts),
+            detail="SKIPPED: LLM 判定未配置",
+        )
+    try:
+        verdict = await judge(
+            judge_cfg.get("base_url", ""),
+            judge_cfg.get("api_key", ""),
+            judge_cfg.get("model", ""),
+            criteria,
+            "\n".join(texts),
+            headers=judge_cfg.get("headers"),
+        )
+        write_json(run_dir / "judge.json", verdict)
+        return AssertionResult(
+            kind="semantic",
+            ok=bool(verdict["pass"]),
+            expected=criteria,
+            actual="\n".join(texts),
+            detail=verdict.get("reason", ""),
+        )
+    except JudgeError as exc:
+        write_json(
+            run_dir / "judge.json",
+            {"pass": False, "reason": str(exc), "skipped": False},
+        )
+        return AssertionResult(
+            kind="semantic",
+            ok=False,
+            expected=criteria,
+            actual="\n".join(texts),
+            detail=str(exc),
+        )
 
 
 def _error_summary(
@@ -82,6 +131,86 @@ def _error_summary(
         duration,
         {"error": repr(exc), "run_dir": str(run_dir)},
     )
+
+
+async def execute_case(
+    cfg: Dict[str, Any],
+    case: Dict[str, Any],
+    run_dir: Path,
+    bot_client: OneBotClient,
+    sender_client: OneBotClient,
+    log_capture: LogCapture,
+) -> Any:
+    """执行一个用例的全部步骤，返回 (results, step_summaries)。"""
+    results: List[AssertionResult] = []
+    step_summaries: List[Dict[str, Any]] = []
+    timeouts = cfg.get("timeouts") or {}
+
+    for index, step in enumerate(case_steps(case), start=1):
+        step_started = time.monotonic()
+        step_dir = Path(run_dir) / "steps" / "{:02d}".format(index)
+        step_dir.mkdir(parents=True, exist_ok=True)
+        send = step["send"]
+        expect = step["expect"]
+
+        mark = log_capture.mark()
+        send_started_at = int(time.time())
+        if send.get("at_bot", True):
+            message = build_group_message(send["text"], cfg["bot"]["qq"])
+        else:
+            message = [{"type": "text", "data": {"text": str(send["text"])}}]
+        sent = await sender_client.call(
+            "send_group_msg",
+            {"group_id": int(send["group_id"]), "message": message},
+        )
+        write_json(step_dir / "sent.json", {"response": sent, "step": step})
+
+        timeout = float(
+            expect.get(
+                "timeout_seconds",
+                timeouts.get("message_seconds", DEFAULT_MESSAGE_TIMEOUT_SECONDS),
+            )
+        )
+        replies = await collect_replies(
+            bot_client, cfg["bot"]["qq"], str(send["group_id"]), timeout
+        )
+        if not replies:
+            replies = await history_bot_replies(
+                sender_client,
+                cfg["bot"]["qq"],
+                str(send["group_id"]),
+                since_time=send_started_at - 1,
+            )
+        texts = [item["text"] for item in replies]
+        write_json(step_dir / "messages.json", replies)
+
+        step_results: List[AssertionResult] = []
+        if expect.get("messages"):
+            step_results.extend(evaluate_messages(texts, expect["messages"]))
+        log_text = log_capture.read_since(mark)
+        if expect.get("logs"):
+            step_results.extend(evaluate_logs(log_text, expect["logs"]))
+        (step_dir / "log-window.log").write_text(log_text, encoding="utf-8")
+
+        semantic = expect.get("semantic")
+        if semantic and semantic.get("enabled"):
+            step_results.append(await _run_semantic(cfg, semantic, texts, step_dir))
+
+        _write_assertions(step_dir, step_results)
+        status = _status_from_results(step_results)
+        step_summaries.append(
+            {
+                "step": index,
+                "status": status,
+                "duration_seconds": round(time.monotonic() - step_started, 3),
+                "results": [_result_dict(item) for item in step_results],
+            }
+        )
+        results.extend(step_results)
+        if status == "FAILED":
+            break
+
+    return results, step_summaries
 
 
 async def run_case(
@@ -149,104 +278,9 @@ async def run_case(
                 started_by_runner = True
             await instance.wait_ready(bot_client, require_platform_log=not attach)
 
-        mark = log_capture.mark()
-        send = case["send"]
-        # 发送前记录时间，历史兜底只接受此后的回复，避免旧消息造成假绿。
-        send_started_at = int(time.time())
-        if send.get("at_bot", True):
-            message = build_group_message(send["text"], cfg["bot"]["qq"])
-        else:
-            message = [{"type": "text", "data": {"text": str(send["text"])}}]
-        sent = await sender_client.call(
-            "send_group_msg",
-            {
-                "group_id": int(send["group_id"]),
-                "message": message,
-            },
+        results, step_summaries = await execute_case(
+            cfg, case, run_dir, bot_client, sender_client, log_capture
         )
-        write_json(run_dir / "sent.json", {"response": sent, "case": case})
-
-        timeouts = cfg.get("timeouts") or {}
-        timeout = float(
-            case["expect"].get(
-                "timeout_seconds",
-                timeouts.get("message_seconds", DEFAULT_MESSAGE_TIMEOUT_SECONDS),
-            )
-        )
-        replies = await collect_replies(
-            bot_client, cfg["bot"]["qq"], str(send["group_id"]), timeout
-        )
-        if not replies:
-            replies = await history_bot_replies(
-                sender_client,
-                cfg["bot"]["qq"],
-                str(send["group_id"]),
-                since_time=send_started_at - 1,
-            )
-        texts: List[str] = [item["text"] for item in replies]
-        write_json(run_dir / "messages.json", replies)
-
-        expect = case["expect"]
-        if expect.get("messages"):
-            results.extend(evaluate_messages(texts, expect["messages"]))
-        log_text = log_capture.read_since(mark)
-        if expect.get("logs"):
-            results.extend(evaluate_logs(log_text, expect["logs"]))
-        (run_dir / "log-window.log").write_text(log_text, encoding="utf-8")
-
-        semantic = expect.get("semantic")
-        if semantic and semantic.get("enabled"):
-            judge_cfg = cfg.get("judge") or {}
-            criteria = semantic.get("criteria", "")
-            if not judge_cfg.get("base_url") or not judge_cfg.get("model"):
-                write_json(
-                    run_dir / "judge.json",
-                    {"pass": False, "reason": "LLM 判定未配置", "skipped": True},
-                )
-                results.append(
-                    AssertionResult(
-                        kind="semantic",
-                        ok=False,
-                        expected=criteria,
-                        actual="\n".join(texts),
-                        detail="SKIPPED: LLM 判定未配置",
-                    )
-                )
-            else:
-                try:
-                    verdict = await judge(
-                        judge_cfg.get("base_url", ""),
-                        judge_cfg.get("api_key", ""),
-                        judge_cfg.get("model", ""),
-                        criteria,
-                        "\n".join(texts),
-                        headers=judge_cfg.get("headers"),
-                    )
-                    write_json(run_dir / "judge.json", verdict)
-                    results.append(
-                        AssertionResult(
-                            kind="semantic",
-                            ok=bool(verdict["pass"]),
-                            expected=criteria,
-                            actual="\n".join(texts),
-                            detail=verdict.get("reason", ""),
-                        )
-                    )
-                except JudgeError as exc:
-                    write_json(
-                        run_dir / "judge.json",
-                        {"pass": False, "reason": str(exc), "skipped": False},
-                    )
-                    results.append(
-                        AssertionResult(
-                            kind="semantic",
-                            ok=False,
-                            expected=criteria,
-                            actual="\n".join(texts),
-                            detail=str(exc),
-                        )
-                    )
-
         status = _status_from_results(results)
         duration = time.monotonic() - started
         _write_assertions(run_dir, results)
@@ -256,7 +290,7 @@ async def run_case(
             status,
             results,
             duration,
-            {"run_dir": str(run_dir)},
+            {"run_dir": str(run_dir), "steps": step_summaries},
         )
     except Exception as exc:
         if run_dir is None:

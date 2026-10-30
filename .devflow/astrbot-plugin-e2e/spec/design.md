@@ -1,149 +1,350 @@
-# AstrBot 插件端到端自动化测试设计（Design）
+# 通用 AstrBot 插件自动化测试 skill 设计（Design）
 
 ## Metadata（元数据）
 
-- 创建时间（Created At）：2026-10-27 17:41:14 CST。
-- 更新时间（Updated At）：2026-10-27 17:41:14 CST。
+- 创建时间（Created At）：2026-10-30 14:30:00 CST。
+- 更新时间（Updated At）：2026-10-30 14:30:00 CST。
 - 作者（Author）：Claude。
-- 目的（Purpose）：固定端到端测试运行器的结构、边界、数据流、接口与关键实现决策。
-- 关联项目（Related Repository / Project）：当前仓库 `.`。
+- 目的（Purpose）：固定需求 2 的结构、边界、数据流、接口与关键实现决策。
+- 关联项目（Related Repository / Project）：当前仓库 `.`；skill 真源仓库 `/Users/mobius/Documents/111AAA-code/person-config`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
 - 关联提案（Related Proposal）：`./proposal.md`。
-- 关联计划（Related Plan）：`../plans/2026-10-27-astrbot-plugin-e2e-plan.md`。
+- 关联计划（Related Plan）：`../plans/2026-10-30-通用插件测试skill-plan.md`。
 - 当前状态（Status）：待用户确认（Pending Approval）。
-- 文档边界（Scope / Boundary）：设计真相源；实现细节与任务顺序以 Plan 为准。
+- 文档边界（Scope / Boundary）：设计真相源；实现步骤与代码以 Plan 为准。
+- 归档：第一版设计已归档到 `./archive/2026-10-27-v1/design.md`。
 
-## 总体思路
-
-Runner 是独立 Python 进程，不嵌入 AstrBot。它通过两个 NapCat OneBot v11 WebSocket 通道工作：
-
-- 发送通道（Sender Channel）：连接发送者号 NapCat 的 WS 服务端，调用 `send_group_msg`。
-- 观察通道（Observer Channel）：连接机器人号 NapCat 的 WS 服务端，订阅 `message_sent` / 群消息事件。
-- 兜底通道：观察不到时，用发送者号调用 `get_group_msg_history` 回填。
-
-AstrBot 测试实例由 Runner 用子进程启动，使用独立数据根、WebUI 端口、OneBot 反向 WS 端口与插件目录。每次用例运行前，Runner 按用例插件重写测试实例配置，停止旧实例并启动新实例，确保插件开关与用例一致。
-
-## 结构与边界
+## 一、总体架构
 
 ```text
-tools/astrbot_e2e/
-├─ cli.py              # CLI 入口与退出码
-├─ config.py           # 配置加载、校验、脱敏
-├─ cases.py            # 用例加载与校验
-├─ assertions.py       # 包含/正则断言
-├─ reports.py          # 报告与证据
-├─ log_capture.py      # 日志窗口
-├─ onebot.py           # OneBot 消息与 WS 客户端
-├─ bootstrap.py        # 测试实例初始化与插件同步
-├─ orchestrator.py     # 启停、PID 归属、就绪检查
-├─ reloader.py         # WebUI 登录与重载
-├─ llm_judge.py        # LLM 语义判定
-├─ runner.py           # 单用例流水线
-├─ fixtures/           # 探针插件与 NapCat 配置样例
-├─ cases/              # 用例 JSON
-└─ tests/              # 单元测试
+Claude / 用户
+   │
+   ▼
+skill: astrbot-plugin-e2e（person-config 真源）
+   ├─ SKILL.md                 流程与门禁
+   ├─ scripts/probe_env.py     环境画像（只读）
+   ├─ scripts/discover_plugin.py  功能清单
+   ├─ scripts/gen_cases.py     用例草案
+   ├─ scripts/aggregate_report.py 报告重生成
+   ├─ scripts/sync_vendor.py   引擎快照
+   └─ vendor/astrbot_e2e/      可移植执行引擎
+             │
+             ▼
+项目内 tools/astrbot_e2e（优先复用）
+   ├─ cases.py      用例模型（单轮 + 多轮）
+   ├─ runner.py     单用例执行
+   ├─ suite.py      批量执行
+   ├─ reports.py    报告与脱敏
+   ├─ bootstrap.py  实例初始化与插件同步
+   ├─ orchestrator.py 启停与健康检查
+   ├─ onebot.py     OneBot v11 客户端
+   └─ cli.py        命令行入口
+             │
+             ▼
+2 × NapCat + 1 × 测试 AstrBot（独立实例）
 ```
 
-边界：
+设计原则：
 
-- `config.py` 只读本地配置，不写凭据。
-- `bootstrap.py` 只操作 `test_root`，拒绝生产数据根。
-- `orchestrator.py` 只停止自己 PID 文件记录且命令行含 `astrbot` 的进程。
-- `runner.py` 只向配置的测试群发送消息。
-- `reloader.py` 只访问测试实例 WebUI。
-- 被测插件从 `integrations/astrbot/<plugin>` 复制，运行时只改测试实例副本。
+1. **执行引擎单一真源**：本仓库 `tools/astrbot_e2e`；skill 只带发布快照。
+2. **skill 只做编排与生成**：探测、分析、生成、报告；不重复实现 OneBot 客户端。
+3. **生产与测试隔离**：不同根目录、不同端口；生产操作需用户确认。
+4. **默认安全**：未知进程不杀、不可测项不静默、报告默认脱敏。
 
-## 数据流与接口
+## 二、执行引擎设计
 
-### 1. 配置
+### 2.1 用例模型（Cases）
 
-`config.local.json` 提供：
+支持两种形状，二选一：
 
-- `test_root`、`webui`、`astrbot`（命令、反向 WS、插件列表、超时）。
-- `bot` / `sender`（QQ 号、OneBot WS URL、Token）。
-- `group_id`、`judge`、`timeouts`。
-
-校验规则：
-
-- `test_root` 不得等于 `~/.astrbot`。
-- 端口不得与生产 `6185 / 6199 / 6099` 重叠。
-- `bot.qq` 与 `sender.qq` 必须不同。
-- `group_id` 必须是数字字符串。
-
-### 2. 用例
+**旧格式（保持兼容）**
 
 ```json
 {
-  "name": "探针插件回显",
+  "name": "探针回显",
   "plugin": "astrbot_plugin_e2e_probe",
-  "reload": true,
-  "send": {"group_id": "{{group_id}}", "text": "/e2e_echo hello-e2e", "at_bot": true},
-  "expect": {
-    "timeout_seconds": 30,
-    "messages": [{"contains": ["e2e_echo:hello-e2e"]}],
-    "logs": [{"contains": ["[e2e_probe] echo hello-e2e"]}],
-    "semantic": {"enabled": false, "criteria": ""}
-  }
+  "send": {"group_id": "{{group_id}}", "text": "/e2e_echo hello", "at_bot": true},
+  "expect": {"timeout_seconds": 30, "messages": [{"contains": ["e2e_echo:hello"]}]}
 }
 ```
 
-首版只支持单步 `send` + `expect`；多轮 `steps` 属于延期项。
+**新格式（多轮）**
 
-### 3. 执行流水线
+```json
+{
+  "name": "cc-qq 多轮安全命令",
+  "plugin": "astrbot_plugin_cc_qq",
+  "steps": [
+    {
+      "send": {"group_id": "{{group_id}}", "text": "/pwd", "at_bot": true},
+      "expect": {"timeout_seconds": 30, "messages": [{"regex": "\\S"}]}
+    },
+    {
+      "send": {"group_id": "{{group_id}}", "text": "/help", "at_bot": true},
+      "expect": {"timeout_seconds": 30, "messages": [{"contains": ["/new"]}]}
+    }
+  ]
+}
+```
 
-1. `prepare_instance(cfg, active_plugin)`：初始化测试根、设置 WebUI 密码、写平台/端口/插件配置、同步插件、按用例插件启用或禁用 `cc_qq`。
-2. 若测试实例已运行，停止；启动新实例；记录 PID。
-3. 连接机器人号与发送者号 OneBot，校验 `get_login_info`。
-4. 等待 WebUI 端口、OneBot 机器人登录与“适配器已连接”日志。
-5. 按需调用 WebUI 登录与插件重载；失败则重启实例兜底。
-6. 记录日志偏移；发送 `at + text` 群消息。
-7. 从观察通道收集机器人回复；无回复时用群消息历史回填。
-8. 执行消息断言、日志断言；按需调用 LLM 判定。
-9. 写 `summary.json`、`messages.json`、`assertions.json`、`judge.json`、`log-window.log`。
-10. 停止本次启动的测试实例。
+统一规则：
 
-### 4. 状态与退出码
+- 顶层字段：`name`、`plugin`、`reload`、`send`、`expect`、`steps`。
+- `steps` 与 `send`/`expect` 不能同时出现。
+- `steps` 非空，最多 50 步。
+- 每步必须有 `send` 与 `expect`；`expect` 至少包含 `messages` / `logs` / `semantic` 之一。
+- `group_id` 支持 `{{group_id}}` 占位符，所有步骤统一渲染。
+- `case_steps(case)` 把两种形状统一成步骤列表，供 runner 与 suite 复用。
 
-| 状态 | 含义 | 退出码 |
+### 2.2 单用例执行（Runner）
+
+`runner.execute_case(cfg, case, run_dir, bot_client, sender_client, log_capture)`：
+
+1. 遍历 `case_steps(case)`。
+2. 每步创建 `run_dir/steps/NN/`。
+3. 记录日志 mark 与发送时间。
+4. 发送群消息（默认 @ bot）。
+5. 采集回包；超时后回退到群历史，并用发送时间过滤旧消息。
+6. 执行消息断言、日志断言、可选 LLM 语义判定。
+7. 写入 `sent.json`、`messages.json`、`log-window.log`、`assertions.json`。
+8. 任一步 FAILED 即停止后续步骤，保留已有证据。
+9. 返回 `(results, step_summaries)`。
+
+`run_case` 负责实例准备、启动、登录校验、等待就绪、reload、清理，再调用 `execute_case`。
+
+### 2.3 批量执行（Suite）
+
+`suite.run_suite(cfg, case_paths, reload, reports_dir, attach, keep_running)`：
+
+1. 加载并渲染全部用例；校验同一插件。
+2. 创建 suite 目录。
+3. `--attach` 时复用实例；否则停止残留实例并启动新实例。
+4. 连接 bot/sender 客户端，校验账号，等待就绪。
+5. 逐用例：创建子目录 → 可选 reload → `execute_case` → 记录状态。
+6. 聚合为 suite 结构，调用 `write_suite_report`。
+7. 清理客户端；非 attach 且未 `--keep-running` 时停止实例。
+
+退出码：`0` 全部通过，`1` 存在失败，`2` 用例/配置/环境错误，`3` 存在跳过。
+
+### 2.4 插件源解析（Bootstrap）
+
+优先级：
+
+1. `cfg["plugin_sources"][name]`
+2. `<repo>/integrations/astrbot/<name>`
+3. `~/.astrbot/data/plugins/<name>`
+4. `<repo>/tools/astrbot_e2e/fixtures/<name>`
+
+复制时忽略 `__pycache__`、`*.pyc`、`tests`。只读复制，不修改源目录。
+
+### 2.5 报告与脱敏（Reports）
+
+suite 结构：
+
+```json
+{
+  "suite": "<timestamp>-<plugin>-suite",
+  "plugin": "astrbot_plugin_cc_qq",
+  "status": "PASSED",
+  "duration_seconds": 12.3,
+  "started_at": "2026-10-30 14:30:00",
+  "config": {"bot": {"qq": "32********68", "token": "***"}},
+  "cases": [
+    {"case": "命令 /help", "status": "PASSED", "run_dir": "...", "steps": [...]}
+  ],
+  "ops": ["2026-10-30 14:30:00 已停止残留测试实例"]
+}
+```
+
+脱敏规则：
+
+- 配置中的 `token`、`password`、`api_key`、`secret` 等键 → `***`。
+- 配置中的 bot/sender QQ 号在任意字符串中出现 → 中间掩码。
+- 超过 500 字符的字符串截断并标注。
+- `--no-redact` 可关闭，但不在默认流程中使用。
+
+输出：
+
+- `report.json`：机器可读。
+- `report.md`：摘要、用例表、失败摘要、操作记录。
+
+### 2.6 自愈与安全（Healing & Safety）
+
+自动执行（测试侧）：
+
+- 停止残留测试实例（PID 文件 + 工作目录校验）。
+- 启动失败重试 1 次。
+- reload 失败改用重启实例。
+- 插件副本不同步时重新复制。
+- 历史消息假通过时用发送时间过滤。
+
+必须用户确认（生产侧）：
+
+- 暂停/恢复生产 AstrBot。
+- 修改生产 NapCat 配置。
+- 删除测试数据或报告。
+
+永不自动：
+
+- 杀未知进程。
+- 修改被测插件源码。
+- 修复插件缺陷。
+
+自愈上限：同一故障最多自动修复 2 次；全部动作写入 `ops` 与 `report.md`。
+
+## 三、skill 设计
+
+### 3.1 环境探测（probe_env）
+
+输入：`--config`（可选）、`--home`（测试注入）。
+
+输出 `environment.json`：
+
+- `platform`：系统、版本、架构、是否 macOS。
+- `python`：版本与解释器。
+- `astrbot`：命令路径、版本、数据根。
+- `napcat`：安装目录、版本、工作目录。
+- `qq`：App 路径、是否运行。
+- `plugins`：生产插件目录与可用插件。
+- `ports`：生产/测试端口占用。
+- `config`：测试根、账号、群号、端口（不含密钥）。
+
+macOS 已知路径：
+
+- AstrBot 数据根：`~/.astrbot`
+- NapCat：`~/Library/Containers/com.tencent.qq/Data/Documents/napcat`
+- QQ 容器：`~/Library/Containers/com.tencent.qq/Data/Library/Application Support/QQ`
+
+### 3.2 功能清单（discover_plugin）
+
+输入：插件目录。
+
+来源：
+
+- `metadata.yaml`：名称、版本、作者、描述、平台。
+- `_conf_schema.json`：配置项。
+- `*.py`：命令、命令组、事件、LLM 钩子注册点。
+- `README.md`：反引号包裹的命令文本。
+
+输出 `features.json`：
+
+```json
+{
+  "plugin": "astrbot_plugin_cc_qq",
+  "features": [
+    {
+      "id": "command-help",
+      "title": "命令 /help",
+      "kind": "command",
+      "trigger": "/help",
+      "testability": "text",
+      "risk": "medium",
+      "notes": "README.md:77"
+    }
+  ],
+  "summary": {"total": 30, "commands": 15, "events": 1, "hooks": 0, "config": 14, "manual": 15}
+}
+```
+
+规则：
+
+- 命令去重。
+- 高风险命令（`/cc`、`/goon`、`/!`、`/new`、`/end`、`/initbase`、`/approve`、`/deny`）标 `risk=high`。
+- 事件、钩子、配置标 `testability=manual/config`，不自动生成用例。
+- 静态扫描负责不漏注册点；AI 负责补预期与风险说明。
+
+### 3.3 用例生成（gen_cases）
+
+规则：
+
+- 只生成 `kind=command`、`testability=text` 的命令。
+- 跳过高风险命令、带参数占位符的命令、事件/钩子/配置。
+- 生成用例：`{{group_id}}`、`at_bot=true`、非空回复正则、默认 30 秒超时。
+- 跳过项写入 `SKIPPED.md`，包含原因。
+- 多轮流程由 AI 根据 `features.json` 手写，放入 `cases/manual/`。
+
+### 3.4 报告重生成（aggregate_report）
+
+- 读取已有 suite `report.json`。
+- 调用执行引擎的 `write_suite_report` 重新渲染。
+- 注意：已脱敏的报告无法恢复原文；原始证据在各步骤目录。
+
+### 3.5 vendor 快照（sync_vendor）
+
+- 输入：`tools/astrbot_e2e`。
+- 输出：`vendor/astrbot_e2e`，忽略 `reports/`、`config.local.json`、`tests/`、`__pycache__`。
+- 写入 `VERSION.json`：源路径、同步时间、目录哈希。
+- 运行时优先项目内引擎，找不到再用 vendor。
+
+## 四、安装与同步
+
+```text
+person-config/skills/custom/astrbot-plugin-e2e/   ← 唯一真源
+        │  rsync --delete
+        ▼
+本仓库 .claude/skills/astrbot-plugin-e2e/          ← 使用副本
+```
+
+- 只修改真源；副本由同步生成。
+- `catalog.json` 增加 `categories.custom` 条目与 `skills.astrbot-plugin-e2e` 元数据。
+- 不自动 commit。
+
+## 五、数据流
+
+```text
+probe_env.py
+   → environment.json
+discover_plugin.py
+   → features.json
+gen_cases.py
+   → cases/*.json + SKIPPED.md
+run-suite
+   → suite/cases/NN/*.json|log
+   → report.json + report.md
+aggregate_report.py
+   → 重新渲染 report.md
+```
+
+## 六、测试策略
+
+- 单元测试：改动用 TDD，先写失败测试，再实现。
+- 引擎测试：`PYTHONPATH=tools backend/.venv/bin/python -m unittest discover -s tools/astrbot_e2e/tests -t tools`。
+- skill 测试：`PYTHONPATH=. python3 -m unittest discover -s tests -t .`（在 skill 根目录）。
+- 真实环境验收：Task 12，需要用户启动三服务并扫码登录。
+
+## 七、兼容性
+
+已验证组合：
+
+- macOS（Darwin 25.2.0）
+- AstrBot `4.29.3`
+- NapCat `4.18.28`
+- Python 3.12（`backend/.venv`）
+
+其他平台只输出探测清单与适配思路：
+
+- Linux：systemd/docker、路径差异、进程检查。
+- Windows：路径、进程检查、QQ 客户端差异。
+
+## 八、关键决策
+
+| 编号 | 决策 | 依据 |
 | --- | --- | --- |
-| `PASSED` | 所有断言通过 | `0` |
-| `FAILED` | 硬断言或语义断言失败 | `1` |
-| `ERROR` | 环境、连接或运行错误 | `2` |
-| `SKIPPED` | 仅语义断言因未配置而跳过，硬断言通过 | `3` |
+| D1 | 混合形态：自包含 + 优先复用 | 复用已验证代码，同时可移植 |
+| D2 | 测试侧自愈，生产侧确认 | 安全边界 |
+| D3 | 自动分析 + 人工确认 | 覆盖与可控的平衡 |
+| D4 | macOS 可运行，其他平台给思路 | 只有 macOS 可验证 |
+| D5 | JSON + Markdown，默认脱敏 | 机器可读与人工可读 |
+| D6 | person-config 真源 + 仓库副本 | 统一 skill 管理 |
+| D7 | 多轮 steps 首版 | 覆盖会话类功能 |
+| D8 | 清单默认必确认，`--yes` 可跳过 | 防误测 |
+| D9 | 生产暂停/恢复由 skill 执行但需确认 | 效率与安全 |
 
-### 5. 插件隔离
+## 九、风险与边界
 
-- 探针用例：`cc_qq` 的 `enabled_group_ids=[]`、`private_enabled=false`，避免把 `/e2e_echo` 当普通消息启动 Claude/Codex。
-- `cc_qq` 用例：启用测试群，写入 `group_rules_json` 与临时工作目录。
-- 每次 Run 按 `case.plugin` 重写配置并重启实例，避免内存中的旧配置生效。
-
-## 复用点
-
-- `integrations/astrbot/astrbot_plugin_cc_qq`：真实被测插件；复用其命令与配置 schema。
-- `.devflow/astrbot-napcat-terminal/`：终端联启调研结论；复用端口与部署风险判断。
-- AstrBot WebUI API：`/api/v1/auth/login` 与 `/api/v1/plugins/reload`。
-- OneBot v11：`send_group_msg`、`get_login_info`、`get_group_msg_history`。
-- 现有 `backend/.venv` 的 `aiohttp`，不新增依赖。
-
-## 风险与权衡
-
-| 风险 | 影响 | 权衡 |
-| --- | --- | --- |
-| 同机双开 QQ 不可行 | 主方案阻塞 | Spike 0 先行；失败回退容器/半自动 |
-| NapCat 配置串用 | 两个号互相覆盖 | 独立配置目录；必要时复制 QQ.app 并只改副本 |
-| 自身消息不上报 | 观察不到回复 | 事件流 + 历史回填双通道 |
-| WebUI 鉴权变化 | 重载失败 | 登录失败时重启实例兜底 |
-| 探针被 `cc_qq` 拦截 | 误启动代理 | 按用例禁用非被测插件 |
-| 测试实例误连生产 | 污染生产 | 配置校验 + PID 归属 + 端口检查 |
-| 重启实例耗时 | 用例变慢 | 首版优先正确性；后续再优化为热重载复用 |
-| LLM 判定不稳定 | 误判 | 默认硬断言；语义判定仅按用例启用并保留原文 |
-
-## 关键实现决策
-
-1. **Runner 独立于 AstrBot**：不耦合 AstrBot 内部事件总线，保证真实 E2E。
-2. **独立测试实例**：`test_root`、`6186`、`6198`、`6200`、`6201` 与生产隔离。
-3. **双账号**：机器人号接入测试实例，发送者号只向 Runner 暴露 OneBot。
-4. **按用例重配并重启**：保证插件开关、配置与日志从干净状态开始。
-5. **消息为主、日志为辅**：消息是用户实际看到的结果；日志补充后台行为。
-6. **SKIPPED 不等于 PASSED**：未配置 LLM 判定时明确标记跳过，退出码 `3`。
-7. **可附加模式 `--attach`**：用于在运行中的实例上做真实热重载增量验证。
+- 生产 bot 兼任测试机器人，测试群流量会进入生产 bot（`backlog.md` Q1）。
+- 生产 NapCat 的 `6198` 客户端在测试实例停止时会重试（Q2）。
+- 报告保留与清理策略未定（Q5）。
+- LLM 语义判定单次调用，无重试与阈值（Q6）。
+- 日志断言依赖插件日志文案（Q10）。
+- 跨仓库同步依赖人工执行 `rsync`，无自动守护。

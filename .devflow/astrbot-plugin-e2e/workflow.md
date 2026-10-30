@@ -3,24 +3,27 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 16:47:08 CST。
-- 更新时间（Updated At）：2026-10-27 22:40:00 CST。
+- 更新时间（Updated At）：2026-10-30 15:55:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：定义 AstrBot 插件端到端自动化测试（End-to-End Test，E2E）mission 的目标、范围、路径与阶段门禁。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
 - 原始需求（Raw Input）：`zzz-prompt-debug/插件自动化测试验证/prompt-01.md`。
-- 当前状态（Status）：已完成（Completed），第一版收尾并提交。
+- 当前状态（Status）：需求 2 已真机验收并收尾；等待提交许可。
 - 文档边界（Scope / Boundary）：当前 mission 的流程与范围真相源（source of truth）；不是已批准的实施计划（Plan）。
 
 ## 目标
 
 建立可重复、可判定的 AstrBot 插件端到端自动化测试能力：在专门的测试群中，用专门的测试账号发送消息，采集插件回复与运行日志，自动断言是否符合预期，并支持插件重载后继续验证。
 
+第二阶段目标：把验证流程固化成通用 skill（环境探测、三服务编排、功能清单、多轮用例、脱敏报告、测试侧自愈）。
+
 ## 范围
 
 - 首版：通用测试运行器（Runner） + 探针插件 + `cc_qq /help` 用例。
+- 第二阶段：通用测试 skill（`astrbot-plugin-e2e`）+ 多轮 `steps` + `run-suite` + 报告脱敏 + 测试侧自愈。
 - 已实现：环境编排、消息注入、结果采集、硬断言、可选 LLM 语义判定、插件重载、测试报告、失败证据。
-- 延期：WebUI 页面、CI 集成、多账号并行、自动扫码登录、复杂多轮对话、cc_qq 长任务全量覆盖。
+- 延期：WebUI 页面、CI 集成、多账号并行、自动扫码登录、富媒体、Linux/Windows 可运行。
 
 ## 成功标准
 
@@ -32,10 +35,13 @@
 ## 当前路径
 
 - 重型路径（Heavy Path）：Align → Plan → proposal/design/tasks → Apply → Verify/Close。
-- 当前阶段：Close（第一版完成）。
+- 当前阶段：Verify/Close 完成（需求 2）。
 - 设计稿：`plans/2026-10-27-astrbot-plugin-e2e-align.md`。
 - 实施计划：`plans/2026-10-27-astrbot-plugin-e2e-plan.md`。
-- 三件套：`spec/proposal.md`、`spec/design.md`、`spec/tasks.md`。
+- 需求 2 设计稿：`plans/2026-10-30-通用插件测试skill-align.md`。
+- 需求 2 实施计划：`plans/2026-10-30-通用插件测试skill-plan.md`。
+- 需求 2 三件套：`spec/proposal.md`、`spec/design.md`、`spec/tasks.md`。
+- 第一版三件套归档：`spec/archive/2026-10-27-v1/`。
 - Spike 0：`plans/2026-10-27-spike-0-dual-qq-result.md`。
 - 完成交接：`handoffs/2026-10-27-002-第一版完成交接.md`。
 
@@ -55,6 +61,11 @@ Mission Init -> Explore -> Align -> Plan -> Propose/Tasks -> Apply -> Verify/Clo
 6. 首个闭环：探针 E2E PASSED。
 7. 真实插件：`cc_qq /help` E2E PASSED（含语义判定）。
 8. Verify/Close：完成；延期项与交接落盘。
+9. 需求 2 Align：完成；9 项决策落盘。
+10. 需求 2 Plan：完成；Task 0–13，待用户批准。
+11. 需求 2 spec 三件套：完成；第一版 spec 已归档。
+12. 需求 2 Apply Task 0–11：完成；引擎 127/127，skill 12/12。
+13. 需求 2 真机验收：完成；多轮与 suite PASSED，脱敏与自愈演练通过。
 
 ## 当前阶段出口条件
 
@@ -65,3 +76,6 @@ Mission Init -> Explore -> Align -> Plan -> Propose/Tasks -> Apply -> Verify/Clo
 - 延期项：`deferred/2026-10-27-post-mvp-deferred.md`。
 - 未决问题与首版限定：`backlog.md`。
 - 提交：第一版相关文件已提交；未提交 `config.local.json`、`reports/`、`.gitignore` 与无关脏文件。
+- 需求 2：Plan 已落盘，等待用户批准；批准后进入 `spec/` 三件套与 Apply。
+- 需求 2 验收证据：`reports/20261030-154828-636210-cc-qq`、`reports/20261030-154847-882152-astrbot_plugin_cc_qq-suite`、`reports/20261030-155012-908540-astrbot_plugin_cc_qq-suite`。
+- 需求 2 已完成；当前等待用户批准提交。

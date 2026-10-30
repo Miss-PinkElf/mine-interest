@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 PLATFORM_ID = "Test-E2E"
+PRODUCTION_PLUGINS_DIR = Path.home() / ".astrbot" / "data" / "plugins"
 
 
 def ensure_test_root(cfg: Dict[str, Any]) -> Path:
@@ -78,19 +79,28 @@ def patch_config(cfg: Dict[str, Any]) -> None:
     (root / "data" / "logs").mkdir(parents=True, exist_ok=True)
 
 
+def resolve_plugin_source(cfg: Dict[str, Any], repo_root: Path, name: str) -> Path:
+    """按优先级解析插件源目录，返回第一个存在的候选。"""
+    candidates: List[Path] = []
+    configured = (cfg.get("plugin_sources") or {}).get(name)
+    if configured:
+        candidates.append(Path(configured).expanduser())
+    candidates.append(Path(repo_root) / "integrations" / "astrbot" / name)
+    candidates.append(PRODUCTION_PLUGINS_DIR / name)
+    candidates.append(Path(repo_root) / "tools" / "astrbot_e2e" / "fixtures" / name)
+    for source in candidates:
+        if source.is_dir():
+            return source
+    raise RuntimeError(
+        "插件源目录不存在，已尝试: {}".format([str(item) for item in candidates])
+    )
+
+
 def sync_plugins(cfg: Dict[str, Any], repo_root: Path, plugins: List[str]) -> None:
     target_base = ensure_test_root(cfg) / "data" / "plugins"
     target_base.mkdir(parents=True, exist_ok=True)
     for name in plugins:
-        integration_source = Path(repo_root) / "integrations" / "astrbot" / name
-        fixture_source = Path(repo_root) / "tools" / "astrbot_e2e" / "fixtures" / name
-        source = integration_source if integration_source.exists() else fixture_source
-        if not source.exists():
-            raise RuntimeError(
-                "插件源目录不存在，已尝试: {} 与 {}".format(
-                    integration_source, fixture_source
-                )
-            )
+        source = resolve_plugin_source(cfg, repo_root, name)
         target = target_base / name
         if target.exists():
             shutil.rmtree(target)

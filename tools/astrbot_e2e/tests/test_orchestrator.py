@@ -93,6 +93,21 @@ class OrchestratorTest(unittest.TestCase):
         self.assertEqual(busy, [("127.0.0.1", 1)])
 
 
+class PortEndpointsTest(unittest.TestCase):
+    def test_exposes_port_endpoints(self):
+        cfg = {
+            "test_root": "/tmp/test-root",
+            "webui": {"host": "127.0.0.1", "port": 6186},
+            "astrbot": {"reverse_ws_host": "127.0.0.1", "reverse_ws_port": 6198},
+        }
+        instance = AstrBotInstance(cfg, Path("/tmp/run"))
+        endpoints = instance.port_endpoints()
+        self.assertEqual(
+            [(label, port) for label, _, port in endpoints],
+            [("WebUI", 6186), ("OneBot 反向 WS", 6198)],
+        )
+
+
 class WaitReadyLogMarkTest(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.tmp = tempfile.TemporaryDirectory()

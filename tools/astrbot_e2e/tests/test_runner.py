@@ -175,3 +175,141 @@ class RunCaseHistoryFallbackTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(kwargs.get("since_time"), 1234567890 - 1)
         prepare.assert_called_once()
         instance.stop.assert_called_once()
+
+
+class MultiStepCaseTest(unittest.IsolatedAsyncioTestCase):
+    @mock.patch("astrbot_e2e.runner.prepare_instance")
+    @mock.patch("astrbot_e2e.runner.AstrBotInstance")
+    @mock.patch("astrbot_e2e.runner.OneBotClient")
+    @mock.patch("astrbot_e2e.runner.collect_replies", new_callable=mock.AsyncMock)
+    @mock.patch("astrbot_e2e.runner.history_bot_replies", new_callable=mock.AsyncMock)
+    @mock.patch("astrbot_e2e.runner.time.time", return_value=1234567890)
+    async def test_runs_all_steps_and_records_step_index(
+        self, time_mock, history, collect, client_cls, instance_cls, prepare
+    ):
+        def make_client(user_id):
+            client = mock.MagicMock()
+            client.connect = mock.AsyncMock()
+            client.close = mock.AsyncMock()
+
+            async def call(action, params):
+                if action == "get_login_info":
+                    return {"user_id": user_id}
+                if action == "send_group_msg":
+                    return {"message_id": 7}
+                raise AssertionError("unexpected action: {}".format(action))
+
+            client.call = mock.AsyncMock(side_effect=call)
+            return client
+
+        client_cls.side_effect = [make_client("10001"), make_client("10002")]
+        instance = mock.MagicMock()
+        instance.is_running.return_value = False
+        instance.start.return_value = mock.MagicMock(pid=4242)
+        instance.wait_ready = mock.AsyncMock()
+        instance.stop = mock.MagicMock()
+        instance_cls.return_value = instance
+        collect.side_effect = [
+            [{"text": "帮助信息", "raw": {}}],
+            [{"text": "当前会话", "raw": {}}],
+        ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            case_path = tmp_path / "case.json"
+            case_path.write_text(
+                json.dumps(
+                    {
+                        "name": "multi-step",
+                        "plugin": "astrbot_plugin_e2e_probe",
+                        "steps": [
+                            {
+                                "send": {"group_id": "123456789", "text": "/help"},
+                                "expect": {"messages": [{"contains": ["帮助"]}]},
+                            },
+                            {
+                                "send": {"group_id": "123456789", "text": "/info"},
+                                "expect": {"messages": [{"contains": ["会话"]}]},
+                            },
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            summary = await run_case(
+                _config(tmp_path / "root"),
+                str(case_path),
+                reports_dir=str(tmp_path / "reports"),
+            )
+
+            self.assertEqual(summary["status"], "PASSED")
+            self.assertEqual([item["step"] for item in summary["steps"]], [1, 2])
+            self.assertEqual(collect.await_count, 2)
+            run_dir = Path(summary["run_dir"])
+            self.assertTrue((run_dir / "steps" / "01" / "messages.json").exists())
+            self.assertTrue((run_dir / "steps" / "02" / "messages.json").exists())
+
+    @mock.patch("astrbot_e2e.runner.prepare_instance")
+    @mock.patch("astrbot_e2e.runner.AstrBotInstance")
+    @mock.patch("astrbot_e2e.runner.OneBotClient")
+    @mock.patch("astrbot_e2e.runner.collect_replies", new_callable=mock.AsyncMock)
+    @mock.patch("astrbot_e2e.runner.history_bot_replies", new_callable=mock.AsyncMock)
+    @mock.patch("astrbot_e2e.runner.time.time", return_value=1234567890)
+    async def test_stops_after_failed_step(
+        self, time_mock, history, collect, client_cls, instance_cls, prepare
+    ):
+        def make_client(user_id):
+            client = mock.MagicMock()
+            client.connect = mock.AsyncMock()
+            client.close = mock.AsyncMock()
+
+            async def call(action, params):
+                if action == "get_login_info":
+                    return {"user_id": user_id}
+                if action == "send_group_msg":
+                    return {"message_id": 7}
+                raise AssertionError("unexpected action: {}".format(action))
+
+            client.call = mock.AsyncMock(side_effect=call)
+            return client
+
+        client_cls.side_effect = [make_client("10001"), make_client("10002")]
+        instance = mock.MagicMock()
+        instance.is_running.return_value = False
+        instance.start.return_value = mock.MagicMock(pid=4242)
+        instance.wait_ready = mock.AsyncMock()
+        instance.stop = mock.MagicMock()
+        instance_cls.return_value = instance
+        collect.return_value = [{"text": "不匹配", "raw": {}}]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            case_path = tmp_path / "case.json"
+            case_path.write_text(
+                json.dumps(
+                    {
+                        "name": "multi-step-fail",
+                        "plugin": "astrbot_plugin_e2e_probe",
+                        "steps": [
+                            {
+                                "send": {"group_id": "123456789", "text": "/help"},
+                                "expect": {"messages": [{"contains": ["帮助"]}]},
+                            },
+                            {
+                                "send": {"group_id": "123456789", "text": "/info"},
+                                "expect": {"messages": [{"contains": ["会话"]}]},
+                            },
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            summary = await run_case(
+                _config(tmp_path / "root"),
+                str(case_path),
+                reports_dir=str(tmp_path / "reports"),
+            )
+
+        self.assertEqual(summary["status"], "FAILED")
+        self.assertEqual(collect.await_count, 1)
+        self.assertEqual([item["step"] for item in summary["steps"]], [1])

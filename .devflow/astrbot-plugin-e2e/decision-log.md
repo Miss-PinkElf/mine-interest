@@ -3,12 +3,12 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 16:47:08 CST。
-- 更新时间（Updated At）：2026-10-27 22:40:00 CST。
+- 更新时间（Updated At）：2026-10-30 15:55:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：记录当前 mission 的关键决策与尚未批准的候选方向。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
-- 当前状态（Status）：已完成（Completed），第一版收尾并提交。
+- 当前状态（Status）：第一版已完成；需求 2 已 Align，待 Plan。
 - 文档边界（Scope / Boundary）：决策真相源（source of truth）；候选建议不等于已批准方案。
 
 ## 最新决策
@@ -43,3 +43,21 @@
 | 2026-10-27 22:36:42 CST | 补做增量重载验证并通过：修改测试实例副本为 `e2e_echo-v2`，`--attach --reload` 后返回 `e2e_echo-v2:hello-e2e`，未重启整个实例 | 只验证 WebUI reload 接口返回成功；跳过 Task 14 Step 4 | 只证明“调用了接口”不足以证明热重载真的加载新代码；前后对比才满足完成定义 | 证据 `reports/20261027-223642-572604-case`；临时 v2 用例与副本已清理；Task 14 闭环 |
 | 2026-10-27 22:40:00 CST | 收尾分类：首版限定与明确延期分开记录，未讨论问题集中到 `backlog.md` | 全部塞进 `deferred/`；只写在聊天里 | 用户要求区分“只做第一版”和“后续明确延期”，并记录未讨论问题 | `backlog.md` 记录 Q1–Q10 与首版限定；`deferred/2026-10-27-post-mvp-deferred.md` 记录明确延期 |
 | 2026-10-27 22:40:00 CST | 收尾提交范围：mission 文档 + `tools/astrbot_e2e/` + 原始需求文档；不含无关脏文件 | 提交全部工作区；只提交代码 | 用户要求只提交本次对话相关文件；`config.local.json` 含密钥、`reports/` 含敏感证据，均不入库 | 提交时显式排除 `config.local.json`、`reports/`；`.gitignore` 按用户默认要求未提交；未提交 `AGENTS.md`、`.claude/settings.local.json`、`zzz-prompt-debug/接入agent/`、`zzz-prompt-debug/调研bridge/` |
+| 2026-10-30 14:02:15 CST | 需求 2 进入 Align；skill 形态采用「混合：自包含 + 优先复用」 | 完全自包含；薄封装 | 复用已验证的 `tools/astrbot_e2e` 降低风险，同时用 `vendor/` 快照保证换机器可带走 | 执行引擎真源仍在本仓库；skill 只带发布快照，不维护两套实现 |
+| 2026-10-30 14:02:15 CST | 自愈边界：自动修复测试侧，生产侧必须用户确认 | 只诊断；全自动含生产 | 测试侧故障可重复、可回滚；生产误操作影响真实 bot 与群 | 自动动作需写 `ops.log`；同一故障最多自动修复 2 次 |
+| 2026-10-30 14:02:15 CST | 功能清单来源：自动分析插件源码/元数据 + 人工确认 | 人工提供清单；纯运行时探测 | 静态扫描不漏注册点，人工确认控制误测范围 | 默认必须确认，`--yes` 可跳过；不可测项标 `SKIPPED` |
+| 2026-10-30 14:02:15 CST | 平台范围：macOS 可运行，Linux/Windows 只给探测清单与适配思路 | 首版同时支持 Linux；三平台全支持 | 只有 macOS 可真实验证，避免假承诺 | 其他平台输出环境画像、差异点与推荐命令，不假装可运行 |
+| 2026-10-30 14:02:15 CST | 报告形态：JSON 证据 + Markdown 摘要，默认脱敏 | 纯 Markdown；JSON + HTML | 机器可读证据便于归档与 CI，Markdown 便于人工阅读 | 报告默认不入库；`--no-redact` 需明确使用 |
+| 2026-10-30 14:02:15 CST | skill 落点：`person-config/skills/custom/` 为真源，本仓库 `.claude/skills/` 放副本，并登记 `catalog.json` | 仅用户级；仅仓库内 | person-config 已是 skill 唯一真源且有对账工具；本仓库副本保证当前项目直接可用 | 只改真源，副本由同步生成；更新 `catalog.json` 的 `copies` |
+| 2026-10-30 14:02:15 CST | 首版补齐多轮 `steps`，并新增 `run-suite` 批量入口 | 首版仍单轮；骨架 + 多轮可选 | 需求 2 要求“测试所有功能”，cc-qq 的 `/new` → `/cc` → `/end` 等必须多轮 | 用例模型需向后兼容；批量执行避免每个用例重启实例 |
+| 2026-10-30 14:02:15 CST | 生产 AstrBot 暂停/恢复由 skill 执行，但必须用户点确认 | 只输出命令；全自动 | 兼顾效率与安全；生产配置自动备份 | 任何生产侧动作记入报告与 `ops.log` |
+| 2026-10-30 14:02:15 CST | Align 设计稿落盘：`plans/2026-10-30-通用插件测试skill-align.md` | 直接进入 Plan | brainstorming 门禁要求先形成可审阅设计，再写实施计划 | 等待用户审阅；通过后进入 Plan，未通过前不实施 |
+| 2026-10-30 14:20:00 CST | Plan 落盘：`plans/2026-10-30-通用插件测试skill-plan.md`，Task 0–13 | 直接进入 Apply；先做最小版 | 重型路径要求 Plan 先于 Propose/Tasks；计划已覆盖执行引擎、skill 脚本、安装登记与验收 | 等待用户批准；批准后产出 `spec/` 三件套，未批准前不实施 |
+| 2026-10-30 14:20:00 CST | skill 执行引擎采用 vendor 快照 + 项目内优先 | 双实现；只依赖项目内工具 | 复用已验证代码，同时保证换机器可携带；快照由脚本生成，不手工维护 | `sync_vendor.py` 写入 `VERSION.json`；运行优先 `tools/astrbot_e2e` |
+| 2026-10-30 14:20:00 CST | `run-suite` 只允许同一插件的用例 | 允许混插件；按插件分组执行 | 测试实例一次只启用一个被测插件，混跑会互相干扰；分组由调用方负责 | 混插件直接报 `CaseError`；多插件组合验证延后 |
+| 2026-10-30 14:30:00 CST | 用户批准 Plan；执行方式定为子代理驱动（Subagent-Driven） | 当前会话内联执行 | 14 个 Task 跨度大，子代理可降低上下文污染，并在任务间复审 | Apply 每个 Task 派生子代理，任务完成后再进入下一项 |
+| 2026-10-30 14:30:00 CST | 第一版 spec 归档，需求 2 重写三件套 | 在原 spec 上增量追加 | 两阶段范围与验收差异大，混写会降低可读性；git 历史仍保留第一版 | 归档到 `spec/archive/2026-10-27-v1/`；新三件套待用户批准 |
+| 2026-10-30 15:40:00 CST | Apply 暂停，Task 12 阻塞于 QQ/NapCat 环境；环境由用户自行还原 | 继续排查并修改 QQ 环境 | QQ 7.0.2 应用签名/quarantine 与 NapCat 注入冲突；`codesign --force --deep --sign -` 破坏 nested Helper，Worker 被 SIGKILL。继续改环境风险高且非本 mission 职责 | 不再改用户 QQ 环境；记录备份与教训；Task 12 待用户恢复后执行 |
+| 2026-10-30 15:40:00 CST | 禁止对 NapCat 注入后的 QQ 使用 `codesign --deep` | 只用 `--force --sign -` 或交给 NapCat 安装器 | QQ Helper 有独立签名；`--deep` 会重签所有嵌套代码，导致 Code Signature Invalid（SIGKILL） | 仅外层签名或使用安装器；保留 Helper 原始签名 |
+| 2026-10-30 15:55:00 CST | 需求 2 真机验收通过；Task 0–13 完成 | 继续扩展富媒体/CI | `doctor OK`；多轮与 suite PASSED；脱敏与两项自愈演练通过 | 等待用户批准提交；Q11/Q12 进入后续 |
+| 2026-10-30 15:55:00 CST | 返回图片卡片的命令标记 `testability=rich_media`，不自动生成文本用例 | 强行用文本断言；忽略该功能 | cc-qq `/help` 实测返回图片帮助卡片，文本提取为空；强行断言会假失败 | `gen_cases` 跳过 manual/config/rich_media；文档与 backlog Q11 记录 |

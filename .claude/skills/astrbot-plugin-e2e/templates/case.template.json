@@ -1,0 +1,17 @@
+{
+  "name": "<case-name>",
+  "plugin": "<plugin-id>",
+  "steps": [
+    {
+      "send": {
+        "group_id": "{{group_id}}",
+        "text": "/help",
+        "at_bot": true
+      },
+      "expect": {
+        "timeout_seconds": 30,
+        "messages": [{"contains": ["<expected-substring>"]}]
+      }
+    }
+  ]
+}

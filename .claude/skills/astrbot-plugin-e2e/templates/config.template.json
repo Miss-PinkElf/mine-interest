@@ -1,0 +1,41 @@
+{
+  "test_root": "~/.astrbot-e2e",
+  "webui": {
+    "host": "127.0.0.1",
+    "port": 6186,
+    "username": "e2e",
+    "password": "<webui-password>"
+  },
+  "astrbot": {
+    "command": "astrbot",
+    "reverse_ws_host": "127.0.0.1",
+    "reverse_ws_port": 6198,
+    "reverse_ws_token": "<reverse-ws-token>",
+    "plugins": ["<plugin-id>"],
+    "startup_timeout_seconds": 120
+  },
+  "plugin_sources": {
+    "<plugin-id>": "<absolute-plugin-source-dir>"
+  },
+  "bot": {
+    "qq": "<bot-qq>",
+    "onebot_ws": "ws://127.0.0.1:6200/onebot/v11/ws",
+    "token": "<bot-token>"
+  },
+  "sender": {
+    "qq": "<sender-qq>",
+    "onebot_ws": "ws://127.0.0.1:6201/onebot/v11/ws",
+    "token": "<sender-token>"
+  },
+  "group_id": "<dedicated-test-group-id>",
+  "judge": {
+    "base_url": "<openai-compatible-base-url>",
+    "api_key": "<judge-api-key>",
+    "model": "<judge-model>"
+  },
+  "timeouts": {
+    "message_seconds": 60,
+    "reload_seconds": 120,
+    "log_window_padding_seconds": 5
+  }
+}

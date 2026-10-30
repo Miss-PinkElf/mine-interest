@@ -67,8 +67,17 @@ PYTHONPATH=tools backend/.venv/bin/python -m astrbot_e2e.cli run \
 | `run --case <path>` | 执行用例；非 attach 模式会自动准备/启动/停止 |
 | `run --attach` | 复用已运行的测试实例 |
 | `run --reload` | 执行前通过 WebUI 热重载插件 |
+| `run-suite --cases-dir <dir>` | 批量执行同一插件用例；一次启动、串行执行 |
 
 退出码：`0` 通过，`1` 失败，`2` 用例/配置错误，`3` 环境错误。
+
+`run-suite` 额外选项：
+
+- `--plugin <id>`：校验用例目录内的插件一致。
+- `--attach`：复用已运行的测试实例。
+- `--reload`：每个用例执行前通过 WebUI 热重载。
+- `--keep-running`：结束后保留测试实例。
+- `--no-redact`：关闭报告脱敏（默认开启，慎用）。
 
 ## 用例格式
 
@@ -99,6 +108,32 @@ PYTHONPATH=tools backend/.venv/bin/python -m astrbot_e2e.cli run \
 - `semantic` 需要配置 `judge.base_url`、`judge.api_key`、`judge.model`；未配置时该断言为 `SKIPPED`。
 - 语义判定返回 `pass` 与 `reason`；不通过时用例失败。
 
+## 多轮用例（steps）
+
+多轮用例与单轮用例二选一，不能同时出现 `steps` 与 `send`/`expect`：
+
+```json
+{
+  "name": "cc-qq 多轮安全命令",
+  "plugin": "astrbot_plugin_cc_qq",
+  "steps": [
+    {
+      "send": {"group_id": "{{group_id}}", "text": "/pwd", "at_bot": true},
+      "expect": {"timeout_seconds": 30, "messages": [{"regex": "\\S"}]}
+    },
+    {
+      "send": {"group_id": "{{group_id}}", "text": "/help", "at_bot": true},
+      "expect": {"timeout_seconds": 30, "messages": [{"contains": ["/new"]}]}
+    }
+  ]
+}
+```
+
+- 每步独立记录日志窗口、回包与断言，证据写入 `run_dir/steps/NN/`。
+- 任一步失败即停止后续步骤，保留已执行步骤的证据。
+- `steps` 最多 50 步；每步都必须包含 `send` 与 `expect`。
+- 旧格式 `send` + `expect` 继续可用，会被视为单步。
+
 ## 配置
 
 `config.example.json` 是模板，`config.local.json` 为本地真实配置：
@@ -107,6 +142,33 @@ PYTHONPATH=tools backend/.venv/bin/python -m astrbot_e2e.cli run \
 - 本地 `.gitignore` 已忽略 `config.local.json` 与 `reports/`。
 - **不要提交** `config.local.json` 或 `reports/`。
 - 生产实例根目录、生产端口与测试实例根目录不能相同；配置模块会拒绝明显冲突。
+
+插件源解析优先级（`plugin_sources` 可选）：
+
+1. `plugin_sources.<plugin-id>` 显式路径；
+2. `<repo>/integrations/astrbot/<plugin-id>`；
+3. `~/.astrbot/data/plugins/<plugin-id>`；
+4. `<repo>/tools/astrbot_e2e/fixtures/<plugin-id>`。
+
+## 报告与脱敏
+
+`run-suite` 会生成：
+
+```text
+reports/<timestamp>-<plugin>-suite/
+├─ report.json      机器可读汇总
+├─ report.md        人工阅读摘要（摘要 / 用例表 / 失败摘要 / 操作记录）
+├─ cases/NN-*/      每个用例的步骤证据
+└─ instance/        测试实例启动日志
+```
+
+默认脱敏：
+
+- 配置中的 `token`、`password`、`api_key`、`secret` 等键（含 `reverse_ws_token`）替换为 `***`；
+- bot / sender QQ 号在任意字符串中出现时中间打码；
+- 超过 500 字符的文本截断并标注。
+
+`run-suite --no-redact` 可关闭脱敏；报告默认不入库。
 
 ## 目录
 
@@ -123,8 +185,9 @@ tools/astrbot_e2e/
 
 ## 已知边界
 
-- 首版只支持文本消息；富媒体延期。
-- 首版只支持单次发送 + 单组断言；多轮对话延期。
+- 首版只支持文本消息与文本断言；图片、文件、语音、引用等富媒体延期。
+- 返回图片卡片的命令（例如 cc-qq 的 `/help`）无法用文本断言验证；在功能清单中标记 `testability=rich_media` 并跳过自动用例，或人工确认。
+- 支持单轮 `send`/`expect` 与多轮 `steps`。
 - 首版串行执行；并行与 CI 延期。
 - QQ 登录需要人工扫码；不承诺自动登录。
 - 仅验证 macOS 双开路径。
