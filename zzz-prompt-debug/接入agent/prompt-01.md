@@ -34,6 +34,17 @@
 1. 或者这样，如果涉及发送图片，渲染html，html里面有图片，然后截图即可，感觉llm输出不可控，
    1. 简单来说如果本次新建了html就截图，然后发送即可
 2. 感觉是不是不管什么回复，都渲染成html就挺好，解决了长文本，富文本，图片，发送的问题
+3. 现在长文本渲染成html之后，发送，没有进入claude的上下文，感觉这个不是bug是正常现象
+4. 写几个基本的skill
+   1. 回复的文本，渲染成友好的html，然后截图，然后发送
+   2. 绘图的skill
+   3. 绘制svg，思维导图的skill
+   4. html动画的skill（这个是需要上传到github page
+5. 这个bot需要不同的人设，并且可以切换，不同人设的session不同
+   1. 可以通过对应工作区的CLAUDE.md的替换实现
+6. 写一个webui对于这个插件，对于每个群聊的工作区，工作区里面有哪些skill，mcp，
+7. 现在转发消息也不能看，你看下这个插件的思路：integrations/astrbot/astrbot_plugin_sourcehub_inspector，或者阅读这个文档看一下开发过程：.devflow/multi-source-hub/NEXT-SESSION-PROMPT-multi-source-hub.md
+8. 现在缓存
 ### 未来需求
 1. 当长时间不对话，能不能检测当前正在输入这个状态，然后告诉用户，当前对话的上下文长度，根据什么时候创建的，如果太长时间之前创建的然后推荐用/new一个对话
 2. 通过acp，或者对话数据的共享，实现并行？
