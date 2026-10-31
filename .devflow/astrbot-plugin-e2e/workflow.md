@@ -85,3 +85,4 @@ Mission Init -> Explore -> Align -> Plan -> Propose/Tasks -> Apply -> Verify/Clo
 - 生产环境一键脚本：`tools/prod_env/prod.sh` + README 已完成并验证；随本轮收尾提交。
 - 生产 NapCat 登录：已恢复并复测通过（`get_login_info` 返回 17号）；生产 AstrBot PID `40562`、窗口 `1850`。
 - 下一步测试资产：更新 `cc_qq_multi_turn` `/info` 断言、隔离 probe 与 cc-qq。
+- 账号策略：生产 17号 不再用于 E2E；用户已新建独立测试 QQ，账号与接入方式待下次对话（`backlog.md` Q24）。

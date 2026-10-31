@@ -27,6 +27,7 @@
 - 验证通过：`bash -n`；首次启动容器 + `6185/6199` + 双标签窗口；重复 `start` 不新增标签；`--restart` 复用窗口 1793 并新增 AstrBot 标签；`stop` 停服务并清理 PID/窗口文件；`--no-iterm` 后台 PID 36607 验证；E2E 机器人冲突自动停止；OneBot 超时返回非 0。
 - 登录复测（2026-10-31 22:55）：用户已扫码；`wait_onebot.py` 连接 `13001` 调 `get_login_info` 返回 17号（exit 0），QQ 安全风险 168 已处理。
 - 当前运行态（2026-10-31 22:55）：`napcat` 运行且已登录；生产 AstrBot PID `40562`、iTerm 窗口 `1850`，`6185/6199` 监听；`napcat-e2e-bot` / `napcat-e2e-sender` 已停；测试 AstrBot `6186/6198` 运行；`production-stopped` 标记无。
+- 账号策略（2026-10-31 用户决定）：生产 QQ 17号 不再改动、不再用于 E2E；用户已新建独立测试 QQ。新账号的 QQ 号、NapCat 配置、端口、是否替代 C# 发送者待下次对话确认；当前 E2E 仍按 17号 编写，尚未切换。
 - 使用注意：子命令在前；`--restart` 是 `start` 的参数（`start --restart`）；`status` 不带前导 `--`。用户曾误用 `prod.sh --restart` 与 `prod.sh --staus`，脚本当前只打印 usage。
 - 本轮未决/候选：`restart` 别名与未知命令提示（`backlog.md` Q18）；`--restart --no-iterm` 旧窗口清理（Q19）；NapCat 登录与 QQ 168 恢复（Q20）；Dashboard `0.0.0.0:6185` 安全收口（Q21）；手动关闭 NapCat 标签的感知（Q23）。
 

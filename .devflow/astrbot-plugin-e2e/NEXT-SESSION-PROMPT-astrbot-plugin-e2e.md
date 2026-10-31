@@ -39,6 +39,7 @@
   - 生产 AstrBot 运行：PID `40562`，`6185/6199` 监听。
   - 脚本窗口 `1850` 存在；`napcat-e2e-bot` / `napcat-e2e-sender` 已停；测试 AstrBot 运行；`production-stopped` 标记无。
 - 登录历史：首次启动需扫码且 QQ 曾返回安全风险 `168`；用户已处理并扫码，2026-10-31 22:55 复测通过。
+- 账号策略（2026-10-31）：生产 QQ 17号 不再改动、不再用于 E2E；用户已新建独立测试 QQ。新账号信息待下次对话确认；当前 E2E 仍按 17号 编写，尚未切换。
 
 ### 正确命令（用户曾误用）
 
@@ -56,7 +57,8 @@ bash tools/prod_env/prod.sh stop
 
 ### 下一步优先级
 
-1. **生产环境已就绪**：保持运行；日常重启用 `bash tools/prod_env/prod.sh start --restart`。跑 E2E 前先停生产（`prod.sh stop` 或 `start-all.sh --stop-production`），避免 17号 冲突。
+- **下次对话第一件事**：确认新测试 QQ 的号码、NapCat 配置、OneBot 端口与发送者安排，再改造 E2E；在此之前不要动生产 17号。
+1. **生产环境已就绪**：保持运行；日常重启用 `bash tools/prod_env/prod.sh start --restart`。新测试 QQ 接入前，跑 E2E 仍需先停生产，避免 17号 冲突。
 2. **修测试资产**：把 `tools/astrbot_e2e/cases/cc_qq_multi_turn.json` 的 `/info` 断言改为包含「当前会话」或匹配「状态」，重跑用例。
 3. **隔离 probe 与 cc-qq**：probe 测试使用只加载 `astrbot_plugin_e2e_probe` 的测试根，或在测试群禁用 cc-qq。
 4. **决定 UX/安全候选**：`restart` 别名（Q18）、`--restart --no-iterm` 旧窗口（Q19）、Dashboard `0.0.0.0:6185` 收口（Q21）、是否停发送者容器（Q22）。
@@ -90,7 +92,8 @@ PYTHONPATH=tools backend/.venv/bin/python -m astrbot_e2e.cli run \
 ### 必须记住的坑
 
 - **子命令在前**：`prod.sh start --restart`，不是 `prod.sh --restart`；`status` 不是 `--status`。
-- **同一 QQ 不能双端在线**：生产 `napcat` 与 E2E `napcat-e2e-bot` 都是 17号；`prod.sh start` 自动停 E2E 机器人，`start-all.sh --stop-production` 自动停生产容器。
+- **生产 17号 不再用于测试**：用户已新建独立测试 QQ；切换前 E2E 仍会和 17号 冲突，接入后生产可与 E2E 并行。
+- **同一 QQ 不能双端在线**（切换前）：生产 `napcat` 与 E2E `napcat-e2e-bot` 都是 17号；`prod.sh start` 自动停 E2E 机器人，`start-all.sh --stop-production` 自动停生产容器。
 - **生产 AstrBot 是前台标签**：关闭 AstrBot 标签会停服务；`prod.sh stop` 用于标签已关但进程残留或统一停止。
 - **先停服务再关窗口**：窗口里有长任务时 `close window` 可能弹确认；脚本先停 AstrBot/容器再关窗口。
 - **窗口 ID 复用**：记录在 `~/.astrbot/.prod-iterm-window-id`；窗口被手动关闭时自动新建。手动关单个 NapCat 日志标签无法感知。
