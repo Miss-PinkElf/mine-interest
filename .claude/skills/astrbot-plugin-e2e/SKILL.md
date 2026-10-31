@@ -35,12 +35,14 @@ python3 scripts/probe_env.py --config <config.local.json> --output environment.j
 ### S1 安全闸
 
 - 识别生产实例（默认 `~/.astrbot`，端口 `6185/6199`）。
+- 仅当测试 bot 与生产使用同一个 QQ 账号时才需要暂停生产；使用独立测试 bot 时生产可保持运行。
 - **暂停/恢复生产必须用户明确确认**；执行前备份生产配置。
 - 不杀未知进程；只停止有 PID 文件且校验属于测试实例的进程。
 
 ### S2 起服务
 
-- 指导用户执行 `~/.qq-e2e/start-e2e.sh`（或等价脚本）拉起 2 个 QQ（内含 NapCat）与 1 个测试 AstrBot。
+- 优先使用仓库内的 Docker 启动脚本 `tools/napcat_e2e/start-all.sh`；没有该脚本时回退到 `~/.qq-e2e/start-e2e.sh`（或平台等价脚本），拉起 2 个 QQ（内含 NapCat）与 1 个测试 AstrBot。
+- 如果测试实例已在运行且 `doctor` 显示账号在线，跳过启动步骤，不要重复拉起或重启。
 - 等待用户扫码登录两个 QQ。
 - 用 `doctor` 验证两个账号在线与插件源可用：
 
@@ -65,7 +67,7 @@ python3 scripts/gen_cases.py --features features.json --out cases/ --timeout 30
 ```
 
 - 自动生成的用例只覆盖安全命令；高风险命令、带参数命令与非命令功能写入 `cases/SKIPPED.md`。
-- 多轮功能（如 `/new` → `/cc` → `/end`）由 AI 根据 `features.json` 手写，放入独立目录（如 `cases/manual/`）。
+- 多轮功能（如 `/start` → `/cc` → `/end`）由 AI 根据 `features.json` 手写，放入独立目录（如 `cases/manual/`）。
 - 向用户展示生成与跳过清单。
 - 注意：`run-suite` 只扫描 `--cases-dir` 顶层的 `*.json`；`cases/manual/` 需单独作为一次 suite 执行，或把文件移到同一目录。
 
@@ -96,7 +98,7 @@ python3 scripts/aggregate_report.py --suite-dir <suite_dir> --config <config.loc
 
 ### S7 收尾
 
-- 恢复生产 AstrBot 需用户确认。
+- 仅当本次暂停过生产 AstrBot 时才需要恢复，且需用户确认。
 - 按用户意愿保留或停止测试实例。
 - 报告保留在本地，不入库。
 

@@ -116,11 +116,11 @@ bash tools/prod_env/prod.sh stop
 |---|---|---|
 | `tools/napcat_e2e/start-all.sh` | E2E 两容器 + 测试 AstrBot；`--stop-production` 停生产并写标记 | 不启动生产 AstrBot |
 | `tools/napcat_e2e/stop-all.sh` | 停 E2E 两容器 + 测试 AstrBot；按标记恢复生产容器 | 不停止生产 AstrBot |
-| `tools/prod_env/prod.sh` | 生产 `napcat` + 生产 AstrBot；启动前自动停 E2E 机器人 | E2E 发送者、测试 AstrBot、测试用例 |
+| `tools/prod_env/prod.sh` | 生产 `napcat` + 生产 AstrBot；仅同号时停 E2E 机器人 | E2E 发送者、测试 AstrBot、测试用例 |
 
 规则：
 
-1. 同一个 17号 只能一套在线；`prod.sh start` 检测到 `napcat-e2e-bot` 会自动 `docker stop` 它。
+1. E2E 测试 bot 默认使用独立账号 `3299987672`，与生产 `3254276668` 不同号，可并行运行；仅当两者同号时，`prod.sh start` 才会自动 `docker stop napcat-e2e-bot`。
 2. `~/.qq-e2e-docker/production-stopped` 标记由 E2E 写入；`prod.sh start` 成功启动生产后会清理过期标记。
 3. `prod.sh stop` 不写、不删标记，只提示。
 
@@ -146,9 +146,9 @@ bash tools/prod_env/prod.sh stop
 
 打开脚本打印的 NapCat WebUI（默认 `http://127.0.0.1:16099/webui`）检查是否需要重新扫码。脚本不会自动登录。
 
-### 脚本为什么自动停 E2E 机器人？
+### 脚本什么时候会自动停 E2E 机器人？
 
-生产 NapCat 和 E2E 机器人登录同一个 17号，不能同时在线。启动生产前停止 E2E 机器人是既定策略；如果正在跑 E2E 用例会被中断。
+只有 E2E 机器人与生产登录同一个 QQ 账号时才会停，因为同一账号不能双端在线。当前 E2E 测试 bot 使用独立账号 `3299987672`，与生产 `3254276668` 不同号，启动生产不会中断 E2E。
 
 ### 窗口 ID 记录失效怎么办？
 

@@ -161,3 +161,16 @@
 - 当前边界：未提交任何改动；容器 11G 未删除；QQ 应用备份在 `~/Applications-backup/`。
 - 下一步：环境恢复后执行 Task 12（doctor、多轮、suite、脱敏、自愈演练），再 Task 13 收尾。
 - 已知风险：不要对 NapCat 注入后的 QQ 使用 `--deep` 重签；App 管理权限会阻止 xattr/codesign。
+
+## 2026-10-30 15:55:00 CST — 需求 2 真机验收与收尾完成
+
+- 阶段：`Verify/Close`（需求 2）。
+- 完成：
+  - `doctor OK`：bot `3254276668`、sender `1961618848`。
+  - 多轮 `/pwd` → `/info` PASSED：`reports/20261030-154828-636210-cc-qq`。
+  - 文本 suite 2/2 PASSED：`reports/20261030-154847-882152-astrbot_plugin_cc_qq-suite`；报告脱敏无泄漏。
+  - 自愈：未知端口占用只报错不误杀；残留实例自动停止/重启（`reports/20261030-155012-908540-astrbot_plugin_cc_qq-suite`）。
+  - 发现并固化：cc-qq `/help` 返回图片卡片，标记 `testability=rich_media`，不自动生成文本用例。
+- 当前边界：Task 0–13 完成；引擎 127/127，skill 12/12；未提交。
+- 下一步：向用户申请提交许可；未批准前不 commit。
+- 已知风险：Q11 富媒体断言；Q12 QQ/NapCat 签名与 App 管理权限；生产 bot 兼任测试机器人。

@@ -7,8 +7,8 @@
       "expect": {"timeout_seconds": 30, "messages": [{"regex": "\\S"}]}
     },
     {
-      "send": {"group_id": "{{group_id}}", "text": "/help", "at_bot": true},
-      "expect": {"timeout_seconds": 30, "messages": [{"contains": ["/new"]}]}
+      "send": {"group_id": "{{group_id}}", "text": "/info", "at_bot": true},
+      "expect": {"timeout_seconds": 30, "messages": [{"regex": "(当前会话 #\\d+.*状态|当前没有活跃会话)"}]}
     }
   ]
 }

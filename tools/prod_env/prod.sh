@@ -12,7 +12,7 @@
 #   - 生产 NapCat 是 ~/napcat 下的容器 napcat（17号）。
 #   - 生产 AstrBot 数据根是 ~/.astrbot，Dashboard 6185，反向 WS 6199。
 #   - AstrBot 在 iTerm 标签或当前终端前台运行；关闭标签/终端即停止。
-#   - 与 tools/napcat_e2e 的 E2E 环境互不管理；启动生产前会自动停 E2E 机器人（同一 17号）。
+#   - 与 tools/napcat_e2e 的 E2E 环境互不管理；仅当 E2E 机器人与生产同号时才自动停它。
 
 set -euo pipefail
 
@@ -35,6 +35,13 @@ E2E_ROOT="${E2E_ROOT:-${HOME}/.qq-e2e-docker}"
 E2E_BOT_CONTAINER="${E2E_BOT_CONTAINER:-napcat-e2e-bot}"
 E2E_SENDER_CONTAINER="${E2E_SENDER_CONTAINER:-napcat-e2e-sender}"
 E2E_MARKER="${E2E_ROOT}/production-stopped"
+
+# E2E 测试 bot 账号：优先读取 tools/napcat_e2e/.env 的 BOT_QQ，回退到默认值。
+E2E_BOT_QQ="${E2E_BOT_QQ:-}"
+if [ -z "${E2E_BOT_QQ}" ] && [ -f "${REPO_ROOT}/tools/napcat_e2e/.env" ]; then
+  E2E_BOT_QQ="$(set -a; . "${REPO_ROOT}/tools/napcat_e2e/.env" >/dev/null 2>&1 || true; printf '%s' "${BOT_QQ:-}")"
+fi
+E2E_BOT_QQ="${E2E_BOT_QQ:-3299987672}"
 
 ASTRBOT_BIN="${ASTRBOT_BIN:-$(command -v astrbot 2>/dev/null || true)}"
 [ -n "${ASTRBOT_BIN}" ] || ASTRBOT_BIN="${HOME}/.local/bin/astrbot"
@@ -181,12 +188,17 @@ stop_napcat() {
   fi
 }
 
-# 同一 17号 只能一套在线：启动生产前自动停 E2E 机器人。
+# 同一 QQ 账号只能一套在线：仅当 E2E 机器人与生产同号时才停它。
 stop_e2e_bot_if_running() {
-  if container_running "${E2E_BOT_CONTAINER}"; then
-    warn "检测到 E2E 机器人 ${E2E_BOT_CONTAINER} 正在运行（同样占用 17号），自动停止 ..."
-    docker stop "${E2E_BOT_CONTAINER}" >/dev/null || die "停止 E2E 机器人失败"
+  if ! container_running "${E2E_BOT_CONTAINER}"; then
+    return 0
   fi
+  if [ "${PROD_QQ}" != "${E2E_BOT_QQ}" ]; then
+    info "E2E 机器人（${E2E_BOT_QQ}）与生产（${PROD_QQ}）不同号，保留运行。"
+    return 0
+  fi
+  warn "检测到 E2E 机器人 ${E2E_BOT_CONTAINER} 正在运行（同样占用 ${E2E_BOT_QQ}），自动停止 ..."
+  docker stop "${E2E_BOT_CONTAINER}" >/dev/null || die "停止 E2E 机器人失败"
 }
 
 cleanup_stale_marker() {

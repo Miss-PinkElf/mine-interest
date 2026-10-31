@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# 单独启动「测试机器人」容器（17号）
+# 单独启动「测试机器人」容器（独立测试 bot）
 #
 # 用法：
 #   bash tools/napcat_e2e/start-bot.sh
-#   bash tools/napcat_e2e/start-bot.sh --stop-production   # 自动停止生产容器 napcat
+#   bash tools/napcat_e2e/start-bot.sh --stop-production   # 仅测试 bot 与生产同号时需要
 #   bash tools/napcat_e2e/start-bot.sh --logs              # 启动后跟随日志
 #   bash tools/napcat_e2e/start-bot.sh --restart           # 已在运行则 docker restart
 #
 # 说明：
-#   - 17号 同时被生产容器 napcat 使用；默认检测到生产容器会中止。
+#   - 测试 bot 与生产容器 napcat 不同号时可并行；同号时默认检测到生产容器会中止。
 #   - 扫码登录后，NapCat 会读取 onebot11_<qq>.json 并监听 6200。
 
 set -euo pipefail
@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/common.sh"
 
-set_tab_title "测试机器人(17号)"
+set_tab_title "测试机器人(${BOT_QQ})"
 
 STOP_PRODUCTION=0
 FOLLOW_LOGS=0
@@ -41,9 +41,9 @@ ensure_docker
 ensure_bot_config
 check_production_container
 
-# 原生 QQ 可能也登录了 17号；Docker 登录会把它顶下线，这里只提示不阻断。
+# 原生 QQ 可能也登录了测试 bot；Docker 登录会把它顶下线，这里只提示不阻断。
 if pgrep -f "/Applications/QQ.app/Contents/MacOS/QQ" >/dev/null 2>&1; then
-  warn "检测到原生 QQ 正在运行；如果它登录了 17号，Docker 登录会把它顶下线。"
+  warn "检测到原生 QQ 正在运行；如果它登录了测试 bot（${BOT_QQ}），Docker 登录会把它顶下线。"
 fi
 
 if [ "${RESTART}" = "1" ] && docker ps --format '{{.Names}}' | grep -qx 'napcat-e2e-bot'; then

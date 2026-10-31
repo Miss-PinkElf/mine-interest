@@ -6,7 +6,12 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .assertions import AssertionResult, evaluate_logs, evaluate_messages
+from .assertions import (
+    AssertionResult,
+    evaluate_images,
+    evaluate_logs,
+    evaluate_messages,
+)
 from .bootstrap import prepare_instance
 from .cases import case_steps, load_case, render_case
 from .llm_judge import JudgeError, judge
@@ -145,6 +150,7 @@ async def execute_case(
     results: List[AssertionResult] = []
     step_summaries: List[Dict[str, Any]] = []
     timeouts = cfg.get("timeouts") or {}
+    last_message_id = ""
 
     for index, step in enumerate(case_steps(case), start=1):
         step_started = time.monotonic()
@@ -155,14 +161,30 @@ async def execute_case(
 
         mark = log_capture.mark()
         send_started_at = int(time.time())
+        reply_to = send.get("reply_to")
+        if reply_to == "last":
+            reply_to = last_message_id or None
         if send.get("at_bot", True):
-            message = build_group_message(send["text"], cfg["bot"]["qq"])
+            message = build_group_message(
+                send.get("text", ""),
+                cfg["bot"]["qq"],
+                image=send.get("image"),
+                reply_to=reply_to,
+            )
         else:
-            message = [{"type": "text", "data": {"text": str(send["text"])}}]
+            message = []
+            if reply_to:
+                message.append({"type": "reply", "data": {"id": str(reply_to)}})
+            if str(send.get("text") or "").strip():
+                message.append({"type": "text", "data": {"text": str(send["text"])}})
+            if send.get("image"):
+                message.append({"type": "image", "data": {"file": str(send["image"])}})
         sent = await sender_client.call(
             "send_group_msg",
             {"group_id": int(send["group_id"]), "message": message},
         )
+        if isinstance(sent, dict) and sent.get("message_id"):
+            last_message_id = str(sent["message_id"])
         write_json(step_dir / "sent.json", {"response": sent, "step": step})
 
         timeout = float(
@@ -172,7 +194,11 @@ async def execute_case(
             )
         )
         replies = await collect_replies(
-            bot_client, cfg["bot"]["qq"], str(send["group_id"]), timeout
+            bot_client,
+            cfg["bot"]["qq"],
+            str(send["group_id"]),
+            timeout,
+            since_time=send_started_at - 1,
         )
         if not replies:
             replies = await history_bot_replies(
@@ -187,6 +213,9 @@ async def execute_case(
         step_results: List[AssertionResult] = []
         if expect.get("messages"):
             step_results.extend(evaluate_messages(texts, expect["messages"]))
+        if expect.get("images"):
+            image_count = sum(int(item.get("images") or 0) for item in replies)
+            step_results.append(evaluate_images(image_count, expect["images"]))
         log_text = log_capture.read_since(mark)
         if expect.get("logs"):
             step_results.extend(evaluate_logs(log_text, expect["logs"]))

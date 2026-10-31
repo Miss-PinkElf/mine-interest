@@ -40,8 +40,8 @@
 
 - **现象**：`/pwd` PASSED；`/info` FAILED，实际回复「当前会话 #5，代理：claude，状态：active。」，用例期望包含 `/new`。
 - **原因**：插件 `/info` 文案已变化，用例断言仍是旧版。
-- **处置**：把断言改为包含「当前会话」或匹配「状态」；重跑用例。
-- **状态**：待修（Pending）。
+- **处置**：断言改为正则 `当前会话.*状态`；重跑用例。
+- **状态**：已修复（2026-11-01）；`cc_qq_multi_turn` PASSED。
 
 ## B5：手动运行 `astrbot run` 用错根目录
 
@@ -91,3 +91,17 @@
 - **原因**：`--restart` 是 `start` 的参数，`status` 是子命令；未知参数没有额外提示。
 - **处置**：文档与 `NEXT-SESSION-PROMPT` 写明正确用法；是否增加 `restart` 别名与未知命令提示，见 `backlog.md` Q18。
 - **状态**：非代码缺陷；候选改进（Candidate）。
+
+## B12：陈旧环境变量 `BOT_QQ` 导致测试 AstrBot 等待旧账号
+
+- **现象**：切到新测试 bot 后，`start-astrbot.sh --detach` 的后台进程一直打印「等待测试机器人 3254276668」，`6198` 不启动，NapCat 反向 WS 报 `ECONNREFUSED`。
+- **原因**：启动终端里残留旧的导出变量 `BOT_QQ=3254276668`；`common.sh` 使用 `${BOT_QQ:-默认值}`，旧值优先于新默认值。
+- **处置**：清理陈旧 `start-astrbot` 进程与锁，用 `env -u BOT_QQ -u SENDER_QQ -u PRODUCTION_QQ` 重新启动。尚未加脚本级防呆。
+- **状态**：已规避（2026-11-01）；防呆检查为候选改进。
+
+## B13：异步代理回复的 E2E 假失败
+
+- **现象**：`/start` 媒体用例 2.6 秒结束，只抓到「已收到，正在处理」，断言图片数为 0；实际 12 秒后图片才发送。
+- **原因**：bot 观察端 `onebot11_<bot_qq>.json` 的 `reportSelfMessage` 为 `false`，观察 WS 收不到 bot 自身消息；执行引擎回退历史查询时只拿到处理回执，未继续等待异步结果。
+- **处置**：观察端 `e2e-observer` 改为 `reportSelfMessage: true`（反向 WS 客户端保持 `false`），同步生成模板、本地配置与 README；媒体用例改为断言 `images.min=1`。
+- **状态**：已修复（2026-11-01）；媒体用例 PASSED（`reports/20261101-021808-341659-cc-qq`，耗时 14.7 秒，图片数 1）。

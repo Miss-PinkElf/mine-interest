@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 16:47:08 CST。
-- 更新时间（Updated At）：2026-10-31 22:55:00 CST。
+- 更新时间（Updated At）：2026-11-01 02:30:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：记录当前 mission 的原始提示词、需求草稿与参考文件来源。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
@@ -26,6 +26,7 @@
 | 5 | `devflow-handoff.md` | 2026-09-09 | 收尾流程指导（回顾、更新 devflow 文档、生成下次提示词） | 已执行，按用户要求未修改 |
 | 6 | `zzz-prompt-debug/插件自动化测试验证/prompt-01.md`（需求 2 追加） | 2026-10-29 | 把插件测试流程做成通用 skill：双 QQ、暂停生产、按插件生成测试流程与报告、自愈、适配不同 NapCat/AstrBot/运行环境 | 已实施并验证（2026-10-30） |
 | 7 | 对话内需求（无独立文档） | 2026-10-31 | 新增生产环境一键启动脚本：启动生产 NapCat 容器 + 生产 AstrBot，支持幂等 start、显式 restart、iTerm 双标签、stop/status | 已实施并验证；计划 `plans/2026-10-31-生产环境一键启动脚本-plan.md`，交接 `handoffs/2026-10-31-004-生产环境一键启动脚本.md` |
+| 8 | `zzz-prompt-debug/插件自动化测试验证/prompt-01.md`（需求 3 追加） | 2026-11-01 | 新建独立测试 bot `3299987672`，发送者仍为 `1961618848`；要求 E2E 与生产可并行，登录由用户控制 | 已实施并验证；计划 `plans/2026-11-01-E2E切换独立测试bot账号-plan.md`，交接 `handoffs/2026-11-01-005-独立测试账号切换与ccqq媒体验证.md` |
 
 ## 备注
 

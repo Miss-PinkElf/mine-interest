@@ -2,7 +2,8 @@
 # 一键启动 Docker 双容器 E2E 环境
 #
 # 用法：
-#   bash tools/napcat_e2e/start-all.sh --stop-production
+#   bash tools/napcat_e2e/start-all.sh                  # 测试 bot 与生产不同号时可直接启动
+#   bash tools/napcat_e2e/start-all.sh --stop-production # 仅测试 bot 与生产同号时需要
 #   bash tools/napcat_e2e/start-all.sh --no-iterm
 #   bash tools/napcat_e2e/start-all.sh --force-tabs
 #   bash tools/napcat_e2e/start-all.sh --restart        # 容器/测试实例已在运行则重启
@@ -11,17 +12,17 @@
 # 行为：
 #   1. 检查 Docker、测试 AstrBot 前置文件；
 #   2. 生成两个容器的 NapCat 配置（已存在则不覆盖）；
-#   3. 检查生产容器 napcat 是否占用 17号（默认中止，--stop-production 才停）；
+#   3. 检查生产容器 napcat 是否占用测试 bot 账号（仅同号时中止，--stop-production 才停）；
 #   4. 检查原生 QQ（默认中止，--allow-native-qq 才放行）；
 #   5. docker compose up -d 启动 napcat-e2e-bot 与 napcat-e2e-sender；
 #   6. 打开 iTerm2 三个标签：
-#        - napcat-e2e-bot 日志（扫码登录 17号）
-#        - napcat-e2e-sender 日志（扫码登录 C#）
+#        - napcat-e2e-bot 日志（扫码登录测试 bot）
+#        - napcat-e2e-sender 日志（扫码登录发送者）
 #        - 测试 AstrBot 后台启动 + 日志（等待 6200/6201 后自动启动）
 #
 # 说明：
 #   - 测试 AstrBot 只连 6198；生产 AstrBot（6199）不需要暂停。
-#   - 生产容器若被本脚本停止，stop-all.sh 会自动恢复。
+#   - 测试 bot 与生产不同号时可并行；生产容器若被本脚本停止，stop-all.sh 会自动恢复。
 #   - 测试容器 restart="no"，不会随开机自动启动。
 #   - 重复执行时：docker compose up -d 是幂等的；如果两个容器和测试 AstrBot
 #     都已在运行，默认不再打开重复标签；需要新的日志窗口请加 --force-tabs。
@@ -78,7 +79,7 @@ if [ "${RESTART}" = "1" ]; then
   compose restart napcat-e2e-bot napcat-e2e-sender
 fi
 
-info "容器已启动。首次运行需要分别扫码登录 17号 与 C#。"
+info "容器已启动。首次运行需要分别扫码登录测试 bot（${BOT_QQ}）与发送者（${SENDER_QQ}）。"
 print_endpoints
 
 # 重复执行保护：两个容器和测试 AstrBot 都已在运行时，默认不再打开重复标签。
@@ -114,8 +115,8 @@ make_tab_prefix() {
   printf '%s' "printf '${esc}]1337;SetColors=tab=${color}${bel}'; printf '${esc}]1337;SetBadgeFormat=${badge_b64}${bel}'; printf '${esc}]0;${title}${bel}'; ( sleep 4; printf '${esc}]0;${title}${bel}' ) & "
 }
 
-PREFIX_BOT=$(make_tab_prefix "ff5f56" "测试机器人 17号" "测试机器人(17号)")
-PREFIX_SENDER=$(make_tab_prefix "4f9dff" "测试发送者 C#" "测试发送者(C#)")
+PREFIX_BOT=$(make_tab_prefix "ff5f56" "测试机器人 ${BOT_QQ}" "测试机器人(${BOT_QQ})")
+PREFIX_SENDER=$(make_tab_prefix "4f9dff" "测试发送者 ${SENDER_QQ}" "测试发送者(${SENDER_QQ})")
 PREFIX_ASTRBOT=$(make_tab_prefix "27c93f" "测试AstrBot 6186" "测试AstrBot(6186)")
 
 # iTerm2 三个标签：两个 NapCat 日志 + 测试 AstrBot。
@@ -154,8 +155,8 @@ APPLESCRIPT
 cat <<EOF
 
 已打开 iTerm2 三个标签：
-  1. napcat-e2e-bot      → 扫码登录 17号（${BOT_QQ}）
-  2. napcat-e2e-sender   → 扫码登录 C#（${SENDER_QQ}）
+  1. napcat-e2e-bot      → 扫码登录测试 bot（${BOT_QQ}）
+  2. napcat-e2e-sender   → 扫码登录发送者（${SENDER_QQ}）
   3. 测试 AstrBot        → 等待扫码后后台启动，并跟随日志（${TEST_ASTRBOT_WEBUI_PORT}/${TEST_ASTRBOT_REVERSE_PORT}）
 
 重复执行说明：

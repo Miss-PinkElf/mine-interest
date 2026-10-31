@@ -8,7 +8,7 @@
     },
     {
       "send": {"group_id": "{{group_id}}", "text": "/info", "at_bot": true},
-      "expect": {"timeout_seconds": 30, "messages": [{"contains": ["/new"]}]}
+      "expect": {"timeout_seconds": 30, "messages": [{"regex": "(当前会话 #\\d+.*状态|当前没有活跃会话)"}]}
     }
   ]
 }

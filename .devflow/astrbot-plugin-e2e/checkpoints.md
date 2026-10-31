@@ -3,13 +3,24 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 17:10:00 CST。
-- 更新时间（Updated At）：2026-10-31 22:45:00 CST。
+- 更新时间（Updated At）：2026-11-01 01:55:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：记录当前 mission 的阶段检查点，只保留最近 3 条。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
-- 当前状态（Status）：生产环境一键脚本完成并验证；NapCat 生产登录待扫码（QQ 安全风险 168）。
+- 当前状态（Status）：独立测试 bot 切换与 skill 对齐完成；cc-qq 多轮与媒体功能 E2E PASSED；进入本轮 Close。
 - 文档边界（Scope / Boundary）：恢复热路径的一部分；不替代 `state.md` 或 `handoff`。
+
+## 2026-11-01 01:55:00 CST — E2E 切换独立测试 bot 账号
+
+- 阶段：`Apply`（需求 3，已获用户批准）。
+- 账号：测试 bot `3299987672`（独立测试号），发送者仍 `1961618848`（C#）；生产容器 `napcat` 保持 `3254276668`。
+- 改动：`tools/napcat_e2e/common.sh` 默认账号与冲突判定；`start-all` / `start-bot` / `start-astrbot` 标签参数化；`tools/prod_env/prod.sh` 仅同号时停 E2E；`config.local.json`、README、skill vendor 同步。
+- 验证：`bash -n` 全部脚本通过；`docker compose config` 通过；引擎 127/127、skill 14/14；`print_endpoints` 显示新账号；生产运行时 `check_production_container` 返回 0 并提示可并行；`prod.sh status` 正常。
+- 扫码与 smoke：旧登录态归档到 `QQ.bak-20261101-014847`；用户扫码 `3299987672` 后 `doctor` 通过，`cc_qq_multi_turn` PASSED（`reports/20261101-022848-087695-cc-qq`）。
+- Skill 对齐：S1/S2/S4/S7 与 safety-rules 适配 Docker + 独立账号；真源、副本与 catalog 哈希同步。
+- 异步回复修复：`e2e-observer` 的 `reportSelfMessage=true`；媒体用例 PASSED（`reports/20261101-021808-341659-cc-qq`，14.7 秒，图片数 1），验证 cc-qq 自动媒体发送生效。
+- 备注：改 NapCat 网络配置需重启容器，重启后可能要求重新扫码。
 
 ## 2026-10-31 22:45:00 CST — 生产环境一键脚本完成
 
@@ -26,16 +37,3 @@
 - 验证：`doctor OK`；`/pwd` PASSED；`/info` 实际回复「当前会话 #5，代理：claude，状态：active。」，用例仍期望 `/new`（断言过期）；`probe_echo` 被 cc-qq 回执拦截。
 - 收尾：旧原生 e2e 数据归档到 `~/.qq-e2e/archive-20261031/`；生产容器 `napcat` 当前停止，恢复用 `stop-all.sh`。
 - 下一步：新会话更新 `/info` 断言、隔离 probe/cc-qq、决定专用测试 bot 账号与 Docker 镜像升级。
-
-## 2026-10-30 15:55:00 CST — 需求 2 真机验收与收尾完成
-
-- 阶段：`Verify/Close`（需求 2）。
-- 完成：
-  - `doctor OK`：bot `3254276668`、sender `1961618848`。
-  - 多轮 `/pwd` → `/info` PASSED：`reports/20261030-154828-636210-cc-qq`。
-  - 文本 suite 2/2 PASSED：`reports/20261030-154847-882152-astrbot_plugin_cc_qq-suite`；报告脱敏无泄漏。
-  - 自愈：未知端口占用只报错不误杀；残留实例自动停止/重启（`reports/20261030-155012-908540-astrbot_plugin_cc_qq-suite`）。
-  - 发现并固化：cc-qq `/help` 返回图片卡片，标记 `testability=rich_media`，不自动生成文本用例。
-- 当前边界：Task 0–13 完成；引擎 127/127，skill 12/12；未提交。
-- 下一步：向用户申请提交许可；未批准前不 commit。
-- 已知风险：Q11 富媒体断言；Q12 QQ/NapCat 签名与 App 管理权限；生产 bot 兼任测试机器人。

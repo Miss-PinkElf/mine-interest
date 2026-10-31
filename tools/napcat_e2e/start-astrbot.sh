@@ -109,8 +109,8 @@ fi
 
 start_foreground() {
   if [ "${WAIT_NAPCAT}" = "1" ]; then
-    wait_for_onebot_ready "${BOT_ONEBOT_PORT}" "${BOT_WS_TOKEN}" "${BOT_QQ}" "机器人 17号"
-    wait_for_onebot_ready "${SENDER_ONEBOT_PORT}" "${SENDER_WS_TOKEN}" "${SENDER_QQ}" "发送者 C#"
+    wait_for_onebot_ready "${BOT_ONEBOT_PORT}" "${BOT_WS_TOKEN}" "${BOT_QQ}" "测试机器人 ${BOT_QQ}"
+    wait_for_onebot_ready "${SENDER_ONEBOT_PORT}" "${SENDER_WS_TOKEN}" "${SENDER_QQ}" "测试发送者 ${SENDER_QQ}"
   fi
   info "启动测试 AstrBot（插件：${E2E_PLUGIN}）..."
   run_start_instance
@@ -130,8 +130,8 @@ if [ "${DETACH}" = "1" ]; then
     # shellcheck disable=SC1091
     source ./common.sh
     if [ "$wait_flag" = "1" ]; then
-      wait_for_onebot_ready 6200 "$BOT_WS_TOKEN" "$BOT_QQ" "机器人 17号"
-      wait_for_onebot_ready 6201 "$SENDER_WS_TOKEN" "$SENDER_QQ" "发送者 C#"
+      wait_for_onebot_ready 6200 "$BOT_WS_TOKEN" "$BOT_QQ" "测试机器人 $BOT_QQ"
+      wait_for_onebot_ready 6201 "$SENDER_WS_TOKEN" "$SENDER_QQ" "测试发送者 $SENDER_QQ"
     fi
     run_start_instance
   ' _ "${LOCK}" "${SCRIPT_DIR}" "${WAIT_NAPCAT}" >>"${DETACH_LOG}" 2>&1 &

@@ -3,13 +3,13 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 16:47:08 CST。
-- 更新时间（Updated At）：2026-10-31 22:55:00 CST。
+- 更新时间（Updated At）：2026-11-01 02:30:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：定义 AstrBot 插件端到端自动化测试（End-to-End Test，E2E）mission 的目标、范围、路径与阶段门禁。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
 - 原始需求（Raw Input）：`zzz-prompt-debug/插件自动化测试验证/prompt-01.md`。
-- 当前状态（Status）：生产环境一键脚本已完成并验证；生产 NapCat 已登录就绪；E2E 测试资产待修。
+- 当前状态（Status）：独立测试 bot 切换完成；skill 已对齐 Docker 与独立账号；cc-qq 多轮与媒体功能 E2E PASSED；进入本轮 Close。
 - 文档边界（Scope / Boundary）：当前 mission 的流程与范围真相源（source of truth）；不是已批准的实施计划（Plan）。
 
 ## 目标
@@ -35,7 +35,7 @@
 ## 当前路径
 
 - 重型路径（Heavy Path）：Align → Plan → proposal/design/tasks → Apply → Verify/Close。
-- 当前阶段：Verify/Close 完成（需求 2）。
+- 当前阶段：Verify/Close 完成（需求 3 + skill 对齐 + cc-qq 媒体验证）。
 - 设计稿：`plans/2026-10-27-astrbot-plugin-e2e-align.md`。
 - 实施计划：`plans/2026-10-27-astrbot-plugin-e2e-plan.md`。
 - 需求 2 设计稿：`plans/2026-10-30-通用插件测试skill-align.md`。
@@ -46,6 +46,9 @@
 - 完成交接：`handoffs/2026-10-27-002-第一版完成交接.md`。
 - 生产环境一键脚本计划：`plans/2026-10-31-生产环境一键启动脚本-plan.md`。
 - 生产环境一键脚本交接：`handoffs/2026-10-31-004-生产环境一键启动脚本.md`。
+- 独立测试 bot 切换计划：`plans/2026-11-01-E2E切换独立测试bot账号-plan.md`。
+- Skill 对齐与 cc-qq 验证计划：`plans/2026-11-01-skill适配独立账号并测试cc-qq-plan.md`。
+- 本轮交接：`handoffs/2026-11-01-005-独立测试账号切换与ccqq媒体验证.md`。
 
 ## 主线阶段
 
@@ -70,10 +73,13 @@ Mission Init -> Explore -> Align -> Plan -> Propose/Tasks -> Apply -> Verify/Clo
 13. 需求 2 真机验收：完成；多轮与 suite PASSED，脱敏与自愈演练通过。
 14. 生产环境一键脚本（`tools/prod_env/`）：完成并验证；iTerm 双标签、幂等 start、显式 `--restart`、`stop` 清理窗口。
 15. 生产 NapCat 登录：用户已处理安全风险并扫码；`get_login_info` 返回 17号，复测通过。
+16. 独立测试 bot：切换为 `3299987672`，与生产 `3254276668` 不同号；E2E 与生产可并行。
+17. Skill 对齐：S1/S2/S4/S7 与 safety-rules 适配 Docker + 独立账号；真源、副本、catalog 同步。
+18. cc-qq 媒体验证：`reportSelfMessage=true` 修复异步采集；多轮与回复媒体 E2E PASSED。
 
 ## 当前阶段出口条件
 
-- 单元测试 106/106 通过。
+- 单元测试：引擎 127/127、skill 14/14 通过。
 - 探针与 `cc_qq /help` 两条 E2E PASSED。
 - 增量重载验证 PASSED：`reports/20261027-223642-572604-case`，`--attach --reload` 后返回 v2 回显。
 - 生产 AstrBot `6199`、生产 QQ `6099` 未受影响。
@@ -84,5 +90,7 @@ Mission Init -> Explore -> Align -> Plan -> Propose/Tasks -> Apply -> Verify/Clo
 - 需求 2 验收证据：`reports/20261030-154828-636210-cc-qq`、`reports/20261030-154847-882152-astrbot_plugin_cc_qq-suite`、`reports/20261030-155012-908540-astrbot_plugin_cc_qq-suite`。
 - 生产环境一键脚本：`tools/prod_env/prod.sh` + README 已完成并验证；随本轮收尾提交。
 - 生产 NapCat 登录：已恢复并复测通过（`get_login_info` 返回 17号）；生产 AstrBot PID `40562`、窗口 `1850`。
-- 下一步测试资产：更新 `cc_qq_multi_turn` `/info` 断言、隔离 probe 与 cc-qq。
-- 账号策略：生产 17号 不再用于 E2E；用户已新建独立测试 QQ，账号与接入方式待下次对话（`backlog.md` Q24）。
+- 测试资产：`cc_qq_multi_turn` `/info` 断言已更新；probe 与 cc-qq 隔离仍延期（Q14）。
+- 账号策略：生产 17号 `3254276668` 不再用于 E2E；测试 bot `3299987672`、发送者 `1961618848`；E2E 与生产可并行。
+- 本轮验收证据：`reports/20261101-021832-550174-cc-qq`（多轮）、`reports/20261101-021808-341659-cc-qq`（媒体）。
+- 本轮延期：cc-qq 全功能覆盖、媒体用例入仓、`BOT_QQ` 防呆，见 `deferred/2026-11-01-e2e-account-switch-deferred.md`。

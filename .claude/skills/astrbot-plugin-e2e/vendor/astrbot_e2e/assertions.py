@@ -44,6 +44,24 @@ def regex(text: str, pattern: str) -> AssertionResult:
     )
 
 
+def evaluate_images(count: int, spec: Dict[str, Any]) -> AssertionResult:
+    """断言回复中的图片数量；spec 支持 min（默认 0）与可选 max。"""
+    try:
+        minimum = int(spec.get("min", 0))
+        maximum = spec.get("max")
+        maximum = int(maximum) if maximum is not None else None
+    except (TypeError, ValueError):
+        return AssertionResult("images", False, spec, str(count), "images 断言参数非法")
+    ok = count >= minimum and (maximum is None or count <= maximum)
+    return AssertionResult(
+        kind="images",
+        ok=ok,
+        expected=spec,
+        actual=str(count),
+        detail="图片数 {}，期望 min={} max={}".format(count, minimum, maximum),
+    )
+
+
 def evaluate_messages(messages: List[str], specs: List[Dict[str, Any]]) -> List[AssertionResult]:
     text = "\n".join(messages)
     results: List[AssertionResult] = []

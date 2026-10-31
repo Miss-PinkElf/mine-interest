@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-31 02:31:26 CST。
-- 更新时间（Updated At）：2026-10-31 22:55:00 CST。
+- 更新时间（Updated At）：2026-11-01 02:30:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：沉淀 Docker 双容器 E2E 启动与排障中可复用的技术经验。
 - 关联仓库或项目（Related Repository / Project）：当前仓库 `.`。
@@ -28,3 +28,7 @@
 13. **`docker compose restart` 保持容器 ID**：`docker logs -f` 标签可以继续跟随；若用 `down`/`up` 重建容器，旧日志标签会失效。
 14. **生产启动脚本用幂等 start + 显式 restart**：每次 `start` 都重启会误触打断生产对话；只补齐缺失服务更安全。
 15. **命令形态要直白**：用户容易把 `--restart` 当成子命令、把 `status` 写成 `--staus`；未知命令应给出明确提示和示例。
+16. **观察端必须开启 `reportSelfMessage`**：E2E 观察端（`e2e-observer`）需要收到 bot 自己发送的消息；设为 `false` 时异步代理结果只能靠历史回退，容易只抓到「处理中」回执。
+17. **NapCat 网络配置启动时读取**：改 `onebot11_<qq>.json` 必须重启容器/QQ；重启后可能要求重新扫码，持久登录态不等于免扫码。
+18. **不要继承旧的账号环境变量**：`common.sh` 用 `${BOT_QQ:-默认值}`，终端里残留的 `BOT_QQ=旧号` 会覆盖新默认值；排查时用 `env -u BOT_QQ -u SENDER_QQ` 启动，或增加配置一致性校验。
+19. **自动媒体会消费路径文本**：插件发送媒体后，原回复中的路径文本可能被移除；E2E 应断言图片数量，而不是同时断言路径文本。

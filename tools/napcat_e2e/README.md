@@ -34,13 +34,13 @@ cp tools/napcat_e2e/.env.example tools/napcat_e2e/.env
 
 ### 首次启动步骤
 
-1. 启动两个 NapCat 容器（会停掉占用 17号 的生产容器）：
+1. 启动两个 NapCat 容器（测试 bot 与生产不同号，可与生产并行）：
 
    ```bash
-   bash tools/napcat_e2e/start-all.sh --stop-production
+   bash tools/napcat_e2e/start-all.sh
    ```
 
-2. 在前两个 iTerm2 标签扫码登录 17号 和 C#。
+2. 在前两个 iTerm2 标签扫码登录测试 bot（`3299987672`）和发送者（`1961618848`）。
 
 3. 第三个标签会自动等待 `6200/6201` 登录就绪，然后启动测试 AstrBot（`--detach` 后台启动）。
 
@@ -64,6 +64,7 @@ cp tools/napcat_e2e/.env.example tools/napcat_e2e/.env
 - `~/.qq-e2e-docker/bot/config/`：
   - `napcat.json`、`napcat_<bot_qq>.json`
   - `onebot11_<bot_qq>.json`（OneBot 服务端 6200 + 反向 WS 6198）
+    - `e2e-observer` 的 `reportSelfMessage` 为 `true`：E2E 观察端需要收到 bot 自己发送的消息，否则异步代理结果只能靠历史回退，容易漏掉最终回复。
   - `webui.json`
 - `~/.qq-e2e-docker/sender/config/`：同结构，OneBot 服务端 6201，不连 AstrBot。
 - 已存在的配置不会被覆盖。
@@ -74,10 +75,10 @@ cp tools/napcat_e2e/.env.example tools/napcat_e2e/.env
 
 | 角色 | 容器/进程 | 宿主端口 | 说明 |
 |---|---|---|---|
-| 测试机器人 17号 | `napcat-e2e-bot` | `6200`、`16299`（WebUI） | 反向 WS → `host.docker.internal:6198` |
-| 测试发送者 C# | `napcat-e2e-sender` | `6201`、`16398`（WebUI） | E2E 工具直连 6201 发送 |
+| 测试机器人 `3299987672` | `napcat-e2e-bot` | `6200`、`16299`（WebUI） | 反向 WS → `host.docker.internal:6198` |
+| 测试发送者 `1961618848`（C#） | `napcat-e2e-sender` | `6201`、`16398`（WebUI） | E2E 工具直连 6201 发送 |
 | 测试 AstrBot | 本机 `~/.astrbot-e2e` | `6186`、`6198` | 由 `astrbot_e2e.cli start-instance` 启动 |
-| 生产容器（可能运行） | `napcat` | `16099` 等 | 与测试共用 17号，测试前需停止 |
+| 生产容器（可能运行） | `napcat` | `16099` 等 | 生产号 `3254276668`，与测试 bot 不同号，可并行 |
 
 运行数据放在仓库外：
 
@@ -91,13 +92,14 @@ cp tools/napcat_e2e/.env.example tools/napcat_e2e/.env
 
 ```bash
 cd /Users/mobius/Documents/111AAA-code/mine-interest.worktrees/mine-interest-source-hub
-bash tools/napcat_e2e/start-all.sh --stop-production
+bash tools/napcat_e2e/start-all.sh
 ```
 
 `--stop-production` 的作用：
 
-- 生产容器 `napcat` 也登录 17号；不停止它会和测试机器人抢同一账号。
-- 脚本停止生产容器并写入标记；`stop-all.sh` 会自动 `docker start napcat` 恢复。
+- 测试 bot 默认使用独立账号 `3299987672`，与生产容器 `napcat`（`3254276668`）不同号，**不需要停生产**。
+- 仅当测试 bot 与生产同号时才需要该参数；脚本会停止生产容器并写入标记，`stop-all.sh` 会自动 `docker start napcat` 恢复。
+- 不同号时传了 `--stop-production` 只会打印提示并忽略，不会误停生产。
 
 脚本会：
 
@@ -105,22 +107,22 @@ bash tools/napcat_e2e/start-all.sh --stop-production
 2. 生成两个容器的 NapCat 配置（已存在则不覆盖）；
 3. 启动 `napcat-e2e-bot` 与 `napcat-e2e-sender`；
 4. 打开 iTerm2 三个标签：
-   - 机器人日志（扫码登录 17号）
-   - 发送者日志（扫码登录 C#）
+   - 机器人日志（扫码登录测试 bot `3299987672`）
+   - 发送者日志（扫码登录发送者 `1961618848`）
    - 测试 AstrBot 启动 + 日志
 
 首次运行需要分别扫码。二维码会出现在两个 NapCat 标签的日志里，也可以打开脚本打印的 WebUI 地址扫码。
 
-如果原生 QQ 正在运行，脚本默认中止（Docker 发送者登录 C# 会把它顶下线）。确认可以顶下线后加：
+如果原生 QQ 正在运行，脚本默认中止（Docker 发送者登录 `1961618848` 会把它顶下线）。确认可以顶下线后加：
 
 ```bash
-bash tools/napcat_e2e/start-all.sh --stop-production --allow-native-qq
+bash tools/napcat_e2e/start-all.sh --allow-native-qq
 ```
 
 不想打开 iTerm2：
 
 ```bash
-bash tools/napcat_e2e/start-all.sh --stop-production --no-iterm
+bash tools/napcat_e2e/start-all.sh --no-iterm
 ```
 
 ## 启动顺序与等待
@@ -153,10 +155,10 @@ bash tools/napcat_e2e/start-all.sh --stop-production --no-iterm
 ## 分开启动
 
 ```bash
-# 机器人容器（17号）
-bash tools/napcat_e2e/start-bot.sh --stop-production
+# 机器人容器（测试 bot 3299987672）
+bash tools/napcat_e2e/start-bot.sh
 
-# 发送者容器（C#）
+# 发送者容器（1961618848）
 bash tools/napcat_e2e/start-sender.sh
 
 # 测试 AstrBot（默认加载 astrbot_plugin_cc_qq）
@@ -202,6 +204,8 @@ docker logs -f napcat-e2e-sender
 
 登录态持久化在 `~/.qq-e2e-docker/{bot,sender}/QQ`，容器重启一般不需要重新扫码。
 
+**切换账号注意**：如果 `~/.qq-e2e-docker/bot/QQ` 里残留旧账号（生产号或发送者）的登录态，容器启动时可能自动登录旧号。首次切换到新测试 bot 前，请先在 NapCat WebUI 退出旧账号（或备份并清空该目录），再扫码登录 `3299987672`，避免顶掉生产或发送者。
+
 ## 运行测试
 
 环境自检：
@@ -224,7 +228,7 @@ PYTHONPATH=tools backend/.venv/bin/python -m astrbot_e2e.cli run-suite \
 
 ## 注意事项
 
-1. **同一 QQ 账号不能双端在线**：生产容器 `napcat` 与测试 `napcat-e2e-bot` 都用 17号；测试前必须停一个。
+1. **账号隔离**：生产容器 `napcat` 使用 `3254276668`，测试 `napcat-e2e-bot` 使用 `3299987672`，不同号可并行；同一账号仍然不能双端在线。
 2. **测试 AstrBot 只连 6198**：测试机器人容器只配置 `AstrBot-E2E` 客户端，不连生产 6199，所以生产 AstrBot 不需要暂停。
 3. **原生 QQ 与 Docker 发送者**：如果原生 QQ 登录了 C#，Docker 登录会把它顶下线；脚本默认中止，需 `--allow-native-qq` 放行。
 4. **切换同 `self_id` 的 NapCat 后**：如果 AstrBot 出现“消息能收但插件主动调用失败”，重启 AstrBot 并等 30 秒让 NapCat 重连。
@@ -251,9 +255,9 @@ PYTHONPATH=tools backend/.venv/bin/python -m astrbot_e2e.cli run-suite \
 
 ### 为什么只看到一个 `napcat` 容器？
 
-- `napcat` 是**生产容器**，来自 `~/napcat`，只跑 17号 一个 QQ。
+- `napcat` 是**生产容器**，来自 `~/napcat`，只跑生产号 `3254276668` 一个 QQ。
 - E2E 的两个容器是 `napcat-e2e-bot` / `napcat-e2e-sender`，只有执行 `start-all.sh` 才会创建。
-- 执行 `start-all.sh --stop-production` 后，生产 `napcat` 会被停掉，OrbStack 里应看到两个 `napcat-e2e-*` 容器。
+- 测试 bot 使用独立账号，默认执行 `start-all.sh` 不会停生产；只有测试 bot 与生产同号时才需要 `--stop-production`。
 - 一个容器只跑一个 QQ；不是把两个 QQ 塞进一个容器。
 
 ### 为什么测试 AstrBot 报 `Server disconnected`？

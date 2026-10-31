@@ -6,7 +6,8 @@
 #
 # 约定：
 #   - 运行数据放在仓库外：默认 ~/.qq-e2e-docker
-#   - 两个 QQ 账号：bot=17号(3254276668)，sender=C#(1961618848)
+#   - 两个 QQ 账号：bot=独立测试号(3299987672)，sender=C#(1961618848)
+#   - 生产容器 napcat 仍使用 3254276668；与测试 bot 不同号，可并行运行
 #   - token 与 tools/astrbot_e2e/config.local.json 保持一致
 #   - 不把真实 token、rkey、完整鉴权 URL 写入仓库
 
@@ -34,8 +35,11 @@ fi
 E2E_ROOT="${E2E_ROOT:-${HOME}/.qq-e2e-docker}"
 
 # 测试账号
-BOT_QQ="${BOT_QQ:-3254276668}"          # 17号
+BOT_QQ="${BOT_QQ:-3299987672}"          # 独立测试 bot（不与生产共用）
 SENDER_QQ="${SENDER_QQ:-1961618848}"    # C#
+
+# 生产容器 napcat 使用的账号；仅用于判定测试 bot 是否与生产冲突。
+PRODUCTION_QQ="${PRODUCTION_QQ:-3254276668}"
 
 # OneBot token（与 tools/astrbot_e2e/config.local.json 对齐）
 BOT_WS_TOKEN="${BOT_WS_TOKEN:-e2e-bot-token}"
@@ -66,7 +70,7 @@ TZ="${TZ:-Asia/Shanghai}"
 
 # 导出给 docker compose 做变量替换
 export E2E_ROOT
-export BOT_QQ SENDER_QQ
+export BOT_QQ SENDER_QQ PRODUCTION_QQ
 export BOT_WS_TOKEN SENDER_WS_TOKEN REVERSE_WS_TOKEN
 export BOT_WEBUI_TOKEN SENDER_WEBUI_TOKEN
 export E2E_PLUGIN
@@ -268,7 +272,7 @@ ensure_bot_config() {
         "name": "e2e-observer",
         "host": "0.0.0.0",
         "port": ${BOT_ONEBOT_PORT},
-        "reportSelfMessage": false,
+        "reportSelfMessage": true,
         "enableForcePushEvent": true,
         "messagePostFormat": "array",
         "token": "${BOT_WS_TOKEN}",
@@ -352,21 +356,31 @@ EOF
 }
 
 # ---------- 安全预检 ----------
-# 生产容器 napcat 也使用 17号；测试机器人启动前必须停止它。
-# STOP_PRODUCTION=1 时自动停止并记录标记，stop-all.sh 会恢复。
+# 生产容器 napcat 使用 PRODUCTION_QQ；仅当测试 bot 与生产同号时才冲突。
+# 不同号时可以与生产并行，--stop-production 会被忽略。
+# 同号且 STOP_PRODUCTION=1 时自动停止并记录标记，stop-all.sh 会恢复。
 check_production_container() {
+  if [ "${BOT_QQ}" != "${PRODUCTION_QQ}" ]; then
+    if docker ps --format '{{.Names}}' | grep -qx 'napcat'; then
+      info "生产容器 napcat 正在运行（${PRODUCTION_QQ}），与测试 bot（${BOT_QQ}）不同号，可并行。"
+      if [ "${STOP_PRODUCTION:-0}" = "1" ]; then
+        warn "测试 bot 与生产不同号，忽略 --stop-production，生产容器保持运行。"
+      fi
+    fi
+    return 0
+  fi
   if ! docker ps --format '{{.Names}}' | grep -qx 'napcat'; then
     return 0
   fi
   if [ "${STOP_PRODUCTION:-0}" = "1" ]; then
-    info "停止生产容器 napcat（17号 让给测试机器人）..."
+    info "停止生产容器 napcat（${PRODUCTION_QQ} 让给测试机器人）..."
     docker stop napcat >/dev/null
     mkdir -p "${E2E_ROOT}"
     touch "${E2E_ROOT}/production-stopped"
     info "已记录生产停止标记：${E2E_ROOT}/production-stopped"
     return 0
   fi
-  die "生产容器 napcat 正在运行并占用 17号。请先 docker stop napcat，或加 --stop-production。"
+  die "生产容器 napcat 正在运行并占用 ${PRODUCTION_QQ}。请先 docker stop napcat，或加 --stop-production。"
 }
 
 # 原生 QQ 与 Docker 发送者共用 C#；未退出时会被 Docker 顶下线。
@@ -397,8 +411,8 @@ webui_url() {
 }
 
 print_endpoints() {
-  info "机器人 17号（${BOT_QQ}）OneBot WS：ws://127.0.0.1:${BOT_ONEBOT_PORT}"
-  info "发送者 C#（${SENDER_QQ}）OneBot WS：ws://127.0.0.1:${SENDER_ONEBOT_PORT}"
+  info "测试机器人（${BOT_QQ}）OneBot WS：ws://127.0.0.1:${BOT_ONEBOT_PORT}"
+  info "测试发送者（${SENDER_QQ}）OneBot WS：ws://127.0.0.1:${SENDER_ONEBOT_PORT}"
   info "机器人 WebUI：$(webui_url "${E2E_ROOT}/bot/config" "${BOT_WEBUI_PORT}")"
   info "发送者 WebUI：$(webui_url "${E2E_ROOT}/sender/config" "${SENDER_WEBUI_PORT}")"
   info "测试 AstrBot：WebUI ${TEST_ASTRBOT_WEBUI_PORT} / 反向 WS ${TEST_ASTRBOT_REVERSE_PORT}"

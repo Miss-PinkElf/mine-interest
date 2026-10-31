@@ -77,9 +77,18 @@ tools/prod_env/
 - 验证：`bash -n`、首次启动、幂等、`--restart` 窗口复用、`stop`、`--no-iterm`、E2E 冲突、超时返回非 0 均通过。
 - 登录复测：用户已在手机 QQ 处理安全风险 168 并扫码；`wait_onebot.py` 返回 17号，生产可用。
 
+## 独立测试账号与 skill 对齐（2026-11-01）
+
+- 用户新建独立测试 bot `3299987672`，发送者保持 `1961618848`（C#），生产继续使用 `3254276668`（17号）。测试 bot 与生产不同号，E2E 与生产可并行。
+- `tools/napcat_e2e` 默认账号、标签、文档与冲突判定全部切换；异号时 `--stop-production` 只提示并忽略；`tools/prod_env/prod.sh` 仅在同号时停 E2E 机器人。
+- 旧 bot 登录态（含 17号 / C#）归档到 `~/.qq-e2e-docker/bot/QQ.bak-20261101-014847`，用户重新扫码新号。
+- skill `astrbot-plugin-e2e` 对齐 Docker 流程（S2 优先 `tools/napcat_e2e/start-all.sh`）、生产暂停改为仅同号时、多轮示例改为 `/start`；真源、仓库副本与 catalog 哈希同步。
+- 修复异步回复采集：观察端 `e2e-observer` 的 `reportSelfMessage` 改为 `true`，否则 `/start` 只能抓到「处理中」回执；改 NapCat 网络配置需重启，重启后可能重新扫码。
+- 验证：`doctor OK`；`cc_qq_multi_turn` PASSED；cc-qq 回复媒体自动发送 PASSED（图片数 1，14.7 秒）；引擎 127/127、skill 14/14。
+
 ## 开放项
 
-- 未决问题：`backlog.md` Q1–Q10（生产 bot 是否长期兼任测试机器人、`6198` 客户端是否保留、测试实例是否常驻、`.gitignore` 是否提交、报告脱敏与保留等）。
+- 未决问题：`backlog.md` Q1–Q27（探针隔离、`6198` 客户端、测试实例常驻、报告脱敏、生产脚本 UX、媒体用例入仓、`BOT_QQ` 防呆等）。
 - 首版限定：CLI、单发单断言、串行、单群、文本、人工登录、macOS，见 `backlog.md`。
 - cc_qq 长任务、审批、多轮对话。
 - 富媒体（图片/文件/语音）与 native addon 警告。
@@ -88,7 +97,7 @@ tools/prod_env/
 - 测试实例生命周期与 `6198` 重试日志的最终策略。
 - 生产启动脚本未决项：`restart` 别名与未知命令提示、`--restart --no-iterm` 旧窗口清理、Dashboard `0.0.0.0:6185` 安全收口、手动关闭 NapCat 标签感知，见 `backlog.md` Q18–Q23。
 - 生产 NapCat 登录/QQ 安全风险 168：已由用户处理并复测通过。
-- 独立测试 QQ 接入：用户已新建测试账号；号码、NapCat 配置、OneBot 端口与发送者安排待下次对话确认（Q24）。
+- 独立测试 QQ 接入：已完成（2026-11-01）；测试 bot `3299987672`、发送者 `1961618848`，可与生产并行。
 
 ## 推荐读取策略
 
