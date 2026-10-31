@@ -65,3 +65,11 @@
 - AstrBot「指令管理」的禁用/改名通过 `handler.enabled` 与 `CommandFilter` 运行中即时生效，持久化在 `command_configs` 表；面板只列注册为 AstrBot 指令的 handler，插件自行解析文本的命令（如 cc-qq）不会出现。
 - 重启 AstrBot 实例要 `cd` 到对应数据目录（`~/.astrbot`、`~/.astrbot-e2e`）再执行 `astrbot run`；数据目录由 cwd 决定，`TEST_ASTRBOT_ROOT` 不被核心读取。用 `nohup ... > logs/restart-<ts>.log 2>&1 &` 启动，等待日志出现「已加载 vX.Y.Z」再判定成功。
 - 发布插件：在插件目录内部 `zip -qr ../astrbot_plugin_cc_qq-vX.Y.Z-upload.zip . -x '*__pycache__*' '*.pyc' '.DS_Store'`，保证 `metadata.yaml` 在根层；覆盖安装前先 `cp -a` 备份到 `plugin-backup-<ts>`，用 `rsync -a --delete` 同步并清理 `__pycache__`。
+- 协议类能力只在插件代码里实现、不写进代理运行时上下文，等于没有：`[[image:<path>]]` 在 README 与解析器里都存在，但代理没有 system prompt / 模板提示，生产 196 个回合使用 0 次。修复方向优先做插件侧兜底（自动识别回复里的可信路径/URL），而不是假设代理会自觉遵守。
+- 自动识别回复媒体时，安全边界必须复用到「工作目录 + 插件媒体目录」的 realpath 校验，图片走 PIL 实检；URL 只放行 `http/https` 且拒绝回环/私网。否则代理一次「顺手把 `~/.ssh/xxx.png` 发出去」就是数据外泄。
+- 同一回复里同时出现本地路径与图床 URL 时，本地优先并丢弃 URL：既避免同一张图发两遍，也避免图床 URL 过期（B3 教训）。
+- 含媒体的回复要先解析媒体、再决定是否转长图；否则 360 字以上的回复会整段变成文字截图，原图反而丢失。
+- e2e 的 `images` 断言只能证明「收到了图片」，不能区分本地原图与长文本截图；要证明用的是真实生成图，需要额外看代理会话 JSONL 或生成目录的新文件。
+- 让代理「使用某个 skill」时，仅说 skill 名称不够（`--setting-sources ""` 下项目 skill 不一定被加载/识别）；显式给出 `SKILL.md` 与 `run.sh` 绝对路径后，代理才会真正执行 skill。首次跑 suite 时代理自己写了 PIL 脚本，补跑显式路径用例才验证到 `run.sh`。
+- 测试 AstrBot 进程会继承启动 shell 的 `ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_BASE_URL` 等环境变量；即使 `claude_setting_sources=""`，子进程仍可能完成鉴权。这与「需要 user 级 settings 才能加载 MCP」并不矛盾，验证代理执行前先看进程环境。
+- 同步命令（`/help` 等）的回复不会转长图，`will_run_agent` 返回 False；不要按字数想当然认为 `/help` 是图片。

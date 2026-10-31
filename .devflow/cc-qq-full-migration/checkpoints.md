@@ -3,14 +3,25 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:23:07 +08:00
-- 更新时间（Updated At）：2026-11-01 01:00:00 +08:00
+- 更新时间（Updated At）：2026-11-01 02:45:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：记录本 mission 最近的阶段切换与继续位置。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
-- 当前状态（Status）：两处缺陷已修复且单测通过（165/165），未升版、未覆盖安装目录（Release Pending）
+- 当前状态（Status）：`0.3.3` 回复媒体自动识别单测 181/181、真机 suite 12/12 通过；测试实例已装，生产仍 `0.3.2`，待发布（Verified / Release Pending）
 - 文档边界（Scope / Boundary）：最近检查点真相源（source of truth）；仅保留最近三条，更早记录见 `checkpoints-archive.md`。
+
+## 2026-11-01 01:50:00 +08:00 — 回复媒体自动识别与发送（0.3.3，待真机）
+
+- 已修复“代理生成了图片但 QQ 收不到”：根因是 `[[image:<path>]]` 协议未进入代理运行时上下文，生产 196 个回合 0 次使用；374 字回复又被整体转成文字长图。
+- 新增 `reply_media.py`：显式标记 + 自动识别可信本地图片/视频路径（绝对、`~/`、`./`、Markdown、反引号）与公网媒体 URL；本地仅限 `work_dir`/插件媒体目录，图片 PIL 实检，视频 `.mp4/.mov/.webm` ≤100 MB；URL 拦截回环与私网；本地优先去重，单条最多 10 个。
+- `platform/replies.py` 新增 `send_parts()`，支持 `Image`/`Video` 组件与 URL；`main.py::_deliver()` 先解析媒体，含媒体时不再整体转长图；新增 `auto_send_media` 开关（默认开）。
+- 验证：全量单测 **181/181**；真实回合 196 回复离线复放，解析出 1 张图片并按「文本 → 图片 → 文本」构造消息链。
+- **真机验收（2026-11-01 02:27–02:32，astrbot-plugin-e2e）**：suite **12/12 通过**（104 秒，测试 bot `3299987672`、发送者 `1961618848`、群 `701292201`）。覆盖 `/help`、`/pwd`、`/info`、`/start` 多轮、执行回执、`/!` 中断、本地图片自动发送、公网 URL 自动发送、越权/私网拒绝、显式标记回归。另单独执行显式 `rc-draw-generate` 用例：实际调用 `run.sh` 生成 `rc-20261101-023122.png`（1254×1254，1.1 MB）并自动发送。报告：`tools/astrbot_e2e/reports/20261101-022711-060610-astrbot_plugin_cc_qq-suite/`、`.../20261101-022956-010523-cc-qq-rc-draw-generate-skill/`。
+- 待办：决定是否发布 `0.3.3` 并覆盖生产安装目录；视频真机因执行引擎无视频断言且本机无 ffmpeg，标 SKIPPED；`auto_send_media=false` 回退需改测试配置并重载，未执行。
+- 提交：`feat(cc-qq): 回复媒体自动识别与发送并完成真机验收`（收尾提交，未推送）。
+- 计划：`plans/2026-11-01-cc-qq-回复媒体自动识别与发送计划.md`。
 
 ## 2026-11-01 00:55:00 +08:00 — 超长输出崩溃修复 + `/new` 更名为 `/start`
 
@@ -29,13 +40,5 @@
 - 合并转发在群聊中无法与 @bot 同时发送，按设计不会触发，本轮标记 SKIPPED。
 - 收尾：测试实例配置已按备份恢复，测试实例已停止；生产 AstrBot 本轮未运行、无需恢复。
 - 报告：`tools/astrbot_e2e/reports/20261030-164735-823213-astrbot_plugin_cc_qq-suite/`（媒体 6/6）、`.../20261030-164654-829047-astrbot_plugin_cc_qq-suite/`（基础 4/4）。
-
-## 2026-10-30 15:45:00 +08:00 — 需求 5 媒体与长图代码完成（0.3.1）
-
-- 已完成：媒体输入（直接图片、引用、合并转发）、图片输出 `[[image:<path>]]`、长文本本地 T2I 长图（默认 360 字或含代码块）、`/img on|off`、只读档媒体根放行。
-- 单测 154/154；`py_compile` 与 `_conf_schema.json` 校验通过；本地 T2I 已用 AstrBot Python 实测出图。
-- 用户明确真机由其本人执行；本轮不做真机验收、不覆盖安装目录、不生成 ZIP。
-- 待真机风险：`codex exec resume` 是否接受 `-i`；guest 只读档能否按媒体根读图；长图临时文件依赖 AstrBot 清理。
-- 证据与交接：`handoffs/2026-10-30-010-需求5媒体与长图代码完成待真机.md`；计划 `plans/2026-10-30-cc-qq-需求5-媒体输入输出与长文本渲染实施计划.md`。
 
 （更早检查点见 `checkpoints-archive.md`。）

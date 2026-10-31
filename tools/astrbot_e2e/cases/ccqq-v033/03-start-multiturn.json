@@ -1,0 +1,41 @@
+{
+  "name": "cc-qq /start 与多轮会话",
+  "plugin": "astrbot_plugin_cc_qq",
+  "steps": [
+    {
+      "send": {"group_id": "{{group_id}}", "text": "/start", "at_bot": true},
+      "expect": {
+        "timeout_seconds": 60,
+        "messages": [{"contains": ["已新建会话"]}],
+        "images": {"max": 0}
+      }
+    },
+    {
+      "send": {
+        "group_id": "{{group_id}}",
+        "text": "请只回复这五个字：多轮第一段",
+        "at_bot": true
+      },
+      "expect": {
+        "timeout_seconds": 120,
+        "messages": [{"contains": ["已收到，正在处理", "多轮第一段"]}]
+      }
+    },
+    {
+      "send": {"group_id": "{{group_id}}", "text": "/info", "at_bot": true},
+      "expect": {
+        "timeout_seconds": 60,
+        "messages": [{"regex": "当前会话 #\\d+.*状态"}],
+        "images": {"max": 0}
+      }
+    },
+    {
+      "send": {"group_id": "{{group_id}}", "text": "/end", "at_bot": true},
+      "expect": {
+        "timeout_seconds": 60,
+        "messages": [{"contains": ["当前会话已结束"]}],
+        "images": {"max": 0}
+      }
+    }
+  ]
+}

@@ -173,3 +173,14 @@
 - 解决方案：cc-qq 的 `/new` 更名为 `/start`（无参数新建会话、带参数启动代理的语义不变），彻底避开同名冲突；不保留 `/new` 别名，避免「私聊能用、群里不能用」的不一致。涉及 `commands/registry.py`、`service.py`、`constants.py`、`commands/session.py`、`README.md` 与两个测试文件；全量单测 165/165。
 - 说明：改名后群内旧习惯 `/new` 仍会命中 AstrBot 内置命令并出现同样的权限提示；如需彻底消除，可在 WebUI「指令管理」单独禁用内置 `/new`（独立配置动作，未执行）。
 - 计划：`plans/2026-11-01-cc-qq-new命令更名为start计划.md`。
+
+## 2026-11-01 — 群内“把图片发给我”未收到生成图：图片输出协议未进入代理上下文（已实现自动识别，待真机验证）
+
+- 问题现象：群 `209267585`、用户 `1961618848` 于 01:13:38 发送「把图片发给我」；代理（Claude，工作目录 `/Users/mobius/Documents/111AAA-code/绘赢喵`）回复纯文本「图片已在上方展示」并给出本地路径与 ossforai 链接，但 QQ 群没有收到生成的图片；NapCat 在 01:13:59 发出的 `[图片]` 实际是这条 374 字回复的长文本截图。
+- 问题原因：图片输出协议 `[[image:<path>]]` 只存在于插件 README 与 `parse_reply_parts` 解析代码，**没有进入代理运行时上下文**（无 system prompt、无 `--append-system-prompt`、无 `initbase` 模板说明）；生产库 196 个回合中含 `[[image:` 的回复为 0 条。需求 5 真机用例能通过，是因为测试提示词显式要求代理输出该标记（`tools/astrbot_e2e/reports/.../sent.json`）。此外回复 374 字超过长图阈值 360，被整段渲染成文字截图，进一步掩盖了问题。
+- 证据：`cc_qq.sqlite3` 回合 195/196；Claude 会话 `08e8665b-83b2-426f-81d4-1a4719bfe44b.jsonl` 第 89 行；生成文件 `绘赢喵/.claude/skills/rc-draw-generate/gen-images/rc-20261101-011250.png`（5,249,890 字节）；NapCat 01:13:10 与 01:13:59 的 `发送 -> … [图片]` 均对应长图渲染。
+- 解决方案（`0.3.3`，已实施）：新增 `reply_media.py` 做回复媒体解析，在显式标记之外自动识别可信本地图片/视频路径（绝对、`~/`、`./`、Markdown、反引号）与公网媒体 URL；本地文件仅限 `work_dir`/插件媒体目录，图片 PIL 实检、视频扩展名 + 100 MB；URL 拦截回环与私网；本地优先去重、单条最多 10 个；含媒体的回复不再整体转长图。`platform/replies.py` 新增 `send_parts()` 支持 `Image`/`Video` 组件；`main.py::_deliver()` 先解析媒体再决定长图；新增 `auto_send_media` 开关（默认开）。
+- 验证：全量单测 181/181；用真实回合 196 的回复离线复放，解析出 1 张图片（路径正确）并以「文本 → 图片 → 文本」顺序构造消息链。
+- **真机验证（2026-11-01 02:27–02:32，astrbot-plugin-e2e，测试 bot 3299987672 / 发送者 1961618848 / 群 701292201）**：suite 12/12 通过（104 秒）。本地图片路径自动发送（images=1、路径已从文本移除）、公网图片 URL 自动发送（images=1）、工作目录外路径与私网 URL 不发送（images=0 且文本保留）、显式 `[[image:]]` 回归（images=1）、执行回执、多轮 `/start`→文本→`/info`→`/end`、`/!` 中断均通过。另单独执行显式 `rc-draw-generate` 用例：代理实际调用 `run.sh` 生成 `rc-20261101-023122.png`（1254×1254，1.1 MB），插件自动发送（images=1）。报告：`tools/astrbot_e2e/reports/20261101-022711-060610-astrbot_plugin_cc_qq-suite/` 与 `.../20261101-022956-010523-cc-qq-rc-draw-generate-skill/`。
+- 备注：`/help` 不会转长图（`will_run_agent` 对同步命令返回 False），真机按文本断言；视频因执行引擎无视频断言且本机无 ffmpeg，标 SKIPPED。生产实例全程未操作。
+- 计划：`plans/2026-11-01-cc-qq-回复媒体自动识别与发送计划.md`。

@@ -130,6 +130,16 @@ QQ 事件
 - 回退：渲染或发送失败 → 退回文本分段。
 - 开关：`/img on|off`（owner／管理员），按会话存储在 `conversation_flags` 表；全局配置提供默认值与阈值。
 
+### 回复媒体自动识别（0.3.3）
+
+- 入口：`reply_media.py::parse_reply_parts(auto_send=True)`，先解析显式 `[[image:<path>]]`，再对剩余文本自动识别。
+- 本地识别：绝对路径、`~/`、`./`、`../`、Markdown `![](path)`、行内反引号；必须位于 `work_dir` 或插件媒体目录（realpath）；图片走 PIL 实检（10 MiB），视频按 `.mp4/.mov/.webm` + 100 MiB。
+- URL 识别：仅 `http/https` 且路径扩展名属于媒体；拦截 `localhost`、回环与私网地址；直接交给 `Image.fromURL` / `Video.fromURL`，失败只告警。
+- 顺序与去重：按出现顺序与文本混排；本地优先——同一回复有可信本地媒体时丢弃 URL；单条最多 10 个，同一路径/URL 只发一次。
+- 文本清理：命中 token 从正文移除（含反引号与 Markdown 语法）；围栏代码块不扫描。
+- 与长图：先解析媒体，有媒体则按图文发送并跳过整段长图；无媒体才走原长图/文本逻辑。
+- 开关：`auto_send_media`（默认开），关闭后只认显式标记。
+
 
 
 - AstrBot 事件、回复与插件数据目录的具体调用方式参考 `integrations/astrbot/astrbot_plugin_sourcehub_inspector/` 和 `integrations/astrbot/astrbot_plugin_sourcehub_bilibili/`。

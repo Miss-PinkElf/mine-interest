@@ -1,0 +1,15 @@
+{
+  "name": "cc-qq 执行回执",
+  "plugin": "astrbot_plugin_cc_qq",
+  "send": {
+    "group_id": "{{group_id}}",
+    "text": "请只回复：回执测试-丙",
+    "at_bot": true
+  },
+  "expect": {
+    "timeout_seconds": 120,
+    "messages": [
+      {"contains": ["已收到，正在处理，完成后会回复。", "回执测试-丙"]}
+    ]
+  }
+}

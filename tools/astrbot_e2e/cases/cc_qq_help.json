@@ -1,5 +1,5 @@
 {
-  "name": "cc_qq /help 群聊回执",
+  "name": "cc_qq /help 命令列表",
   "plugin": "astrbot_plugin_cc_qq",
   "reload": true,
   "send": {
@@ -9,10 +9,11 @@
   },
   "expect": {
     "timeout_seconds": 30,
-    "messages": [{"contains": ["/new", "/info"]}],
+    "messages": [{"contains": ["/start", "/info"]}],
+    "images": {"max": 0},
     "semantic": {
       "enabled": true,
-      "criteria": "回复是一份命令列表，且包含 /new 与 /info"
+      "criteria": "回复是一份命令列表，且包含 /start 与 /info，不包含 /new"
     }
   }
 }

@@ -1,0 +1,13 @@
+{
+  "name": "cc-qq 回执去重间隔垫片",
+  "plugin": "astrbot_plugin_cc_qq",
+  "send": {
+    "group_id": "{{group_id}}",
+    "text": "请先执行 shell 命令 sleep 10，等它结束后再只回复：间隔完成-丁",
+    "at_bot": true
+  },
+  "expect": {
+    "timeout_seconds": 180,
+    "messages": [{"contains": ["间隔完成-丁"]}]
+  }
+}

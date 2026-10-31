@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from astrbot_plugin_cc_qq.constants import IMAGE_MARKER_MAX_COUNT
-from astrbot_plugin_cc_qq.media import parse_reply_parts
+from astrbot_plugin_cc_qq.reply_media import parse_reply_parts
 
 
 class ParseReplyPartsTests(unittest.TestCase):

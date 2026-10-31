@@ -1,0 +1,24 @@
+{
+  "name": "cc-qq 执行中 /! 中断",
+  "plugin": "astrbot_plugin_cc_qq",
+  "steps": [
+    {
+      "send": {
+        "group_id": "{{group_id}}",
+        "text": "请执行 shell 命令 sleep 120，等它结束后再只回复：中断前完成-戊",
+        "at_bot": true
+      },
+      "expect": {
+        "timeout_seconds": 30,
+        "messages": [{"contains": ["已收到，正在处理"]}]
+      }
+    },
+    {
+      "send": {"group_id": "{{group_id}}", "text": "/!", "at_bot": true},
+      "expect": {
+        "timeout_seconds": 60,
+        "messages": [{"contains": ["已中断当前代理执行"]}]
+      }
+    }
+  ]
+}

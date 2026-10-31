@@ -1,0 +1,16 @@
+{
+  "name": "cc-qq /pwd 工作目录与权限档",
+  "plugin": "astrbot_plugin_cc_qq",
+  "send": {
+    "group_id": "{{group_id}}",
+    "text": "/pwd",
+    "at_bot": true
+  },
+  "expect": {
+    "timeout_seconds": 60,
+    "messages": [
+      {"contains": ["工作目录", "权限档", "代理"]}
+    ],
+    "images": {"max": 0}
+  }
+}

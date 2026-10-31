@@ -13,6 +13,8 @@ from .approval import ApprovalBroker, approval_targets
 from .commands.registry import command_allowed, parse_command, will_run_agent
 from .constants import (
     APPROVAL_USAGE_REPLY,
+    AUTO_SEND_MEDIA_KEY,
+    DEFAULT_AUTO_SEND_MEDIA,
     DEFAULT_LONG_TEXT_IMAGE_MAX_HEIGHT,
     DEFAULT_LONG_TEXT_IMAGE_USE_NETWORK,
     DEFAULT_MAX_INCOMING_IMAGES,
@@ -53,7 +55,8 @@ from .media import agent_images, cleanup_old_media, materialize
 from .permissions import ROLE_ADMIN, ROLE_OWNER
 from .platform.duplicates import is_recent_duplicate
 from .platform.qq_events import empty_text_reply, parse_qq_event, should_ignore_as_stale, stale_max_age_from_config
-from .platform.replies import send_images, send_reply, send_text
+from .platform.replies import send_images, send_parts, send_reply, send_text
+from .reply_media import has_reply_media, parse_reply_parts
 from .render import (
     config_flag,
     render_long_images,
@@ -381,7 +384,17 @@ class CcQqPlugin(Star):
     async def _deliver(
         self, message, reply: str, work_dir: str, allow_long_image: bool
     ) -> bool:
-        """长文本优先渲染成长图；渲染或发送失败时回退文本。"""
+        """回复中的图片/视频按原位置优先发送；纯文本再走长图或文本。"""
+        auto_send = self._config_flag(AUTO_SEND_MEDIA_KEY, DEFAULT_AUTO_SEND_MEDIA)
+        parts, ignored = parse_reply_parts(
+            reply, work_dir, self.media_root, auto_send=auto_send
+        )
+        if has_reply_media(parts):
+            if ignored:
+                self.logger.warning(
+                    "%s 忽略 %s 个不可信的图片路径", LOG_PREFIX, ignored
+                )
+            return await send_parts(self.context, message.origin, parts, self.logger)
         if allow_long_image and should_render_image(
             reply,
             self.service.image_enabled(message.conversation),

@@ -1,7 +1,7 @@
 """插件标识、配置键与默认值（Plugin Constants）。"""
 
 PLUGIN_NAME = "astrbot_plugin_cc_qq"
-PLUGIN_VERSION = "0.3.2"
+PLUGIN_VERSION = "0.3.3"
 PLUGIN_DESCRIPTION = "通过 QQ 使用本机 Claude Code 与 Codex"
 LOG_PREFIX = "[cc-qq]"
 
@@ -198,6 +198,14 @@ IMAGE_MARKER_PATTERN = r"\[\[image:(.+?)\]\]"
 IMAGE_MARKER_PREFIX = "[[image:"
 IMAGE_MARKER_MAX_COUNT = 10
 IMAGE_MARKER_IGNORED_REPLY = "有图片路径不在允许范围内，已忽略。"
+
+# 回复媒体自动识别（Auto-send Reply Media）：回复里出现可信路径或公网媒体链接时自动发送。
+AUTO_SEND_MEDIA_KEY = "auto_send_media"
+DEFAULT_AUTO_SEND_MEDIA = True
+AUTO_MEDIA_MAX_COUNT = 10
+MAX_VIDEO_BYTES = 100 * 1024 * 1024
+MEDIA_VIDEO_EXTENSIONS = frozenset((".mp4", ".mov", ".webm"))
+MEDIA_REPLY_EXTENSIONS = MEDIA_IMAGE_EXTENSIONS | MEDIA_VIDEO_EXTENSIONS
 
 # 需求 5：长文本渲染（Long-text Rendering）
 LONG_TEXT_IMAGE_ENABLED_KEY = "long_text_image_enabled"

@@ -3,17 +3,18 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:10:32 +08:00
-- 更新时间（Updated At）：2026-11-01 01:00:00 +08:00
+- 更新时间（Updated At）：2026-11-01 02:40:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：提供本 mission 的短当前快照。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
-- 当前状态（Status）：`0.3.2` 已发布并覆盖生产与测试安装目录，两实例已重启加载 `v0.3.2`；单测 165/165；Codex 侧 0.2.5 同项仍待做
-- 文档边界（Scope / Boundary）：当前状态真相源（source of truth）。不代表已在 AstrBot/QQ 上完成 `0.3.2` 真机复测。
+- 当前状态（Status）：`0.3.3` 单测 181/181、真机 e2e 12/12 通过（含 rc-draw 显式用例），**未发布、未覆盖生产安装目录**；生产仍运行 `0.3.2`，测试实例 `~/.astrbot-e2e` 已装 0.3.3；代码已提交（收尾提交，未推送）
+- 文档边界（Scope / Boundary）：当前状态真相源（source of truth）。不代表已在 AstrBot/QQ 上完成 `0.3.3` 真机验证。
 
 ## 当前快照
 
+- **2026-11-01 回复媒体自动识别（0.3.3，真机 12/12 通过，待发布）**：真机（测试 bot `3299987672`、群 `701292201`）本地图片、公网 URL、越权/私网拒绝、显式标记、回执、多轮、`/!` 中断全部通过；显式 `rc-draw-generate` 用例实际调用 `run.sh` 生成 1254×1254 PNG 并自动发送。报告与证据见 `tools/astrbot_e2e/reports/20261101-022711-060610-astrbot_plugin_cc_qq-suite/`。以下为代码实施摘要：群 `209267585` 用户 `1961618848` 要求“把图片发给我”，代理生成的 5.0 MB PNG 未被发送。根因是 `[[image:<path>]]` 协议未进入代理运行时上下文，生产 196 个回合 0 次使用；同时 374 字回复被转为文字长图。新增 `reply_media.py` 自动识别可信本地图片/视频路径（绝对、`~/`、`./`、Markdown、反引号）与公网媒体 URL，本地仅限 `work_dir`/插件媒体目录，URL 拦截私网；`send_parts()` 支持 `Image`/`Video`；含媒体的回复不再整体转长图；新增 `auto_send_media` 开关（默认开）。全量单测 181/181，真实回合 196 离线复放通过。详见 `bug-log.md`、`decision-log.md` 与计划 `plans/2026-11-01-cc-qq-回复媒体自动识别与发送计划.md`。
 - **2026-11-01 两处缺陷修复并发布 0.3.2**：① 代理 `stream-json` 单行（图片 base64，1,050,933 字节）超过 `StreamReader` 1 MiB 上限导致 `ValueError`、整轮工作丢失；改为 `agents/process.py::iter_stdout_lines()` 分块读取、超限整行丢弃告警，上限 8 MiB，并补充异常堆栈日志。② AstrBot 内置 `/new`（共享群管理员）在 `waking_check` 阶段先于插件拦截，cc-qq 的 `/new` 更名为 `/start`，不保留别名。单测 165/165；已生成 `integrations/astrbot/astrbot_plugin_cc_qq-v0.3.2-upload.zip`，生产与测试安装目录已覆盖（备份 `~/.astrbot/data/plugin-backup-20261101-005050/`、`~/.astrbot-e2e/data/plugin-backup-20261101-005050/`），两实例重启后日志均为「已加载 v0.3.2」。详见 `bug-log.md` 与两份 `plans/2026-11-01-*` 计划。
 - **2026-10-30 需求 5 真机测试（astrbot-plugin-e2e）**：媒体 suite 6/6、基础命令 suite 4/4 通过。测试中发现并修复 4 个缺陷：B1 配置 `null` 导致媒体/长图默认关闭；B2 `/help` 命令回复被误转长图；B3 NapCat 图片 URL 过期导致落盘失败（改用 `get_image` 本地路径）；B4 `[[image:相对路径]]` 按进程 cwd 解析导致发送失败（改为 realpath 绝对路径）。单测 159/159。详见 `bug-log.md` 与两份 suite 报告。
 - **2026-10-30 需求 5 实施与发布（0.3.1）**：新增媒体输入（直接图片、引用消息、合并转发）、图片输出 `[[image:<path>]]`、长文本本地 T2I 长图（默认 360 字或含代码块触发）与 `/img on|off`。只读档通过 `extra_read_roots` 额外放行插件媒体目录，写工具与 `Bash` 仍拒绝。真机修复后发布 `0.3.1`：生产与测试安装目录已覆盖（生产备份 `~/.astrbot/data/plugin-backup-20261030-165521/`），ZIP 为 `integrations/astrbot/astrbot_plugin_cc_qq-v0.3.1-upload.zip`。计划见 `plans/2026-10-30-cc-qq-需求5-媒体输入输出与长文本渲染实施计划.md`。
@@ -58,3 +59,12 @@
 - 审批卡片私聊通知管理员、私聊短时聚合与上下文截断（需求3.3）、工作目录人格、图形化权限页：见 `deferred/阶段二至四功能.md`。
 - 阶段 2 到阶段 4 的其余功能仍按总体计划继续。
 - **需求 5 延期项**：图片来源与合理性（搜索图片、表情包）、合并转发在群聊中的触发规则、GitHub Pages／语雀网页版、群会话按成员隔离、长图样式配置、单张图片大小与保留期配置、outbox 自动附发、媒体用例入库。逐项原因与触发条件见 `deferred/第一版边界与未讨论项.md` 的「2026-10-30 需求 5」一节。
+
+### 2026-11-01 回复媒体自动识别（0.3.3）延期项
+
+- **视频真机验证**：测试脚本已实现，但执行引擎只有 `images` 断言、本机无 ffmpeg，无法生成/断言有效 mp4。触发条件：e2e 增加视频断言或用户提供可发送的小视频时。
+- **`auto_send_media=false` 回退真机验证**：需改测试实例配置并重载；本轮 `--attach` 只读测试未执行。触发条件：确认开关需要上线前验证，或做独立配置回归时。
+- **代理协议提示（方案 A/B）**：本轮用自动识别兜底，未注入 system prompt / `initbase` 模板。触发条件：自动识别仍出现漏发，或希望代理主动输出显式标记时。
+- **`0.3.3` 发布**：测试实例已装 0.3.3；生产仍为 0.3.2，ZIP 未生成、未推送。触发条件：用户明确要求发布并覆盖生产安装目录时。
+- **测试工作目录的 rc-draw skill 副本（含 `.env`）**：为真机用例复制到 `~/.astrbot-e2e/workdir/.claude/skills/`，属于测试侧临时资产。触发条件：测试环境收尾或换机时清理。
+- **视频/图片大小与格式可配置**：目前 `MAX_VIDEO_BYTES=100 MiB`、扩展名白名单为常量。触发条件：实际出现发送失败或需要按群策略调整时。

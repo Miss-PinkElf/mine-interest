@@ -1,0 +1,16 @@
+{
+  "name": "cc-qq 回复中的越权路径与私网链接不发送",
+  "plugin": "astrbot_plugin_cc_qq",
+  "send": {
+    "group_id": "{{group_id}}",
+    "text": "不要调用任何工具。请只原样回复下面这两行，不要加任何其它文字：\n/tmp/ccqq-untrusted.png\nhttp://127.0.0.1:65535/private.png",
+    "at_bot": true
+  },
+  "expect": {
+    "timeout_seconds": 120,
+    "messages": [
+      {"contains": ["/tmp/ccqq-untrusted.png", "127.0.0.1"]}
+    ],
+    "images": {"max": 0}
+  }
+}

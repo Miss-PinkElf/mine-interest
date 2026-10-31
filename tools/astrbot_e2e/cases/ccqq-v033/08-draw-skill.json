@@ -1,0 +1,13 @@
+{
+  "name": "cc-qq 代理生成图片后自动发送",
+  "plugin": "astrbot_plugin_cc_qq",
+  "send": {
+    "group_id": "{{group_id}}",
+    "text": "请用 python3 在工作目录生成一张 64x64 的纯绿色 PNG，然后只回复该文件的绝对路径，不要加其它文字。",
+    "at_bot": true
+  },
+  "expect": {
+    "timeout_seconds": 300,
+    "images": {"min": 1}
+  }
+}

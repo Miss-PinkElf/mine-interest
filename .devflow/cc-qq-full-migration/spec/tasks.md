@@ -98,6 +98,18 @@
 - [x] T06.9 文档与版本：README 群会话语义与媒体说明、`metadata.yaml` 与版本常量升至 `0.3.1`。
 - [x] T06.10 真机验收：直接图片、引用、`[[image:]]` 发图、非法路径拒绝、长图、`/img off`、命令回归均通过；媒体 suite 6/6、基础命令 suite 4/4。**合并转发标记 SKIPPED**：群聊中合并转发无法与 @bot 同时发送，按设计静默；私聊场景本轮未开启。证据：`tools/astrbot_e2e/reports/20261030-164735-823213-astrbot_plugin_cc_qq-suite/`、`.../20261030-164654-829047-astrbot_plugin_cc_qq-suite/`。
 
+## T07 回复媒体自动识别与发送（0.3.3）
+
+计划：`plans/2026-11-01-cc-qq-回复媒体自动识别与发送计划.md`。
+
+- [x] T07.1 `constants.py` / `_conf_schema.json`：新增 `auto_send_media`（默认开）、`AUTO_MEDIA_MAX_COUNT=10`、`MAX_VIDEO_BYTES=100 MiB`、视频扩展名白名单。
+- [x] T07.2 新增 `reply_media.py`：显式标记解析迁入；自动识别本地路径（绝对、`~/`、`./`、`../`、Markdown、反引号）与公网媒体 URL；本地仅限 `work_dir`/插件媒体目录，图片 PIL 实检，URL 拦截回环/私网；本地优先去重、单条上限、文本清理。
+- [x] T07.3 `platform/replies.py`：新增 `send_parts()`，支持 `Image`/`Video` 组件与 URL（`fromURL`/`fromFileSystem`）；单媒体失败只告警。
+- [x] T07.4 `main.py::_deliver()`：先解析媒体；含媒体时按图文发送并跳过长图，否则保持原逻辑；读取 `auto_send_media`。
+- [x] T07.5 测试与文档：新增 `tests/test_reply_auto_media.py` 16 项；全量单测 181/181；README、配置说明、版本 `0.3.3`。
+- [x] T07.6 真机验收（astrbot-plugin-e2e，测试 bot `3299987672`／发送者 `1961618848`／群 `701292201`）：suite 12/12 通过（本地图片、URL、越权/私网拒绝、显式标记、回执、多轮、`/!` 中断）；另显式跑通 `rc-draw-generate`（`run.sh` 生成 1254×1254 PNG）并自动发送。证据：`tools/astrbot_e2e/reports/20261101-022711-060610-astrbot_plugin_cc_qq-suite/`、`.../20261101-022956-010523-cc-qq-rc-draw-generate-skill/`。
+- [ ] T07.7 未做（延期）：视频真机、`auto_send_media=false` 回退、代理协议提示；见 `deferred/2026-11-01-post-0.3.3-deferred.md`。
+
 
 
 - [x] 同步提升 `metadata.yaml` 与 Python 版本常量至 `0.1.16`。覆盖安装目录后需用户重载才生效。

@@ -165,6 +165,12 @@
     "default": 6,
     "hint": "单条消息最多下载并交给代理的图片数量，超出部分忽略并提示。图片保存在插件数据目录 media/ 下，默认保留 7 天。"
   },
+  "auto_send_media": {
+    "description": "⑧ 自动发送回复中的媒体（Auto-send Reply Media）",
+    "type": "bool",
+    "default": true,
+    "hint": "开启后，代理回复里出现的可信本地图片/视频路径，或公网图片/视频链接，会被插件自动发送；本地文件仅限当前工作目录与插件媒体目录，单条最多 10 个。关闭后只认 [[image:<路径>]] 标记。"
+  },
   "long_text_image_enabled": {
     "description": "⑧ 长文本转图片（Long Text Image）",
     "type": "bool",

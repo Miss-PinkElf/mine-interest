@@ -1,0 +1,13 @@
+{
+  "name": "cc-qq 回复自动发送公网图片链接",
+  "plugin": "astrbot_plugin_cc_qq",
+  "send": {
+    "group_id": "{{group_id}}",
+    "text": "不要调用任何工具。请只原样回复下面这一行，不要加任何其它文字：\nhttps://www.python.org/static/img/python-logo.png",
+    "at_bot": true
+  },
+  "expect": {
+    "timeout_seconds": 120,
+    "images": {"min": 1, "max": 1}
+  }
+}

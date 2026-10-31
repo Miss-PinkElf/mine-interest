@@ -2,17 +2,33 @@
 
 from __future__ import annotations
 
-from astrbot.core.message.components import Image, Plain
+from astrbot.core.message.components import Image, Plain, Video
 from astrbot.core.message.message_event_result import MessageChain
 
 from ..constants import LOG_PREFIX, MAX_QQ_TEXT_CHARS
-from ..media import parse_reply_parts
+from ..reply_media import (
+    MEDIA_KIND_TEXT,
+    MEDIA_KIND_VIDEO,
+    parse_reply_parts,
+)
+
+URL_PREFIXES = ("http://", "https://")
+IMAGE_SEND_FAILED_WARNING = "%s 图片发送失败：%s"
+VIDEO_SEND_FAILED_WARNING = "%s 视频发送失败：%s"
 
 
 def split_text(content: str):
     """按 QQ 文本长度分段，保持原始顺序。"""
     return [content[index:index + MAX_QQ_TEXT_CHARS]
             for index in range(0, len(content), MAX_QQ_TEXT_CHARS)]
+
+
+def _media_component(kind: str, value: str):
+    """URL 交给 AstrBot 抓取，本地路径直接读取。"""
+    is_url = value.startswith(URL_PREFIXES)
+    if kind == MEDIA_KIND_VIDEO:
+        return Video.fromURL(value) if is_url else Video.fromFileSystem(value)
+    return Image.fromURL(value) if is_url else Image.fromFileSystem(value)
 
 
 async def _send_chain(context, origin: str, components: list, logger) -> bool:
@@ -27,6 +43,32 @@ async def _send_chain(context, origin: str, components: list, logger) -> bool:
     return bool(delivered)
 
 
+async def send_parts(
+    context, origin: str, parts: list[tuple[str, str]], logger
+) -> bool:
+    """按顺序发送文本、图片与视频；单个媒体失败只影响该条。"""
+    if not origin or not parts:
+        return False
+    delivered = True
+    for kind, value in parts:
+        if kind == MEDIA_KIND_TEXT:
+            for chunk in split_text(value):
+                if not await _send_chain(context, origin, [Plain(chunk)], logger):
+                    delivered = False
+                    break
+            if not delivered:
+                break
+            continue
+        if not await _send_chain(context, origin, [_media_component(kind, value)], logger):
+            warning = (
+                VIDEO_SEND_FAILED_WARNING
+                if kind == MEDIA_KIND_VIDEO
+                else IMAGE_SEND_FAILED_WARNING
+            )
+            logger.warning(warning, LOG_PREFIX, value)
+    return delivered
+
+
 async def send_reply(
     context,
     origin: str,
@@ -34,32 +76,19 @@ async def send_reply(
     logger,
     work_dir: str = "",
     media_root=None,
+    auto_send: bool = False,
 ) -> bool:
-    """发送文本；内容中的 `[[image:<path>]]` 会作为图片按原位置发送。"""
+    """发送回复；`[[image:<path>]]` 与自动识别的媒体按原位置发送。"""
     if not origin or not content:
         return False
-    parts, ignored = parse_reply_parts(content, work_dir, media_root)
+    parts, ignored = parse_reply_parts(
+        content, work_dir, media_root, auto_send=auto_send
+    )
     if ignored:
         logger.warning("%s 忽略 %s 个不可信的图片路径", LOG_PREFIX, ignored)
     if not parts:
         return False
-
-    delivered = True
-    for kind, value in parts:
-        if kind == "text":
-            for chunk in split_text(value):
-                if not await _send_chain(context, origin, [Plain(chunk)], logger):
-                    delivered = False
-                    break
-            if not delivered:
-                break
-        else:
-            if not await _send_chain(
-                context, origin, [Image.fromFileSystem(value)], logger
-            ):
-                # 图片发送失败只影响该图，后续文本继续发送。
-                logger.warning("%s 图片发送失败：%s", LOG_PREFIX, value)
-    return delivered
+    return await send_parts(context, origin, parts, logger)
 
 
 async def send_images(context, origin: str, paths, logger) -> bool:

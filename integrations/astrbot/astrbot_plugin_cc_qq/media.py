@@ -9,7 +9,6 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import os
-import re
 import shutil
 import time
 from dataclasses import dataclass, replace
@@ -19,16 +18,12 @@ from PIL import Image as PILImage
 
 from .constants import (
     DEFAULT_MAX_INCOMING_IMAGES,
-    IMAGE_MARKER_MAX_COUNT,
-    IMAGE_MARKER_PATTERN,
     IMAGE_ONLY_PROMPT,
     MAX_FORWARD_CHARS,
     MAX_IMAGE_BYTES,
     MEDIA_EXTENSION_BY_FORMAT,
 )
 from .contracts import IncomingMessage
-
-IMAGE_MARKER = re.compile(IMAGE_MARKER_PATTERN)
 
 
 @dataclass(frozen=True)
@@ -307,33 +302,3 @@ def build_agent_prompt(message: IncomingMessage) -> str:
         sections.append("如需查看图片，请使用 Read 工具读取上面的本地路径。")
 
     return "\n\n".join(section for section in sections if section).strip()
-
-
-def parse_reply_parts(
-    content: str, work_dir: str = "", media_root: Path | str | None = None
-) -> tuple[list[tuple[str, str]], int]:
-    """把代理回复拆成文本段与图片段；不可信路径被剔除并计数。"""
-    parts: list[tuple[str, str]] = []
-    ignored = 0
-    image_count = 0
-    last = 0
-    for match in IMAGE_MARKER.finditer(content):
-        text = content[last:match.start()]
-        if text:
-            parts.append(("text", text))
-        path = match.group(1).strip()
-        resolved = (
-            resolve_trusted_path(path, work_dir, media_root)
-            if path and image_count < IMAGE_MARKER_MAX_COUNT
-            else None
-        )
-        if resolved:
-            parts.append(("image", resolved))
-            image_count += 1
-        else:
-            ignored += 1
-        last = match.end()
-    tail = content[last:]
-    if tail:
-        parts.append(("text", tail))
-    return parts, ignored
