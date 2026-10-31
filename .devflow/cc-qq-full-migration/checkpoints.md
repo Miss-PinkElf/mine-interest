@@ -3,14 +3,23 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:23:07 +08:00
-- 更新时间（Updated At）：2026-10-30 17:00:00 +08:00
+- 更新时间（Updated At）：2026-11-01 00:55:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：记录本 mission 最近的阶段切换与继续位置。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
-- 当前状态（Status）：0.2.4 已实施，待重载与真机验收（Runtime Verification Pending）
+- 当前状态（Status）：两处缺陷已修复且单测通过（165/165），未升版、未覆盖安装目录（Release Pending）
 - 文档边界（Scope / Boundary）：最近检查点真相源（source of truth）；仅保留最近三条，更早记录见 `checkpoints-archive.md`。
+
+## 2026-11-01 00:55:00 +08:00 — 超长输出崩溃修复 + `/new` 更名为 `/start`
+
+- 已修复私聊「用skill画」`ValueError`：Claude `stream-json` 单行（图片 base64，1,050,933 字节）超过 `StreamReader` 1 MiB 上限，`readline()` 抛 `ValueError`，整轮代理工作丢失。改为 `agents/process.py::iter_stdout_lines()` 分块读取、按换行切分、超限整行丢弃告警；上限提升到 8 MiB；`main.py` 失败日志补充异常消息与堆栈。新增 `tests/test_process_stream.py` 5 项，真实子进程 1.05 MB 单行复现通过。
+- 已规避群内 `/new` 权限冲突：AstrBot 内置 `/new`（共享群管理员）在 `waking_check` 阶段先于插件拦截，核心 `admins_id` 仍为默认 `["astrbot"]`。cc-qq 的 `/new` 更名为 `/start`，不保留别名；`README`、帮助文案与测试同步。
+- 验证：AstrBot Python 3.12.13 全量单测 **165/165** 通过。
+- 发布：`0.3.2` ZIP 已生成（`astrbot_plugin_cc_qq-v0.3.2-upload.zip`）；生产与测试安装目录已覆盖，备份为 `plugin-backup-20261101-005050`；两实例已重启，日志均为「已加载 v0.3.2」（生产 3 群/私聊开，测试 1 群/私聊关）。
+- 待办：真机复测私聊大图读取与群内 `@bot /start`；如仍介意旧 `/new` 提示，可在 WebUI「指令管理」单独禁用内置 `/new`。
+- 计划：`plans/2026-11-01-cc-qq-代理输出超长行导致ValueError修复计划.md`、`plans/2026-11-01-cc-qq-new命令更名为start计划.md`。
 
 ## 2026-10-30 17:00:00 +08:00 — 需求 5 真机测试完成（媒体 suite 6/6）
 
@@ -28,14 +37,5 @@
 - 用户明确真机由其本人执行；本轮不做真机验收、不覆盖安装目录、不生成 ZIP。
 - 待真机风险：`codex exec resume` 是否接受 `-i`；guest 只读档能否按媒体根读图；长图临时文件依赖 AstrBot 清理。
 - 证据与交接：`handoffs/2026-10-30-010-需求5媒体与长图代码完成待真机.md`；计划 `plans/2026-10-30-cc-qq-需求5-媒体输入输出与长文本渲染实施计划.md`。
-
-## 2026-10-30 00:05:00 +08:00 — C 阶段验收完成 + 0.2.5 修复 F1
-
-- 已完成 C 阶段：普通消息 1.1s 回执 / 6.5s 回复、`/cc` 透传、`/goon` 前缀、执行中 `/!` 中断、guest 只读、workspace 内写、目录外审批 `/deny` 与 `/approve`、deepseek 搜索（1 次 `deepseek_search`，0 次原生联网）全部通过。
-- 已完成 0.2.5：`will_run_agent` 增加 role 门禁、`/cc` 空参不触发回执；`service._should_notify_started` 要求 `/goon` 存在活跃会话。单测 113/113；真机复验 owner `/cc`、无会话 `/goon`、guest `/cc`/`/goon` 均不再先发回执。
-- 环境：测试配置已按备份恢复；生产 AstrBot 已恢复（PID `61792`，`6185/6199` 正常）。
-- 流程问题：F1 修复未先取得用户明确批准即实施；用户已要求后续所有修复必须先说明问题、走 devflow Align/Plan 并获批准后再 Apply，规则已写入 `.claude/CLAUDE.md` 三处。
-- 证据：`plans/2026-10-29-cc-qq-0.2.4-命令与权限验收结果.md`（含 C/D 节）；原始 JSON 在 `tools/astrbot_e2e/reports/20261029-ccqq-accept/`。
-- 下一步：Codex 侧同项验收；决定是否生成 `v0.2.5` ZIP、提交与推送。
 
 （更早检查点见 `checkpoints-archive.md`。）

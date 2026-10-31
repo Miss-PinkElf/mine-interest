@@ -1,7 +1,7 @@
 """插件标识、配置键与默认值（Plugin Constants）。"""
 
 PLUGIN_NAME = "astrbot_plugin_cc_qq"
-PLUGIN_VERSION = "0.3.1"
+PLUGIN_VERSION = "0.3.2"
 PLUGIN_DESCRIPTION = "通过 QQ 使用本机 Claude Code 与 Codex"
 LOG_PREFIX = "[cc-qq]"
 
@@ -151,8 +151,11 @@ NO_COMMANDS_REPLY = "当前角色没有可用命令。"
 NEW_SESSION_REPLY_TEMPLATE = "已新建会话 #{session_id}，代理：{agent_type}。"
 RESUMED_SESSION_REPLY_TEMPLATE = "已恢复会话 #{session_id}，代理：{agent_type}。"
 NO_WORK_DIR_REPLY = "工作目录不存在"
-MAX_AGENT_OUTPUT_LINE_BYTES = 1_048_576
-NO_ACTIVE_SESSION_REPLY = "当前没有活跃会话，请发送消息或使用 /new 开始。"
+# 代理 stdout 单行上限：超过时整行丢弃并告警，不再让 asyncio 的 readline 抛 ValueError。
+MAX_AGENT_OUTPUT_LINE_BYTES = 8 * 1024 * 1024
+# 分块读取代理 stdout 的块大小，避免把超大行整体缓存在内存里。
+STDOUT_READ_CHUNK_BYTES = 65_536
+NO_ACTIVE_SESSION_REPLY = "当前没有活跃会话，请发送消息或使用 /start 开始。"
 CONTINUE_PROMPT = "继续"
 SESSION_ACTIVE = "active"
 SESSION_ENDED = "ended"

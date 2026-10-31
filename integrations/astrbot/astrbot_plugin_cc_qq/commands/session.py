@@ -35,7 +35,7 @@ def help_text(role: str = ROLE_GUEST) -> str:
 
 def info_text(record: SessionRecord | None) -> str:
     if record is None:
-        return "当前没有活跃会话。发送消息或使用 /new 开始。"
+        return "当前没有活跃会话。发送消息或使用 /start 开始。"
     return f"当前会话 #{record.id}，代理：{record.agent_type}，状态：{record.status}。"
 
 

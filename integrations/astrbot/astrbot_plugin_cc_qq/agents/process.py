@@ -19,6 +19,7 @@ from ..constants import (
     STDERR_LOG_LINE_CHARS,
     STDERR_LOG_LINE_COUNT,
     STDERR_TAIL_LINES,
+    STDOUT_READ_CHUNK_BYTES,
 )
 
 logger = logging.getLogger("astrbot_plugin_cc_qq.agents.process")
@@ -42,6 +43,63 @@ async def deliver_prompt(stdin, prompt: str, process) -> None:
             code = process.returncode
         shown = "未知" if code is None else str(code)
         raise AgentProcessError(f"代理进程在接收消息前退出，退出码 {shown}") from exc
+
+
+def _log_dropped_line(total_bytes: int) -> None:
+    logger.warning("%s 丢弃超长代理输出行：%s 字节", LOG_PREFIX, total_bytes)
+
+
+async def iter_stdout_lines(
+    stream: asyncio.StreamReader, max_line_bytes: int, read_timeout_seconds: int
+) -> AsyncIterator[str]:
+    """分块读取 stdout 并按换行切分。
+
+    asyncio 的 StreamReader.readline() 在单行超过 limit 时会抛 ValueError；
+    Claude 的 stream-json 会把图片 base64 等工具结果作为单行输出，
+    因此改为分块读取：超限行整行丢弃并告警，不影响后续事件与本轮执行。
+    """
+    buffer = bytearray()
+    discarding = False
+    dropped_bytes = 0
+    while True:
+        chunk = await asyncio.wait_for(
+            stream.read(STDOUT_READ_CHUNK_BYTES), timeout=read_timeout_seconds
+        )
+        if not chunk:
+            break
+        buffer.extend(chunk)
+        start = 0
+        while True:
+            index = buffer.find(b"\n", start)
+            if index < 0:
+                break
+            line = bytes(buffer[start:index])
+            start = index + 1
+            if discarding:
+                _log_dropped_line(dropped_bytes + len(line))
+                discarding = False
+                dropped_bytes = 0
+                continue
+            if len(line) > max_line_bytes:
+                _log_dropped_line(len(line))
+                continue
+            yield line.decode("utf-8", errors="replace").rstrip("\r")
+        if start:
+            del buffer[:start]
+        if discarding:
+            dropped_bytes += len(buffer)
+            buffer.clear()
+        elif len(buffer) > max_line_bytes:
+            discarding = True
+            dropped_bytes = len(buffer)
+            buffer.clear()
+    if discarding:
+        _log_dropped_line(dropped_bytes)
+    elif buffer:
+        if len(buffer) > max_line_bytes:
+            _log_dropped_line(len(buffer))
+        else:
+            yield bytes(buffer).decode("utf-8", errors="replace").rstrip("\r")
 
 
 def _stderr_for_log(tail: deque[str]) -> str:
@@ -102,16 +160,15 @@ class ProcessRunner:
                 )
                 raise
 
-            while True:
-                try:
-                    line = await asyncio.wait_for(
-                        process.stdout.readline(), timeout=DEFAULT_AGENT_TIMEOUT_SECONDS
-                    )
-                except asyncio.TimeoutError as exc:
-                    raise AgentProcessError("代理长时间没有输出，已中断") from exc
-                if not line:
-                    break
-                yield line.decode("utf-8", errors="replace").rstrip("\r\n")
+            try:
+                async for line in iter_stdout_lines(
+                    process.stdout,
+                    MAX_AGENT_OUTPUT_LINE_BYTES,
+                    DEFAULT_AGENT_TIMEOUT_SECONDS,
+                ):
+                    yield line
+            except asyncio.TimeoutError as exc:
+                raise AgentProcessError("代理长时间没有输出，已中断") from exc
 
             return_code = await process.wait()
             if return_code:

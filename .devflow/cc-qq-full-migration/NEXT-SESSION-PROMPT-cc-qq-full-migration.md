@@ -3,13 +3,13 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 11:00:28 +08:00
-- 更新时间（Updated At）：2026-10-30 17:20:00 +08:00
+- 更新时间（Updated At）：2026-11-01 00:53:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：提供可直接复制到新对话的 mission 恢复指令。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
-- 当前状态（Status）：`0.3.1` 需求 5 已开发、真机测试并覆盖安装目录；Codex 侧 0.2.5 同项、Codex 图片 `-i` 与远端推送待做
+- 当前状态（Status）：`0.3.2` 已发布并覆盖生产与测试安装目录；Codex 侧 0.2.5 同项、Codex 图片 `-i`、`/start` 与大图真机复测、远端推送待做
 - 文档边界（Scope / Boundary）：恢复提示，不代替 `state.md` 或已批准计划。
 
 ## 可复制提示词
@@ -23,9 +23,15 @@
 
 **硬门禁（最高优先级）**：任何代码修复前必须先「说明问题与根因 → 讨论方案 → 写 Plan 到 `.devflow/<mission>/plans/` → 用户明确批准 → 再 Apply」。`继续验证`、`先测着`、`最后再修复` 都不是修复授权。
 
-## 当前结论（2026-10-30）
+## 当前结论（2026-11-01）
 
-- 版本 `0.3.1`；插件单测 159/159 通过。
+- 版本 `0.3.2`；插件单测 165/165 通过。
+- `0.3.2` 两处修复：
+  - 代理 stdout 改为分块读取（`iter_stdout_lines`），单行上限 8 MiB，超限整行丢弃告警；修复图片 base64 单行 >1 MiB 导致 `ValueError` 与整轮丢失。
+  - cc-qq 的 `/new` 更名为 `/start`，避开 AstrBot 内置 `/new`（共享群管理员）在 `waking_check` 阶段的权限拦截；不保留别名。
+- 发布：ZIP `integrations/astrbot/astrbot_plugin_cc_qq-v0.3.2-upload.zip`；生产与测试安装目录已覆盖（备份 `plugin-backup-20261101-005050`）；两实例重启后均为「已加载 v0.3.2」。
+
+## 历史结论（2026-10-30）
 - 需求 5 已完成 Align → Plan → spec 三件套 → Apply → 真机验证：
   - 媒体输入：直接图片、引用消息（文本＋图片）、合并转发展开。
   - 图片输出：`[[image:<path>]]` 图文混排，路径限工作目录或插件媒体目录。
@@ -37,14 +43,15 @@
 
 ## 当前环境
 
-- 生产 AstrBot 与测试 AstrBot 当前都**没有运行**（`6185/6186` 无监听）；覆盖后需用户启动或重载才生效。
+- 生产 AstrBot（`6185/6199`）与测试 AstrBot（`6186/6198`）均**正在运行 `0.3.2`**（2026-11-01 00:51 重启）。
+- 生产日志 `~/.astrbot/logs/restart-20261101-005110.log`；测试日志 `~/.astrbot-e2e/logs/restart-20261101-005110.log`。
 - 两个 NapCat 端口 `6098/6099` 与 OneBot `6200/6201` 仍在监听，两个 QQ 已登录。
 - 测试实例 `~/.astrbot-e2e` 配置已按备份恢复（`claude_setting_sources=""`）；要测代理执行需临时改为 `user`。
 - 一键启动脚本：`~/.qq-e2e/start-e2e.sh`（本地脚本不入库）。
 
 ## 下一步优先级
 
-1. **用户启动生产 AstrBot 并重载 `0.3.1`**，确认日志出现「已加载 v0.3.1」。
+1. **`0.3.2` 真机复测**：群内 `@机器人 /start` 建会话；私聊让代理 `Read` 一张 >750 KB 图片，确认不再出现 `ValueError`、能正常回复。
 2. **Codex 侧真机验收**：0.2.5 的只读／工作区／完全权限（T05.10）；补验 T03-M.4b、T04.4、T04.5。
 3. **Codex 图片 `-i`**：确认 `codex exec resume` 是否接受 `-i`；不接受则改为仅首轮传图。
 4. **推送远端**：`0.3.1` 代码与文档尚未推送；`v0.3.0`／`v0.3.1` 的发布策略由用户决定。
@@ -61,6 +68,8 @@
 - NapCat 图片 URL 会过期，必须优先用 `file` + `get_image` 换本地路径。
 - 长图只对会启动代理的输入生效；同步命令（`/help` 等）永远保持文本。
 - AstrBot 未填写配置是 `null`，读取时必须把 `None` 当默认值。
+- cc-qq 的会话命令是 `/start`（不是 `/new`）。AstrBot 内置 `/new` 要求核心 `admins_id`（当前仍是默认 `["astrbot"]`），在群里会先于插件拦截并回复「权限不足」；如需彻底消除旧 `/new` 提示，在 WebUI「指令管理」单独禁用内置 `/new`。
+- 代理 stdout 现在按块读取；单行超过 8 MiB 会整行丢弃并告警，不再中断整轮执行。
 - `allowed_work_dirs` 为空时 `/cd` 只能测「未配置」负向；测序号切换需临时配置 3 个测试目录。
 - 相同回复文案 10 秒内被去重，批量验收需间隔 ≥11 秒。
 - NapCat 的 `onebot11_*.json` 带 UTF-8 BOM，用 `utf-8-sig`；改完必须重启 QQ。

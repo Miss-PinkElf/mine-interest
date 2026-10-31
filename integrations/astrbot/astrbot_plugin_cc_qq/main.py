@@ -273,7 +273,13 @@ class CcQqPlugin(Star):
                         message, decision, on_started=lambda: self._notify_started(message)
                     )
                 except Exception as exc:
-                    self.logger.error("%s 消息处理失败：%s", LOG_PREFIX, type(exc).__name__)
+                    self.logger.error(
+                        "%s 消息处理失败：%s：%s",
+                        LOG_PREFIX,
+                        type(exc).__name__,
+                        exc,
+                        exc_info=True,
+                    )
                     reply = SERVICE_ERROR_REPLY
                 reply = self._prepend_notes(reply, notes)
 

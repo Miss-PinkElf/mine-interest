@@ -3,17 +3,18 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:10:32 +08:00
-- 更新时间（Updated At）：2026-10-30 17:00:00 +08:00
+- 更新时间（Updated At）：2026-11-01 00:55:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：提供本 mission 的短当前快照。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
-- 当前状态（Status）：`0.3.1` 代码、单测（159/159）与媒体真机 suite（6/6）、基础命令 suite（4/4）均通过；Codex 侧 0.2.5 同项与 ZIP 仍待做
+- 当前状态（Status）：`0.3.2` 已发布并覆盖生产与测试安装目录，两实例已重启加载 `v0.3.2`；单测 165/165；Codex 侧 0.2.5 同项仍待做
 - 文档边界（Scope / Boundary）：当前状态真相源（source of truth）。不代表已在 AstrBot/QQ 上验收通过，也不代表已生成 ZIP。
 
 ## 当前快照
 
+- **2026-11-01 两处缺陷修复并发布 0.3.2**：① 代理 `stream-json` 单行（图片 base64，1,050,933 字节）超过 `StreamReader` 1 MiB 上限导致 `ValueError`、整轮工作丢失；改为 `agents/process.py::iter_stdout_lines()` 分块读取、超限整行丢弃告警，上限 8 MiB，并补充异常堆栈日志。② AstrBot 内置 `/new`（共享群管理员）在 `waking_check` 阶段先于插件拦截，cc-qq 的 `/new` 更名为 `/start`，不保留别名。单测 165/165；已生成 `integrations/astrbot/astrbot_plugin_cc_qq-v0.3.2-upload.zip`，生产与测试安装目录已覆盖（备份 `~/.astrbot/data/plugin-backup-20261101-005050/`、`~/.astrbot-e2e/data/plugin-backup-20261101-005050/`），两实例重启后日志均为「已加载 v0.3.2」。详见 `bug-log.md` 与两份 `plans/2026-11-01-*` 计划。
 - **2026-10-30 需求 5 真机测试（astrbot-plugin-e2e）**：媒体 suite 6/6、基础命令 suite 4/4 通过。测试中发现并修复 4 个缺陷：B1 配置 `null` 导致媒体/长图默认关闭；B2 `/help` 命令回复被误转长图；B3 NapCat 图片 URL 过期导致落盘失败（改用 `get_image` 本地路径）；B4 `[[image:相对路径]]` 按进程 cwd 解析导致发送失败（改为 realpath 绝对路径）。单测 159/159。详见 `bug-log.md` 与两份 suite 报告。
 - **2026-10-30 需求 5 实施与发布（0.3.1）**：新增媒体输入（直接图片、引用消息、合并转发）、图片输出 `[[image:<path>]]`、长文本本地 T2I 长图（默认 360 字或含代码块触发）与 `/img on|off`。只读档通过 `extra_read_roots` 额外放行插件媒体目录，写工具与 `Bash` 仍拒绝。真机修复后发布 `0.3.1`：生产与测试安装目录已覆盖（生产备份 `~/.astrbot/data/plugin-backup-20261030-165521/`），ZIP 为 `integrations/astrbot/astrbot_plugin_cc_qq-v0.3.1-upload.zip`。计划见 `plans/2026-10-30-cc-qq-需求5-媒体输入输出与长文本渲染实施计划.md`。
 - 仓库插件版本升至 `0.2.4`（`0.2.1` 配置页文案，`0.2.2` MCP 放行，`0.2.3` `/cd list` 序号切换，`0.2.4` `/goon` 静默修复与执行回执）。105 个单元测试通过；安装目录已同步到 `0.2.4`（备份在 `~/.astrbot/data/plugin-backup-20261028-005725/`）；未生成 ZIP。

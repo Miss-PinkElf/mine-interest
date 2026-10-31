@@ -43,7 +43,7 @@ class WillRunAgentTest(unittest.TestCase):
         self.assertTrue(will_run_agent(parse_command("今天天气怎么样")))
 
     def test_agent_starting_commands(self):
-        for text in ("/goon", "/cc 你好", "/new 初始消息", "/! 重跑"):
+        for text in ("/goon", "/cc 你好", "/start 初始消息", "/! 重跑"):
             self.assertTrue(will_run_agent(parse_command(text)), text)
 
     def test_commands_without_agent(self):
@@ -58,7 +58,7 @@ class WillRunAgentTest(unittest.TestCase):
             "/initbase",
             "/approve 1",
             "/deny 1",
-            "/new",
+            "/start",
             "/!",
             "/cc",
         ):
@@ -68,11 +68,11 @@ class WillRunAgentTest(unittest.TestCase):
         self.assertFalse(will_run_agent(parse_command("/cc"), "owner"))
 
     def test_guest_cannot_trigger_agent_commands(self):
-        for text in ("/goon", "/cc 你好", "/new 初始消息", "/! 重跑"):
+        for text in ("/goon", "/cc 你好", "/start 初始消息", "/! 重跑"):
             self.assertFalse(will_run_agent(parse_command(text), "guest"), text)
 
     def test_member_can_trigger_agent_commands(self):
-        for text in ("/goon", "/cc 你好", "/new 初始消息", "/! 重跑"):
+        for text in ("/goon", "/cc 你好", "/start 初始消息", "/! 重跑"):
             self.assertTrue(will_run_agent(parse_command(text), "member"), text)
 
     def test_guest_plain_text_runs_agent(self):

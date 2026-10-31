@@ -18,7 +18,7 @@ class Command:
 COMMANDS = (
     Command("/help", "/help", "查看当前角色可用的命令", ROLE_GUEST),
     Command("/info", "/info", "查看当前会话、工作目录与权限档", ROLE_GUEST),
-    Command("/new", "/new [初始消息]", "新建会话", ROLE_MEMBER),
+    Command("/start", "/start [初始消息]", "新建会话", ROLE_MEMBER),
     Command("/resume", "/resume [会话ID]", "恢复本群或私聊的历史会话", ROLE_MEMBER),
     Command("/end", "/end", "结束当前会话", ROLE_MEMBER),
     Command("/goon", "/goon", "中断当前执行并继续", ROLE_MEMBER),
@@ -36,7 +36,7 @@ INVALID_INTERRUPT_PREFIXES = ("!!", "！！")
 COMMAND_BY_NAME = {command.name: command for command in COMMANDS}
 
 # 有参数才会启动代理的命令：用于决定是否先回「已开始处理」。
-ARGUMENT_AGENT_COMMANDS = frozenset({"/new", "/!"})
+ARGUMENT_AGENT_COMMANDS = frozenset({"/start", "/!"})
 
 
 def will_run_agent(command: tuple[str, str] | None, role: str | None = None) -> bool:

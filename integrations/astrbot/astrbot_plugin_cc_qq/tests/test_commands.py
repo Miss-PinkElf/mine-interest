@@ -5,7 +5,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from astrbot_plugin_cc_qq.commands.registry import command_allowed, will_run_agent
+from astrbot_plugin_cc_qq.commands.registry import (
+    command_allowed,
+    parse_command,
+    will_run_agent,
+)
 from astrbot_plugin_cc_qq.commands.session import help_text
 from astrbot_plugin_cc_qq.constants import (
     CD_LIST_CURRENT_MARKER,
@@ -27,14 +31,20 @@ class CommandRoleTest(unittest.TestCase):
     def test_guest_can_only_use_help_and_info(self):
         self.assertTrue(command_allowed("guest", "/help"))
         self.assertTrue(command_allowed("guest", "/info"))
-        self.assertFalse(command_allowed("guest", "/new"))
+        self.assertFalse(command_allowed("guest", "/start"))
         self.assertFalse(command_allowed("guest", "/cd"))
 
     def test_member_cannot_use_admin_commands(self):
-        self.assertTrue(command_allowed("member", "/new"))
+        self.assertTrue(command_allowed("member", "/start"))
         self.assertFalse(command_allowed("member", "/cd"))
         self.assertFalse(command_allowed("member", "/initbase"))
         self.assertFalse(command_allowed("member", "/approve"))
+
+    def test_new_command_is_renamed_to_start(self):
+        """旧的 /new 与 AstrBot 内置命令冲突，插件只认 /start。"""
+        self.assertIsNone(parse_command("/new"))
+        self.assertEqual(parse_command("/start"), ("/start", ""))
+        self.assertIn("/start", help_text("member"))
 
     def test_admin_can_use_admin_commands(self):
         for name in ("/cd", "/initbase", "/approve", "/deny"):

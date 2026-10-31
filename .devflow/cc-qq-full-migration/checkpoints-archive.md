@@ -163,3 +163,12 @@
 - 缺陷：F1 执行回执早于权限与参数校验；F2 @bot 空文本被内置 LLM 抢占。
 - 环境：生产 AstrBot 测试期间暂停并在结束后恢复（PID `38223`，`6185/6199` 正常）。
 - 证据：`plans/2026-10-29-cc-qq-0.2.4-命令与权限验收结果.md`；原始 JSON 在 `tools/astrbot_e2e/reports/20261029-ccqq-accept/`。
+
+## 2026-10-30 00:05:00 +08:00 — C 阶段验收完成 + 0.2.5 修复 F1
+
+- 已完成 C 阶段：普通消息 1.1s 回执 / 6.5s 回复、`/cc` 透传、`/goon` 前缀、执行中 `/!` 中断、guest 只读、workspace 内写、目录外审批 `/deny` 与 `/approve`、deepseek 搜索（1 次 `deepseek_search`，0 次原生联网）全部通过。
+- 已完成 0.2.5：`will_run_agent` 增加 role 门禁、`/cc` 空参不触发回执；`service._should_notify_started` 要求 `/goon` 存在活跃会话。单测 113/113；真机复验 owner `/cc`、无会话 `/goon`、guest `/cc`/`/goon` 均不再先发回执。
+- 环境：测试配置已按备份恢复；生产 AstrBot 已恢复（PID `61792`，`6185/6199` 正常）。
+- 流程问题：F1 修复未先取得用户明确批准即实施；用户已要求后续所有修复必须先说明问题、走 devflow Align/Plan 并获批准后再 Apply，规则已写入 `.claude/CLAUDE.md` 三处。
+- 证据：`plans/2026-10-29-cc-qq-0.2.4-命令与权限验收结果.md`（含 C/D 节）；原始 JSON 在 `tools/astrbot_e2e/reports/20261029-ccqq-accept/`。
+- 下一步：Codex 侧同项验收；决定是否生成 `v0.2.5` ZIP、提交与推送。

@@ -168,7 +168,7 @@ class ConversationService:
         if name == "/end":
             ended = await self.sessions.end(conversation)
             return SESSION_ENDED_REPLY if ended else NO_SESSION_TO_END_REPLY
-        if name == "/new":
+        if name == "/start":
             await self.sessions.interrupt(conversation)
             record, result = await self.sessions.new(
                 conversation, settings, argument, message.message_id

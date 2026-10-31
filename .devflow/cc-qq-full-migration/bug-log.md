@@ -157,3 +157,19 @@
   - 解决方案：新增 `resolve_trusted_path()` 返回 realpath 绝对路径，`parse_reply_parts` 使用绝对路径发送。
 
 - **测试设计教训**：工作目录内不要放可被代理偶然 `Read` 的测试素材；图片输入应通过 base64 发送，并在断言后检查插件媒体目录，避免语义断言被代理自主探索蒙混。
+
+## 2026-11-01 — 代理单行输出超过 1 MiB 导致整轮失败（已修复，未发布）
+
+- 问题现象：私聊「用skill画」长时间无回复，约 9 分半后收到「处理消息时发生错误，请联系插件管理员查看日志。」；插件日志只有 `[cc-qq] 消息处理失败：ValueError`，数据库回执 `status=error`、无 `turns` 记录。
+- 问题原因：Claude Code 以 `stream-json --verbose` 输出时，工具结果（图片 base64）是单行 JSON。`agents/process.py` 用 `asyncio.StreamReader.readline()` 读取，`limit=MAX_AGENT_OUTPUT_LINE_BYTES`（1 MiB）；单行超过上限时 asyncio 抛 `ValueError: Separator is found, but chunk is longer than limit`。该异常不在任何层被处理，最终由 `main.py:276` 兜底回复通用错误，`finally` 终止代理进程，整轮工作丢失。
+- 证据：Claude 会话 `36455ffd-...jsonl` 在 `2026-10-31T16:16:51.152Z` 有一条 **1,050,933 字节**的 `tool_result`（PNG base64）；插件报错时间 `16:16:51.964`；用 AstrBot Python 3.12.13 复现得到同类型 `ValueError`。
+- 解决方案：`agents/process.py` 新增 `iter_stdout_lines()`，改为按 `STDOUT_READ_CHUNK_BYTES` 分块读取、自行按换行切分；单行超过 `MAX_AGENT_OUTPUT_LINE_BYTES`（提升到 8 MiB）时整行丢弃并告警，不再中断执行；`main.py` 失败日志补充异常消息与堆栈。单测 165/165（新增 `tests/test_process_stream.py` 5 项），真实子进程 1.05 MB 单行复现通过。
+- 计划：`plans/2026-11-01-cc-qq-代理输出超长行导致ValueError修复计划.md`。
+
+## 2026-11-01 — 群内 `/new` 被 AstrBot 内置命令拦截（已改名规避）
+
+- 问题现象：owner `1961618848` 在群 `209267585` 发 `/new`，收到「您(ID: 1961618848)的权限不足以使用此指令。通过 /sid 获取 ID 并请管理员添加。」
+- 问题原因：该文案来自 AstrBot 核心 `pipeline/waking_check/stage.py`。AstrBot 本体自带 `/new`（`builtin_stars/builtin_commands/main.py`），权限为「共享群管理员（SHARED_GROUP_ADMIN）」，判定 `event.is_admin()`；核心 `admins_id` 仍是默认占位值 `["astrbot"]`，与 cc-qq 插件的 `owner_qq_id` 是两套独立体系。权限检查发生在所有插件 handler 之前，失败即回复并 `stop_event()`，cc-qq 的 `/new` 无法执行；私聊不受该群限制，所以正常。
+- 解决方案：cc-qq 的 `/new` 更名为 `/start`（无参数新建会话、带参数启动代理的语义不变），彻底避开同名冲突；不保留 `/new` 别名，避免「私聊能用、群里不能用」的不一致。涉及 `commands/registry.py`、`service.py`、`constants.py`、`commands/session.py`、`README.md` 与两个测试文件；全量单测 165/165。
+- 说明：改名后群内旧习惯 `/new` 仍会命中 AstrBot 内置命令并出现同样的权限提示；如需彻底消除，可在 WebUI「指令管理」单独禁用内置 `/new`（独立配置动作，未执行）。
+- 计划：`plans/2026-11-01-cc-qq-new命令更名为start计划.md`。
