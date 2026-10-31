@@ -8,7 +8,7 @@
 - 目的（Purpose）：给新对话提供可直接复制的恢复提示，继续 E2E 收尾与生产环境一键脚本的登录复测。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest-source-hub`（`.`）。
 - 关联 mission（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
-- 当前状态（Status）：生产环境一键脚本已完成并验证；NapCat 生产登录待扫码（QQ 安全风险 168）；E2E 测试资产待修。
+- 当前状态（Status）：生产环境一键脚本已完成并验证；生产 NapCat 已登录就绪；E2E 测试资产待修。
 - 文档边界（Scope / Boundary）：恢复提示，不替代 `state.md` / `checkpoints.md` / `handoff`。
 
 ## 可复制提示词
@@ -35,10 +35,10 @@
   - `bash -n`、首次启动、幂等、`--restart` 窗口复用、`stop`、`--no-iterm`、E2E 冲突自动停、OneBot 超时返回非 0。
   - 生产 AstrBot `6185/6199`、NapCat `13001/16099`；测试 AstrBot `6186/6198`。
 - 当前运行态（2026-10-31 22:55）：
-  - `napcat` 容器运行但**未登录**（`13001` 监听，`get_login_info` 未返回 17号）。
-  - 生产 AstrBot 已停（`6185/6199` 无监听，PID 文件过期）。
-  - 脚本窗口 `1831` 已关闭；`napcat-e2e-bot` / `napcat-e2e-sender` 已停；测试 AstrBot 运行；`production-stopped` 标记无。
-- 阻塞：NapCat 启动日志要求扫码，QQ 返回「账号近期存在安全风险」错误码 `168`；需用户在最新手机 QQ 恢复账号后扫码，再执行 `prod.sh start` 复测。
+  - `napcat` 容器运行且**已登录**（`13001` 监听，`get_login_info` 返回 17号）。
+  - 生产 AstrBot 运行：PID `40562`，`6185/6199` 监听。
+  - 脚本窗口 `1850` 存在；`napcat-e2e-bot` / `napcat-e2e-sender` 已停；测试 AstrBot 运行；`production-stopped` 标记无。
+- 登录历史：首次启动需扫码且 QQ 曾返回安全风险 `168`；用户已处理并扫码，2026-10-31 22:55 复测通过。
 
 ### 正确命令（用户曾误用）
 
@@ -56,7 +56,7 @@ bash tools/prod_env/prod.sh stop
 
 ### 下一步优先级
 
-1. **恢复生产登录**：用户在手机 QQ 处理安全风险 168 → NapCat WebUI/日志扫码 → `bash tools/prod_env/prod.sh start` 确认 `get_login_info` 返回 17号。
+1. **生产环境已就绪**：保持运行；日常重启用 `bash tools/prod_env/prod.sh start --restart`。跑 E2E 前先停生产（`prod.sh stop` 或 `start-all.sh --stop-production`），避免 17号 冲突。
 2. **修测试资产**：把 `tools/astrbot_e2e/cases/cc_qq_multi_turn.json` 的 `/info` 断言改为包含「当前会话」或匹配「状态」，重跑用例。
 3. **隔离 probe 与 cc-qq**：probe 测试使用只加载 `astrbot_plugin_e2e_probe` 的测试根，或在测试群禁用 cc-qq。
 4. **决定 UX/安全候选**：`restart` 别名（Q18）、`--restart --no-iterm` 旧窗口（Q19）、Dashboard `0.0.0.0:6185` 收口（Q21）、是否停发送者容器（Q22）。

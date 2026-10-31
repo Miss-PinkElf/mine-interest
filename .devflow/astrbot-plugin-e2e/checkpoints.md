@@ -16,8 +16,8 @@
 - 新增 `tools/prod_env/prod.sh` + `README.md`：`start/stop/status`；默认 iTerm 双标签（NapCat 日志 + AstrBot 前台），关闭 AstrBot 标签即停服务；`--restart` 复用窗口；`--no-iterm` 当前终端前台。
 - 幂等：`start` 在 NapCat 与 AstrBot 都在运行时 no-op；重启显式 `--restart`；启动前自动停 `napcat-e2e-bot`；成功后清理过期 `production-stopped` 标记。
 - 验证：`bash -n`；首次启动容器 + `6185/6199` + 双标签；重复 `start` 不新增标签；`--restart` 复用窗口并新增 AstrBot 标签；`stop` 停服务并清 PID/窗口；`--no-iterm` PID 36607 验证；E2E 冲突自动停；OneBot 超时返回非 0。
-- 环境阻塞：NapCat 要求扫码，QQ 返回安全风险 168；`wait_onebot.py` 未拿到 17号。脚本按预期超时并提示 WebUI。
-- 当前运行态：生产 AstrBot PID `37107`、窗口 `1831`、`napcat` 运行未登录；E2E 机器人已停；测试 AstrBot `6186/6198` 运行；标记已清理。
+- 环境阻塞已解除：用户扫码后 `wait_onebot.py` 连接 `13001`，`get_login_info` 返回 17号（exit 0）。
+- 当前运行态：生产 AstrBot PID `40562`、窗口 `1850`、`napcat` 已登录；`napcat-e2e-bot` / `napcat-e2e-sender` 已停；测试 AstrBot `6186/6198` 运行；标记已清理。
 
 ## 2026-10-31 02:31:26 CST — Docker 双容器 E2E 启动脚本完成
 

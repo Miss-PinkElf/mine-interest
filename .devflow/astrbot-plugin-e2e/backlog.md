@@ -34,7 +34,7 @@
 | Q17 | 微信/其他平台 E2E 驱动？ | 当前只有 OneBot/NapCat；微信适配器（`weixin_oc`/`wecom`/公众号）没有 OneBot 驱动，需单独 Align | 用户 | 确定微信渠道后 |
 | Q18 | 是否给 `prod.sh` 增加 `restart` 别名与未知命令提示？ | 用户曾误用 `prod.sh --restart` / `prod.sh --staus`；当前只打印 usage。别名可降低误用，但会增加入口语义 | 用户 | 下次使用前 |
 | Q19 | `start --restart --no-iterm` 是否要清理旧 iTerm 窗口？ | 该组合会在当前终端前台运行 AstrBot，但旧窗口可能残留 NapCat 日志标签；当前不处理 | 用户 | 需要无 GUI 重启时 |
-| Q20 | 生产 NapCat 登录/QQ 安全风险 168 如何恢复？ | 当前 `napcat` 运行但未登录；需用户在最新手机 QQ 按提示恢复账号后扫码 | 用户 | 恢复生产前 |
+| Q20 | 生产 NapCat 登录/QQ 安全风险 168 如何恢复？ | 已恢复：2026-10-31 22:55 用户扫码后 `get_login_info` 返回 17号；保留此条仅作历史记录 | 用户 | 已解决 |
 | Q21 | 生产 AstrBot Dashboard 是否收口到 `127.0.0.1`？ | `~/.astrbot/data/cmd_config.json` 的 `dashboard.host` 为 `0.0.0.0`，日志提示安全风险；本次未改生产配置 | 用户 | 安全加固时 |
 | Q22 | 生产 `start` 是否需要顺带停 `napcat-e2e-sender`？ | 发送者 C# 与生产 17号 不冲突，当前只停 `napcat-e2e-bot`；残留发送者容器可能占用 6201/16398 | 用户 | 需要彻底清理 E2E 时 |
 | Q23 | 手动关闭 NapCat 日志标签后如何感知？ | 脚本只能按窗口 ID 复用窗口；手动关单个标签无法检测，重启时只补 AstrBot 标签 | 实现 | 下次迭代 |

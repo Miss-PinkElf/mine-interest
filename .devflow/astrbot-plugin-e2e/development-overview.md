@@ -8,7 +8,7 @@
 - 目的（Purpose）：供人类理解本 mission 的完整演进、最终结构、验证证据与开放项；不是默认恢复热路径。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
-- 当前状态（Status）：E2E 引擎与生产启动脚本已完成；NapCat 生产登录待扫码。
+- 当前状态（Status）：E2E 引擎与生产启动脚本已完成；生产 NapCat 已登录就绪。
 - 文档边界（Scope / Boundary）：阶段总览；详细任务以 Plan/spec 为准。
 
 ## 背景
@@ -75,7 +75,7 @@ tools/prod_env/
 - `start` 幂等；`start --restart` 显式重启；默认 iTerm 双标签（NapCat 日志 + AstrBot 前台），关闭 AstrBot 标签即停服务；`start --no-iterm` 当前终端前台；`stop` 停服务并清理窗口/PID。
 - 与 E2E 的边界：启动生产前自动停 `napcat-e2e-bot`；成功后清理过期 `production-stopped` 标记；不管理测试发送者与测试 AstrBot。
 - 验证：`bash -n`、首次启动、幂等、`--restart` 窗口复用、`stop`、`--no-iterm`、E2E 冲突、超时返回非 0 均通过。
-- 环境阻塞：生产 NapCat 需扫码；QQ 返回安全风险 168，`get_login_info` 未返回 17号；需用户手机 QQ 恢复后复测。
+- 登录复测：用户已在手机 QQ 处理安全风险 168 并扫码；`wait_onebot.py` 返回 17号，生产可用。
 
 ## 开放项
 
@@ -87,7 +87,7 @@ tools/prod_env/
 - 更深配置/用例形状校验。
 - 测试实例生命周期与 `6198` 重试日志的最终策略。
 - 生产启动脚本未决项：`restart` 别名与未知命令提示、`--restart --no-iterm` 旧窗口清理、Dashboard `0.0.0.0:6185` 安全收口、手动关闭 NapCat 标签感知，见 `backlog.md` Q18–Q23。
-- 生产 NapCat 登录/QQ 安全风险 168：环境侧待用户处理。
+- 生产 NapCat 登录/QQ 安全风险 168：已由用户处理并复测通过。
 
 ## 推荐读取策略
 

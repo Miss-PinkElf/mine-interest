@@ -9,7 +9,7 @@
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
 - 原始需求（Raw Input）：`zzz-prompt-debug/插件自动化测试验证/prompt-01.md`。
-- 当前状态（Status）：生产环境一键脚本已完成并验证；NapCat 生产登录待扫码；E2E 测试资产待修。
+- 当前状态（Status）：生产环境一键脚本已完成并验证；生产 NapCat 已登录就绪；E2E 测试资产待修。
 - 文档边界（Scope / Boundary）：当前 mission 的流程与范围真相源（source of truth）；不是已批准的实施计划（Plan）。
 
 ## 目标
@@ -69,7 +69,7 @@ Mission Init -> Explore -> Align -> Plan -> Propose/Tasks -> Apply -> Verify/Clo
 12. 需求 2 Apply Task 0–11：完成；引擎 127/127，skill 12/12。
 13. 需求 2 真机验收：完成；多轮与 suite PASSED，脱敏与自愈演练通过。
 14. 生产环境一键脚本（`tools/prod_env/`）：完成并验证；iTerm 双标签、幂等 start、显式 `--restart`、`stop` 清理窗口。
-15. 生产 NapCat 登录：待用户在手机 QQ 处理安全风险提示并扫码后复测 `get_login_info`。
+15. 生产 NapCat 登录：用户已处理安全风险并扫码；`get_login_info` 返回 17号，复测通过。
 
 ## 当前阶段出口条件
 
@@ -83,5 +83,5 @@ Mission Init -> Explore -> Align -> Plan -> Propose/Tasks -> Apply -> Verify/Clo
 - 需求 2：已完成并提交。
 - 需求 2 验收证据：`reports/20261030-154828-636210-cc-qq`、`reports/20261030-154847-882152-astrbot_plugin_cc_qq-suite`、`reports/20261030-155012-908540-astrbot_plugin_cc_qq-suite`。
 - 生产环境一键脚本：`tools/prod_env/prod.sh` + README 已完成并验证；随本轮收尾提交。
-- 生产 NapCat 登录阻塞：QQ 安全风险 168，需用户在手机 QQ 恢复后扫码；脚本超时路径已验证。
+- 生产 NapCat 登录：已恢复并复测通过（`get_login_info` 返回 17号）；生产 AstrBot PID `40562`、窗口 `1850`。
 - 下一步测试资产：更新 `cc_qq_multi_turn` `/info` 断言、隔离 probe 与 cc-qq。
