@@ -3,14 +3,14 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 10:10:32 +08:00
-- 更新时间（Updated At）：2026-11-01 00:55:00 +08:00
+- 更新时间（Updated At）：2026-11-01 01:00:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：提供本 mission 的短当前快照。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
 - 当前状态（Status）：`0.3.2` 已发布并覆盖生产与测试安装目录，两实例已重启加载 `v0.3.2`；单测 165/165；Codex 侧 0.2.5 同项仍待做
-- 文档边界（Scope / Boundary）：当前状态真相源（source of truth）。不代表已在 AstrBot/QQ 上验收通过，也不代表已生成 ZIP。
+- 文档边界（Scope / Boundary）：当前状态真相源（source of truth）。不代表已在 AstrBot/QQ 上完成 `0.3.2` 真机复测。
 
 ## 当前快照
 
@@ -37,6 +37,10 @@
 
 ## 本轮不做 / 后续阶段（Deferred Scope）
 
+- **`0.3.2` 真机复测待做**：群内 `@机器人 /start`、私聊让代理读取 >750 KB 图片，确认不再出现 `ValueError`。代码与单测已通过，生产/测试实例已加载 `v0.3.2`，但尚无真实 QQ 复测证据。
+- **AstrBot 内置 `/new` 冲突不在核心侧处理**：本轮选择改插件命令名（`/new`→`/start`），未把 `1961618848` 加入核心 `admins_id`，也未全局关闭内置命令。旧习惯 `/new` 在群里仍会收到核心的「权限不足」提示；触发条件：用户不希望看到该提示或需要内置 `/name`、`/provider` 等管理命令时，再评估「WebUI 指令管理单独禁用内置 `/new`」或「加入 admins_id + 禁用内置 `/new`」。
+- **超过 8 MiB 的单行仍会被整行丢弃**：分块读取只保证不再崩溃；若关键代理文本恰好超过上限，会丢失该行并在日志告警。触发条件：实际出现「代理有输出但用户没收到」且日志出现「丢弃超长代理输出行」时，再评估「保留头部 N 字节 + 截断标记」策略。
+- **AstrBot 内置命令与插件命令的长期共存**：cc-qq 目前只有 `/new` 与内置命令重名（已改名规避），`/help` 仍同时存在两个处理器（内置结果会被 `star_request` 清空，用户只看到插件回复）。若后续 cc-qq 新增命令，需先核对内置命令清单再命名。
 - 真机验收 T05.10：**Claude 侧已验收（命令/权限 + 工具级只读、工作区写入、目录外审批）**；Codex 侧同项仍待测；未生成 ZIP。
 - T05.11 MCP 搜索：**已真机通过**（deepseek 搜索 1 次 `mcp__deepseek-web__deepseek_search`，原生 WebSearch/WebFetch 0 次）。
 - T05.12 `/cd list` 与序号切换：**已真机通过（2026-10-29）**，含当前目录标记、`/cd 2`、越界、非目录、目录外拒绝。

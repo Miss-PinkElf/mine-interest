@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-30 15:38:00 +08:00
-- 更新时间（Updated At）：2026-10-30 17:10:00 +08:00
+- 更新时间（Updated At）：2026-11-01 00:58:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：留下这次排查里下次还会用到的判断，避免再走错证据。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -16,7 +16,7 @@
 - 用户和 NapCat 同时登录的是同一个机器人号 `1961618848`。空白私聊的发送者仍是对方 `1968401530`，不是第二个机器人号在线。插件只丢弃 `sender_id == self_id`。
 - CPython 3.12 的 `StreamWriter.drain()` 在对端已关掉管道时抛 `ConnectionResetError('Connection lost')`。`0.1.14` 之前这段不在 `AgentProcessError` 里，子进程 stderr 会被丢掉。
 - 上传 ZIP 必须在插件目录内部打包，让 `metadata.yaml` 位于压缩包根层。在工作区根目录执行 `zip -r ../... .` 会把整个仓库打进工作区的上一级目录。
-- 插件单测要用 `backend/.venv/bin/python -m unittest discover -s integrations/astrbot/astrbot_plugin_cc_qq/tests -t integrations/astrbot -p 'test_*.py'`。这个虚拟环境是 Python 3.9.6，AstrBot 运行时是 3.12。直接 `python -m unittest integrations.astrbot...` 会找不到包。
+- 插件单测优先用 AstrBot 自带解释器：`~/.local/share/uv/tools/astrbot/bin/python3 -m unittest discover -s integrations/astrbot/astrbot_plugin_cc_qq/tests -t integrations/astrbot -p 'test_*.py'`（Python 3.12.13，含 Pillow，与运行时一致）。`backend/.venv`（3.9.6）当前**没有 Pillow**，跑全量会在 `media.py` 导入时报 `ModuleNotFoundError: PIL`，不能作为唯一验证环境。
 - 不要在整个 `$HOME` 里做宽搜索，macOS 隐私权限会拦住。插件配置 JSON 带 UTF-8 BOM，读取时用 `utf-8-sig`。
 - 空白事件是双端登录机器人号时多推进来的空包，日志为 `1968401530/1968401530:`，发送者仍是对方。回执按 `message_id` 去重，拦不住这种连发空包。
 - 在 AstrBot 插件设置页保存新 schema 字段时，可能把 `private_enabled` 和 `private_user_ids` 写回默认值。15:44 那次保存清掉了 `1968401530`。
@@ -33,7 +33,7 @@
 - `permissions.deny` 会把工具直接从工具列表移除，PreToolUse hook 的 `allow` 不会把被 deny 的工具加回来；这与“hook allow 可以覆盖 dontAsk 默认拒绝”不矛盾，deny 优先级更高。
 - 群在 `enabled_group_ids` 但 `group_rules_json` 缺少条目时，`policy` 返回 `REASON_CONFIGURATION_INVALID`，用户看到的是「插件配置无效」，不是「未配置工作目录」；排查时先对这两个名单。
 - 服务端 MCP（deepseek-web）与本机 MCP（fetch）风险不同：前者在服务端抓取，碰不到 localhost/内网；后者在本机进程直连 URL，需要单独禁用。
-- 插件单测通过（Python 3.9.6）不等于运行时可用：AstrBot 跑 3.12.13。想在不重载的前提下验证真实运行时，可直接用 `/Users/mobius/.local/share/uv/tools/astrbot/bin/python3` 把安装目录加入 `sys.path` 再导入，能捕获版本相关的导入错误。
+- （已更新，见上一条）插件单测通过（旧 `backend/.venv`，Python 3.9.6）不等于运行时可用：AstrBot 跑 3.12.13，且该 venv 当前缺 Pillow。想在不重载的前提下验证真实运行时，直接用 `/Users/mobius/.local/share/uv/tools/astrbot/bin/python3` 把安装目录加入 `sys.path` 再导入，能捕获版本相关的导入错误。
 - `/cd` 的三种形式（list／序号／路径）必须共用同一套边界校验；把原 `_change_work_dir` 的校验体抽成 `_apply_work_dir`，序号入口只负责选目标，避免为快捷方式开出免校验旁路。
 - 清单类命令的编号不要落库：配置顺序一变，历史序号就失效。每次实时读配置、在提示里说明「以当次顺序为准」，比维护一份映射表更简单可靠。
 - `/goon` 里 `return await self._execute(...) or ""` 是个隐形陷阱：`_execute` 被取消时返回 `None`，`or ""` 把它变成空串，`service` 判 `reply is not None` 标 `done`、`main` 判 `if reply:` 不发，形成「回执显示成功、用户完全无感知」。凡是 `None` 有语义（取消／失败）的返回值，禁止用 `or ""` 兜底。
@@ -55,3 +55,13 @@
 - NapCat 消息里的图片 `url` 是短期签名地址，稍晚下载会返回 400 `download url has expired`；应优先用 `file` 标识调 OneBot `get_image` 拿本地绝对路径。AstrBot 自带的 `ImageResolver` 优先返回 URL，不能直接用来落盘。
 - `Image.fromFileSystem(相对路径)` 按 AstrBot 进程 cwd 解析，不是会话工作目录。代理输出的 `[[image:相对路径]]` 必须在解析阶段就转成 realpath 绝对路径再发送。
 - e2e 测试素材不要放在工作目录：代理在 full 权限下会自行 `ls` + `Read`，把「本来没收到图片」变成语义断言假绿。图片输入用 base64 发送，并额外检查插件媒体目录是否真的落盘。
+- `asyncio.StreamReader.readline()` 在单行超过 `limit` 时抛 `ValueError: Separator is found, but chunk is longer than limit`，不是超时或 EOF；该行会被消费，捕获后流仍可继续读。逐行读取外部代理输出时不要依赖 `readline()`，否则单行超限会整轮失败。分块 `read()` + 自行按 `\n` 切分 + 超限整行丢弃告警，是有界内存下的稳妥方案（`agents/process.py::iter_stdout_lines`）。
+- Claude Code `--print --output-format stream-json --verbose` 会输出 `type=user` 的 `tool_result` 事件；`Read` 图片时内容是 base64，单行可达数 MB（525 KB PNG → 1.05 MB JSON）。插件即使忽略该事件，读取层也必须能处理超长行。
+- 排查「只有异常类型、没有堆栈」的插件错误时，可用会话 JSONL 反查：`~/.claude/projects/<cwd-slug>/<session_id>.jsonl` 的 `timestamp` 是 UTC；按报错本地时间换算后取末尾事件，再统计行大小找超大 `tool_result`。本次 `1,050,933` 字节行与插件 `ValueError` 时间相差不足 1 秒。
+- 捕获异常时只记录 `type(exc).__name__` 会让根因不可见；本地日志应至少记录异常消息，必要时加 `exc_info=True`。本次已改 `main.py` 的兜底日志。
+- AstrBot 有**两套管理员**：插件自己的 `owner_qq_id`（cc-qq 用）与核心 `cmd_config.json` 的 `admins_id`（内置命令用）。核心 `event.is_admin()` 只认 `role == "admin"`，role 只由 `admins_id` 设置；QQ 群管理员身份不会自动映射。
+- AstrBot 内置命令的权限检查发生在 `waking_check` 阶段，早于插件 handler 分发；内置命令权限失败会 `stop_event()` 并直接回复「权限不足」，插件 handler 无法抢先处理。与内置命令同名时，改插件命令名或在 WebUI「指令管理」禁用内置命令；不要期望在插件侧拦截。
+- 内置 `/new` 的权限是 `SHARED_GROUP_ADMIN`：群聊要求核心管理员（或 `unique_session` 下的会话隔离），私聊跳过该限制；所以同一命令会出现「私聊能用、群里不能用」。cc-qq 已把 `/new` 更名为 `/start`。
+- AstrBot「指令管理」的禁用/改名通过 `handler.enabled` 与 `CommandFilter` 运行中即时生效，持久化在 `command_configs` 表；面板只列注册为 AstrBot 指令的 handler，插件自行解析文本的命令（如 cc-qq）不会出现。
+- 重启 AstrBot 实例要 `cd` 到对应数据目录（`~/.astrbot`、`~/.astrbot-e2e`）再执行 `astrbot run`；数据目录由 cwd 决定，`TEST_ASTRBOT_ROOT` 不被核心读取。用 `nohup ... > logs/restart-<ts>.log 2>&1 &` 启动，等待日志出现「已加载 vX.Y.Z」再判定成功。
+- 发布插件：在插件目录内部 `zip -qr ../astrbot_plugin_cc_qq-vX.Y.Z-upload.zip . -x '*__pycache__*' '*.pyc' '.DS_Store'`，保证 `metadata.yaml` 在根层；覆盖安装前先 `cp -a` 备份到 `plugin-backup-<ts>`，用 `rsync -a --delete` 同步并清理 `__pycache__`。

@@ -3,12 +3,13 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-23 00:00:00 +08:00
+- 更新时间（Updated At）：2026-11-01 01:00:00 +08:00
 - 作者（Author）：Claude（Fable 5）
 - 目的（Purpose）：用较短篇幅记录 cc-qq 从骨架到权限分级的演进脉络，供深度恢复时阅读。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
 - 关联 mission（Related Mission）：`.devflow/cc-qq-full-migration/`
 - 原始需求（Raw Requirement）：`zzz-prompt-debug/完整迁移cc-ding/prompt-01.md`、`zzz-prompt-debug/接入agent/prompt-01.md`
-- 当前状态（Status）：0.3.1 需求 5（媒体输入输出与长文本长图）代码、单测 159/159 与真机媒体 suite 6/6 完成（Completed for Requirement 5）
+- 当前状态（Status）：`0.3.2` 已发布（超长输出崩溃修复、`/new`→`/start`），单测 165/165，生产/测试安装目录已覆盖并重启；真机复测待做（Released / Runtime Retest Pending）
 - 文档边界（Scope / Boundary）：过程总览，不代替 `state.md`、`spec/` 或 `plans/`。
 
 ## 演进时间线
@@ -25,6 +26,7 @@
 | 2026-10-28 | `0.2.4` | 修 `/goon` 取消后被误标 `done` 且静默的问题；新增执行回执（会启动代理的输入先回一条）；首轮产出排查耗时分析文档，把「串行往返过多」与「长任务无中间输出」关联起来。 |
 | 2026-10-29–30 | `0.2.5` | 在专用测试群完成 A+B+C 真机验收：三级命令门禁、`/cd` 序号切换、真实代理执行、`/goon` 前缀、执行中 `/!` 中断、guest 只读、工作区写入、目录外审批、deepseek 搜索。修复 F1（执行回执必须晚于权限、参数与会话校验），113 个单测通过。 |
 | 2026-10-30 | `0.3.1` | 需求 5：媒体输入（直接图片、引用、合并转发）、图片输出 `[[image:<path>]]`、长文本本地 T2I 长图（默认 360 字或含代码块）、`/img on|off`、只读档媒体根放行。真机媒体 suite 6/6、基础命令 suite 4/4；修复配置 `null`、`/help` 误转长图、NapCat 图片 URL 过期、相对路径发送失败四个缺陷。单测 159/159。 |
+| 2026-11-01 | `0.3.2` / `b2f80b2` | 修复代理 `stream-json` 单行（图片 base64）超过 `StreamReader` 1 MiB 上限导致的 `ValueError` 与整轮丢失：改分块读取、上限 8 MiB、超限整行丢弃告警；失败日志补异常消息与堆栈。`/new` 更名为 `/start`，规避 AstrBot 内置 `/new`（共享群管理员）在 `waking_check` 阶段的拦截。单测 165/165；生产与测试安装目录已覆盖并重启。真机复测待做。 |
 
 ## 当前架构脉络
 

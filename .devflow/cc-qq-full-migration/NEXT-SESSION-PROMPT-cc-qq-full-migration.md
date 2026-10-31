@@ -1,9 +1,9 @@
-# 下一次对话提示词：cc-qq 需求 5 发布后收尾（Next Session Prompt）
+# 下一次对话提示词：cc-qq 0.3.2 发布后收尾（Next Session Prompt）
 
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-09-29 11:00:28 +08:00
-- 更新时间（Updated At）：2026-11-01 00:53:00 +08:00
+- 更新时间（Updated At）：2026-11-01 01:00:00 +08:00
 - 作者（Author）：Grok / Claude（Fable 5）
 - 目的（Purpose）：提供可直接复制到新对话的 mission 恢复指令。
 - 关联仓库或项目（Related Repository / Project）：`mine-interest`
@@ -19,7 +19,7 @@
 先读：
 - `.devflow/cc-qq-full-migration/state.md`
 - `.devflow/cc-qq-full-migration/checkpoints.md`
-- `.devflow/cc-qq-full-migration/handoffs/2026-10-30-010-需求5媒体与长图代码完成待真机.md`
+- `.devflow/cc-qq-full-migration/handoffs/2026-11-01-011-0.3.2发布与收尾.md`
 
 **硬门禁（最高优先级）**：任何代码修复前必须先「说明问题与根因 → 讨论方案 → 写 Plan 到 `.devflow/<mission>/plans/` → 用户明确批准 → 再 Apply」。`继续验证`、`先测着`、`最后再修复` 都不是修复授权。
 
@@ -54,11 +54,20 @@
 1. **`0.3.2` 真机复测**：群内 `@机器人 /start` 建会话；私聊让代理 `Read` 一张 >750 KB 图片，确认不再出现 `ValueError`、能正常回复。
 2. **Codex 侧真机验收**：0.2.5 的只读／工作区／完全权限（T05.10）；补验 T03-M.4b、T04.4、T04.5。
 3. **Codex 图片 `-i`**：确认 `codex exec resume` 是否接受 `-i`；不接受则改为仅首轮传图。
-4. **推送远端**：`0.3.1` 代码与文档尚未推送；`v0.3.0`／`v0.3.1` 的发布策略由用户决定。
+4. **推送远端**：提交 `b2f80b2`（`0.3.2`）尚未推送；`v0.3.0`／`v0.3.1`／`v0.3.2` 的 tag 与发布策略由用户决定。
 5. 合并转发触发规则：群聊中合并转发无法与 @bot 同时发送，当前静默；需要时单独对齐。
 6. 图片来源与合理性（搜索图片、表情包）由用户后续 skill 解决；插件侧协议已就绪。
 7. 第三测试 QQ 账号、生产暂停自动化、F2（@bot 空文本被 LLM 抢占）。
 8. 流式输出：优先级由用户决定。
+
+## 未讨论 / 明确延期（禁止当成已批准）
+
+- 不把 owner `1961618848` 加入 AstrBot 核心 `admins_id`：会让内置 `/new` 与插件双执行，并放开内置管理命令；需要内置 `/name`、`/provider` 时再评估，且须先禁用内置 `/new`。
+- 不全局关闭内置命令：会失去 `/sid`、内置 `/help` 等；只有确认完全不需要内置命令时才考虑。
+- 旧 `/new` 不保留别名；群里旧习惯 `/new` 仍会命中内置命令并提示权限不足，可在 WebUI「指令管理」单独禁用内置 `/new`（可选配置，本轮未执行）。
+- 超过 8 MiB 的单行仍整行丢弃；只有实际出现「日志告警丢弃且用户没收到关键内容」时，再评估「保留头部 + 截断标记」。
+- 内置 `/help` 与插件 `/help` 双处理器并存；目前无重复回复，出现异常再清理内置 `/help`。
+- 两实例重启目前是手工 kill + `nohup astrbot run`；是否写成发布脚本待定。
 
 ## 必须记住的约束
 
@@ -79,5 +88,5 @@
 
 - 日常恢复：`state.md` → `checkpoints.md` → 最新 handoff。
 - 完整过程：`development-overview.md` + `decision-log.md` + `plans/`。
-- 逾期项：`deferred/第一版边界与未讨论项.md` 的「2026-10-30 需求 5」一节；轻量想法：`backlog.md`。
+- 逾期项：`deferred/第一版边界与未讨论项.md` 的「2026-11-01 `0.3.2`」与「2026-10-30 需求 5」两节；轻量想法：`backlog.md`。
 - 原始输入与新增需求：`origin.md`、`zzz-prompt-debug/接入agent/prompt-01.md`。
