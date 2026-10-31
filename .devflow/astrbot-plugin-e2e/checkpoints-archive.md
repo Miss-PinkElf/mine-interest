@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 18:22:00 CST。
-- 更新时间（Updated At）：2026-10-31 02:31:26 CST。
+- 更新时间（Updated At）：2026-10-31 22:55:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：归档 `checkpoints.md` 中超过最近 3 条的旧检查点。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
@@ -149,3 +149,15 @@
 - 当前边界：只写文档；未改代码、未启动服务、未提交。
 - 下一步：用户批准 spec 三件套 → Apply Task 0 基线校验。
 - 已知风险：多轮步骤回归、批量执行状态串扰、报告脱敏、自愈误杀、person-config 副本漂移。
+
+## 2026-10-30 15:40:00 CST — Apply 暂停（Task 12 阻塞）
+
+- 阶段：`Apply`（需求 2）；Task 0–11 完成，Task 12 未完成。
+- 完成：
+  - 引擎：多轮 `steps`、`execute_case`、`run-suite`、插件源解析、报告脱敏、doctor 增强、`--no-redact`；全量 **127/127**。
+  - skill：探测、功能清单、用例生成、文档/模板、vendor、仓库副本、catalog 登记；脚本测试全部通过。
+  - 复核修复：`reverse_ws_token` 脱敏；`/cc <参数>` 识别；系统路径误报；`/cd`、`/resume` 高风险；目录不存在静默空清单。
+- 阻塞：本机 QQ 7.0.2 签名/quarantine 问题；`codesign --force --deep --sign -` 破坏 nested Helper 签名，Worker 被 `SIGKILL (Code Signature Invalid)`。用户决定自行还原 QQ/NapCat 环境。
+- 当前边界：未提交任何改动；容器 11G 未删除；QQ 应用备份在 `~/Applications-backup/`。
+- 下一步：环境恢复后执行 Task 12（doctor、多轮、suite、脱敏、自愈演练），再 Task 13 收尾。
+- 已知风险：不要对 NapCat 注入后的 QQ 使用 `--deep` 重签；App 管理权限会阻止 xattr/codesign。

@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 22:40:00 CST。
-- 更新时间（Updated At）：2026-10-31 02:31:26 CST。
+- 更新时间（Updated At）：2026-10-31 22:55:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：记录本次对话中未讨论完的问题、首版限定与轻量后续想法，避免只留在聊天里。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
@@ -32,6 +32,12 @@
 | Q15 | `cc_qq_multi_turn` 的 `/info` 断言何时更新？ | 实际回复「当前会话 #N…状态」，用例仍期望 `/new`；属于测试资产过期 | 实现 | 下次会话优先 |
 | Q16 | Docker 镜像何时升级？ | 本地 `mlikiowa/napcat-docker:latest` 为 2026-03 构建 / NapCat 4.17.46；升级需重验 Packet/rkey/图片下载 | 用户/实现 | 镜像更新时 |
 | Q17 | 微信/其他平台 E2E 驱动？ | 当前只有 OneBot/NapCat；微信适配器（`weixin_oc`/`wecom`/公众号）没有 OneBot 驱动，需单独 Align | 用户 | 确定微信渠道后 |
+| Q18 | 是否给 `prod.sh` 增加 `restart` 别名与未知命令提示？ | 用户曾误用 `prod.sh --restart` / `prod.sh --staus`；当前只打印 usage。别名可降低误用，但会增加入口语义 | 用户 | 下次使用前 |
+| Q19 | `start --restart --no-iterm` 是否要清理旧 iTerm 窗口？ | 该组合会在当前终端前台运行 AstrBot，但旧窗口可能残留 NapCat 日志标签；当前不处理 | 用户 | 需要无 GUI 重启时 |
+| Q20 | 生产 NapCat 登录/QQ 安全风险 168 如何恢复？ | 当前 `napcat` 运行但未登录；需用户在最新手机 QQ 按提示恢复账号后扫码 | 用户 | 恢复生产前 |
+| Q21 | 生产 AstrBot Dashboard 是否收口到 `127.0.0.1`？ | `~/.astrbot/data/cmd_config.json` 的 `dashboard.host` 为 `0.0.0.0`，日志提示安全风险；本次未改生产配置 | 用户 | 安全加固时 |
+| Q22 | 生产 `start` 是否需要顺带停 `napcat-e2e-sender`？ | 发送者 C# 与生产 17号 不冲突，当前只停 `napcat-e2e-bot`；残留发送者容器可能占用 6201/16398 | 用户 | 需要彻底清理 E2E 时 |
+| Q23 | 手动关闭 NapCat 日志标签后如何感知？ | 脚本只能按窗口 ID 复用窗口；手动关单个标签无法检测，重启时只补 AstrBot 标签 | 实现 | 下次迭代 |
 
 ## 首版限定（First-Version Only，不计划在本版扩展）
 
@@ -47,6 +53,7 @@
 | 登录 | 人工扫码 | 不承诺自动登录；QQ 风控与人工确认 |
 | 平台 | macOS 宿主 + Docker Linux 容器 | 原生双 QQ 仍作为回退；Windows 未验证 |
 | 插件生命周期 | 每轮启动独立测试 AstrBot | `--attach` + `--reload` 可增量验证；常驻策略见 Q3 |
+| 生产启动脚本 | 仅 macOS + iTerm2；只管理生产 NapCat/AstrBot | 不管理 E2E 发送者与测试 AstrBot；Linux/Windows 未验证；`--no-iterm` 为终端前台模式 |
 
 ## 明确延期（Deferred）
 
@@ -55,6 +62,7 @@
 - `deferred/2026-10-27-post-mvp-deferred.md`：cc_qq 长任务、审批、多轮、富媒体、WebUI、CI、并行、自动登录、更深校验等。
 - `deferred/2026-10-27-config-validation-deferred.md`：配置值形状与边界校验。
 - `deferred/2026-10-27-case-validation-deferred.md`：用例值形状与边界校验。
+- `deferred/2026-10-31-prod-env-deferred.md`：生产启动脚本的别名/提示、无 GUI 重启、自动扫码、Dashboard 收口、跨平台等。
 
 ## 轻量后续想法（候选，未批准）
 
@@ -68,5 +76,8 @@
 - Docker 版一键启动脚本已入库：`tools/napcat_e2e/start-all.sh`（iTerm 三标签、`--restart`、`--force-tabs`、`--detach`）；旧原生 `~/.qq-e2e/start-e2e.sh` 保留作回退参考，旧数据已归档到 `~/.qq-e2e/archive-20261031/`。
 - Docker 镜像升级、专用测试 bot 账号、微信/其他平台驱动、probe/cc-qq 隔离、`cc_qq_multi_turn` `/info` 断言更新：见 Q13–Q17，均为候选/待办，不是已批准实施项。
 - 测试期间需要临时修改测试实例配置（`allowed_work_dirs`、`claude_setting_sources=user`、角色字段）；可评估把这些作为 `run` 的参数或 bootstrap 选项。
+- 生产启动脚本可增加 `restart` 别名、未知命令提示（例如提示 `start --restart`）、`status` 短别名；属于 UX 候选，未批准。
+- 生产 AstrBot Dashboard 当前监听 `0.0.0.0:6185`；可评估改为 `127.0.0.1`，但会影响远程访问，需用户确认。
+- 生产启动前是否顺带停 `napcat-e2e-sender`：当前只停机器人容器，发送者与 17号 不冲突；需要彻底清理 E2E 时再处理。
 
 以上均为候选项（Candidate），不是已批准计划（Plan），也未进入实施（Apply）。

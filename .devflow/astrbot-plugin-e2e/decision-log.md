@@ -67,3 +67,9 @@
 | 2026-10-31 02:31:26 CST | 测试 AstrBot 用 `--detach` 后台启动 | 前台 tab；launchd | 关闭终端不应杀掉测试实例；后台启动简单，仍由 `stop-instance` 管理 | `start-all` 的 AstrBot 标签使用 `--detach`；前台模式保留给调试 |
 | 2026-10-31 02:31:26 CST | iTerm AppleScript 使用 `tell application "iTerm"` | `iTerm2` | iTerm2 3.6.7 的脚本应用名是 `iTerm`；`iTerm2` 报 -2741/-1728 | 已修复并实跑打开三标签 |
 | 2026-10-31 02:31:26 CST | `cc_qq_multi_turn` 的 `/info` 断言待更新 | 改插件文案；删用例 | 实际回复「当前会话 #N…状态」，旧断言期望 `/new`；插件行为正确 | 新会话更新断言并复跑；不把测试资产问题误判为插件缺陷 |
+| 2026-10-31 22:45:00 CST | 生产启动脚本采用单脚本 `tools/prod_env/prod.sh` + `start/stop/status` | 多脚本目录；改造 E2E 脚本 | 用户要求「新写一个脚本」，单入口更省事；生产与 E2E 职责分离 | 新增 `tools/prod_env/`；不修改 `tools/napcat_e2e/` 行为 |
+| 2026-10-31 22:45:00 CST | 生产 AstrBot 在 iTerm 标签前台运行，关闭标签即停服务 | detached + 日志 tail | 用户明确要求「关闭标签就关闭服务」；前台进程由标签 shell 管理，语义直观 | 标签命令 `cd ~/.astrbot && echo $$ > .prod-run.pid && exec astrbot run`；`stop` 仍按 PID 兜底 |
+| 2026-10-31 22:45:00 CST | `start` 幂等，重启必须 `--restart`；重启复用记录的 iTerm 窗口 ID | 每次 start 都重启；每次新开窗口 | 避免误触打断生产对话；复用窗口避免堆积；窗口 ID 存内部文件，不设置可见标签名 | 幂等路径只在两边都运行时 no-op；窗口 ID 失效时自动新建 |
+| 2026-10-31 22:45:00 CST | 启动生产前自动停 `napcat-e2e-bot`，成功后清理过期 `production-stopped` 标记 | 中止让用户手动停；保留标记 | 同一 17号 不能双开；用户明确选择自动停 E2E；标记语义是「恢复生产」，生产已启动即满足 | 与 `stop-all.sh` 的边界写入 README：停止不碰测试侧，启动不碰测试 AstrBot |
+| 2026-10-31 22:45:00 CST | OneBot 就绪超时：默认启动返回非 0；幂等路径提示未就绪 | 超时也返回 0；静默 | 服务进程在跑不等于 bot 可用；避免自动化误判成功 | `wait_for_onebot` 失败时保留服务并退出 1；幂等路径做一次快速 `get_login_info` 检查 |
+| 2026-10-31 22:45:00 CST | 当前阻塞：生产 NapCat 要求扫码，QQ 返回安全风险 168 | 脚本内绕过；自动登录 | 环境/账号侧问题，不是脚本缺陷；需用户在手机 QQ 恢复账号后扫码 | 当前保留生产 AstrBot 与 NapCat 运行、iTerm 窗口 1831；扫码后重新 `start` 验证 |

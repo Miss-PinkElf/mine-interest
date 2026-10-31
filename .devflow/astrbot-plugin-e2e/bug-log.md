@@ -3,12 +3,12 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-31 02:31:26 CST。
-- 更新时间（Updated At）：2026-10-31 02:31:26 CST。
+- 更新时间（Updated At）：2026-10-31 22:55:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：记录 Docker 双容器 E2E 启动脚本实施与验证中发现的问题、根因与处置。
 - 关联仓库或项目（Related Repository / Project）：当前仓库 `.`。
 - 关联 mission（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
-- 当前状态（Status）：部分已修复，1 条测试断言待修。
+- 当前状态（Status）：大部分已修复；1 条测试断言待修；1 条生产登录环境阻塞待用户处理。
 - 文档边界（Scope / Boundary）：问题记录，不替代 `state.md` 或 `handoff`。
 
 ## B1：`start-instance` 报 `Server disconnected`
@@ -63,3 +63,31 @@
 - **原因**：entrypoint 启动 QQ 后由 bash 等待，kill 后容器可能直接退出。
 - **处置**：使用 `docker restart napcat-e2e-bot` / `docker compose restart`，数据卷与登录态保留。
 - **状态**：已写入脚本与 README。
+
+## B8：生产 `start` 幂等路径未校验 OneBot 就绪
+
+- **现象**：`napcat` 容器与 AstrBot `6185` 都在运行，但 NapCat 未登录时，`prod.sh start` 只提示「已在运行」并退出 0。
+- **原因**：幂等判断只检查容器与 Dashboard 端口，没有检查 OneBot `get_login_info`。
+- **处置**：幂等路径增加一次快速 `get_login_info` 检查；未就绪时警告并提示打开 NapCat WebUI。
+- **状态**：已修复（2026-10-31）。
+
+## B9：生产 `start` 在 OneBot 超时时仍返回 0
+
+- **现象**：首次 `start` 等待 OneBot 超时后，脚本打印警告但退出码为 0，自动化会误判成功。
+- **原因**：`wait_for_onebot` 失败只 `warn`，没有传递到退出码。
+- **处置**：默认 iTerm 模式记录 `onebot_ok`；失败时保留服务但 `exit 1`。
+- **状态**：已修复（2026-10-31）。
+
+## B10：生产 NapCat 启动后要求扫码，QQ 返回安全风险 168
+
+- **现象**：`napcat` 容器启动后日志显示二维码；扫码前 `get_login_info` 无法返回 17号。日志同时出现「你的账号近期存在安全风险…」错误码 `168`。
+- **原因**：QQ 账号侧安全风控，需要用户在最新手机 QQ 按提示恢复；不是脚本或 NapCat 链路故障。
+- **处置**：脚本按预期超时并提示 NapCat WebUI；需用户处理账号后扫码，再执行 `prod.sh start` 复测。
+- **状态**：待用户处理（Pending，环境侧）。
+
+## B11：生产启动脚本命令形态误用
+
+- **现象**：用户执行 `prod.sh --restart` 与 `prod.sh --staus`，脚本只打印 usage。
+- **原因**：`--restart` 是 `start` 的参数，`status` 是子命令；未知参数没有额外提示。
+- **处置**：文档与 `NEXT-SESSION-PROMPT` 写明正确用法；是否增加 `restart` 别名与未知命令提示，见 `backlog.md` Q18。
+- **状态**：非代码缺陷；候选改进（Candidate）。

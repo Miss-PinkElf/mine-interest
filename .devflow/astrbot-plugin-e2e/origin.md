@@ -3,7 +3,7 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 16:47:08 CST。
-- 更新时间（Updated At）：2026-10-30 14:02:15 CST。
+- 更新时间（Updated At）：2026-10-31 22:55:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：记录当前 mission 的原始提示词、需求草稿与参考文件来源。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
@@ -24,7 +24,8 @@
 | 3 | `.devflow/multi-source-hub/bug-log.md` | 2026-09-20 至 2026-10-01 | 机器人自身消息上报问题、NapCat `reportSelfMessage` 相关记录 | 已参考，作为风险输入 |
 | 4 | `.devflow/cc-qq-full-migration/` | 2026-09-30 起 | cc_qq 插件迁移与测试记录 | 已参考，作为被测插件的背景 |
 | 5 | `devflow-handoff.md` | 2026-09-09 | 收尾流程指导（回顾、更新 devflow 文档、生成下次提示词） | 已执行，按用户要求未修改 |
-| 6 | `zzz-prompt-debug/插件自动化测试验证/prompt-01.md`（需求 2 追加） | 2026-10-29 | 把插件测试流程做成通用 skill：双 QQ、暂停生产、按插件生成测试流程与报告、自愈、适配不同 NapCat/AstrBot/运行环境 | 已 Align（2026-10-30），待 Plan |
+| 6 | `zzz-prompt-debug/插件自动化测试验证/prompt-01.md`（需求 2 追加） | 2026-10-29 | 把插件测试流程做成通用 skill：双 QQ、暂停生产、按插件生成测试流程与报告、自愈、适配不同 NapCat/AstrBot/运行环境 | 已实施并验证（2026-10-30） |
+| 7 | 对话内需求（无独立文档） | 2026-10-31 | 新增生产环境一键启动脚本：启动生产 NapCat 容器 + 生产 AstrBot，支持幂等 start、显式 restart、iTerm 双标签、stop/status | 已实施并验证；计划 `plans/2026-10-31-生产环境一键启动脚本-plan.md`，交接 `handoffs/2026-10-31-004-生产环境一键启动脚本.md` |
 
 ## 备注
 

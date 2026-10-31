@@ -3,13 +3,13 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 16:47:08 CST。
-- 更新时间（Updated At）：2026-10-30 15:55:00 CST。
+- 更新时间（Updated At）：2026-10-31 22:55:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：定义 AstrBot 插件端到端自动化测试（End-to-End Test，E2E）mission 的目标、范围、路径与阶段门禁。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
 - 原始需求（Raw Input）：`zzz-prompt-debug/插件自动化测试验证/prompt-01.md`。
-- 当前状态（Status）：需求 2 已真机验收并收尾；等待提交许可。
+- 当前状态（Status）：生产环境一键脚本已完成并验证；NapCat 生产登录待扫码；E2E 测试资产待修。
 - 文档边界（Scope / Boundary）：当前 mission 的流程与范围真相源（source of truth）；不是已批准的实施计划（Plan）。
 
 ## 目标
@@ -44,6 +44,8 @@
 - 第一版三件套归档：`spec/archive/2026-10-27-v1/`。
 - Spike 0：`plans/2026-10-27-spike-0-dual-qq-result.md`。
 - 完成交接：`handoffs/2026-10-27-002-第一版完成交接.md`。
+- 生产环境一键脚本计划：`plans/2026-10-31-生产环境一键启动脚本-plan.md`。
+- 生产环境一键脚本交接：`handoffs/2026-10-31-004-生产环境一键启动脚本.md`。
 
 ## 主线阶段
 
@@ -66,6 +68,8 @@ Mission Init -> Explore -> Align -> Plan -> Propose/Tasks -> Apply -> Verify/Clo
 11. 需求 2 spec 三件套：完成；第一版 spec 已归档。
 12. 需求 2 Apply Task 0–11：完成；引擎 127/127，skill 12/12。
 13. 需求 2 真机验收：完成；多轮与 suite PASSED，脱敏与自愈演练通过。
+14. 生产环境一键脚本（`tools/prod_env/`）：完成并验证；iTerm 双标签、幂等 start、显式 `--restart`、`stop` 清理窗口。
+15. 生产 NapCat 登录：待用户在手机 QQ 处理安全风险提示并扫码后复测 `get_login_info`。
 
 ## 当前阶段出口条件
 
@@ -76,6 +80,8 @@ Mission Init -> Explore -> Align -> Plan -> Propose/Tasks -> Apply -> Verify/Clo
 - 延期项：`deferred/2026-10-27-post-mvp-deferred.md`。
 - 未决问题与首版限定：`backlog.md`。
 - 提交：第一版相关文件已提交；未提交 `config.local.json`、`reports/`、`.gitignore` 与无关脏文件。
-- 需求 2：Plan 已落盘，等待用户批准；批准后进入 `spec/` 三件套与 Apply。
+- 需求 2：已完成并提交。
 - 需求 2 验收证据：`reports/20261030-154828-636210-cc-qq`、`reports/20261030-154847-882152-astrbot_plugin_cc_qq-suite`、`reports/20261030-155012-908540-astrbot_plugin_cc_qq-suite`。
-- 需求 2 已完成；当前等待用户批准提交。
+- 生产环境一键脚本：`tools/prod_env/prod.sh` + README 已完成并验证；随本轮收尾提交。
+- 生产 NapCat 登录阻塞：QQ 安全风险 168，需用户在手机 QQ 恢复后扫码；脚本超时路径已验证。
+- 下一步测试资产：更新 `cc_qq_multi_turn` `/info` 断言、隔离 probe 与 cc-qq。

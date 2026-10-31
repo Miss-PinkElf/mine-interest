@@ -3,13 +3,13 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 16:47:08 CST。
-- 更新时间（Updated At）：2026-10-31 02:31:26 CST。
+- 更新时间（Updated At）：2026-10-31 22:45:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：保存当前 mission 的短快照，供下一次恢复使用。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
 - 原始需求（Raw Input）：`zzz-prompt-debug/插件自动化测试验证/prompt-01.md`。
-- 当前状态（Status）：Docker 双容器 E2E 启动脚本完成并验证；测试资产有 1 条过期断言待修（Completed / Test Asset Pending）。
+- 当前状态（Status）：生产环境一键脚本完成并验证；NapCat 生产登录待扫码（QQ 安全风险 168）；E2E 测试资产仍有 1 条过期断言待修。
 - 文档边界（Scope / Boundary）：恢复热路径（Resume Hot Path）真相源；不是实施计划。
 
 ## 2026-10-31 收尾快照
@@ -19,6 +19,16 @@
 - 已知问题：`cc_qq_multi_turn` 的 `/info` 断言过期；`probe_echo` 被 cc-qq 执行回执拦截；iTerm AppleScript 已修正为 `tell application "iTerm"`。
 - 数据：旧原生 e2e 已归档到 `~/.qq-e2e/archive-20261031/`；Docker 数据在 `~/.qq-e2e-docker`；生产容器 `napcat` 当前被 `--stop-production` 停止，恢复用 `stop-all.sh`。
 - 详见 `handoffs/2026-10-31-003-Docker双容器E2E启动脚本.md`。
+
+## 2026-10-31 生产环境一键脚本（tools/prod_env）
+
+- 新增 `tools/prod_env/prod.sh` 与 `README.md`：`start` / `stop` / `status`；默认开 iTerm2 一个窗口两个标签（NapCat 日志 + AstrBot 前台），关闭 AstrBot 标签即停服务；`--restart` 复用记录的窗口 ID；`--no-iterm` 在当前终端前台运行。
+- 幂等语义：`start` 在 NapCat 与 AstrBot 都已运行时不做任何事，只提示；重启必须显式 `--restart`；启动前自动 `docker stop napcat-e2e-bot`；成功后清理过期 `production-stopped` 标记。
+- 验证通过：`bash -n`；首次启动容器 + `6185/6199` + 双标签窗口；重复 `start` 不新增标签；`--restart` 复用窗口 1793 并新增 AstrBot 标签；`stop` 停服务并清理 PID/窗口文件；`--no-iterm` 后台 PID 36607 验证；E2E 机器人冲突自动停止；OneBot 超时返回非 0。
+- 当前阻塞（环境侧）：生产 NapCat 启动后要求扫码；QQ 返回「账号近期存在安全风险」错误码 168，需登录最新手机 QQ 恢复；`wait_onebot.py` 连 `13001` 未返回 17号，脚本按预期超时并提示 WebUI。
+- 当前运行态（2026-10-31 22:55 核对）：`napcat` 容器运行但未登录；生产 AstrBot 已停（`6185/6199` 无监听，PID 文件已过期）；脚本窗口 `1831` 已关闭；`napcat-e2e-bot` 已停；测试 AstrBot `6186/6198` 运行；`production-stopped` 标记无。
+- 使用注意：子命令在前；`--restart` 是 `start` 的参数（`start --restart`）；`status` 不带前导 `--`。用户曾误用 `prod.sh --restart` 与 `prod.sh --staus`，脚本当前只打印 usage。
+- 本轮未决/候选：`restart` 别名与未知命令提示（`backlog.md` Q18）；`--restart --no-iterm` 旧窗口清理（Q19）；NapCat 登录与 QQ 168 恢复（Q20）；Dashboard `0.0.0.0:6185` 安全收口（Q21）；手动关闭 NapCat 标签的感知（Q23）。
 
 - Mission：`astrbot-plugin-e2e`（AstrBot 插件端到端自动化测试）。
 - 当前阶段（Current Stage）：Docker E2E 启动脚本（First Version）完成；测试 AstrBot 运行中；用例断言待修。
@@ -47,14 +57,16 @@
   - Task 12 阻塞：本机 QQ 应用签名/quarantine 问题导致 QQ 无法启动。排查中发现 `codesign --force --deep --sign -` 会破坏 QQ 7.0.2 的 nested Helper 签名，Worker 被 `SIGKILL (Code Signature Invalid)`；不要再对 NapCat 注入后的 QQ 使用 `--deep`。用户决定自行还原 QQ 环境。
   - Task 12 已验收（2026-10-30）：`doctor OK`；多轮 `/pwd` → `/info` PASSED（`reports/20261030-154828-636210-cc-qq`）；文本 suite 2/2 PASSED（`reports/20261030-154847-882152-astrbot_plugin_cc_qq-suite`）；报告脱敏无泄漏；端口占用不误杀、残留实例自动停止/重启（`reports/20261030-155012-908540-astrbot_plugin_cc_qq-suite`）。
   - 已知限制：cc-qq `/help` 返回图片帮助卡片，首版文本断言无法验证；已约定标记 `testability=rich_media` 并跳过自动用例（`backlog.md` Q11）。
-  - 当前未提交：所有 Task 0–13 的代码与文档改动仍在工作区；本仓库与 person-config 均未 commit。（2026-10-31 收尾提交仅包含本轮 Docker E2E 脚本与相关文档，见 `handoffs/2026-10-31-003-...`。）
+  - 2026-10-31 Docker E2E 脚本已提交（`8a89eac`）；本轮生产环境脚本与文档随 2026-10-31 收尾提交。
 - 残留风险：
   - NapCat native addon / FFmpeg / PacketBackend 警告存在；文本链路已验证，富媒体未验证。
   - 两个 QQ 实例共享同一个 macOS 容器，只隔离 NapCat 工作目录与端口。
   - 测试实例关闭内置命令，避免与 `cc_qq` 的 `/help` 叠加。
   - 生产 bot 继续兼任测试机器人，测试群流量会进入生产 bot。
-- 未决问题：`backlog.md`（Q1–Q17），包括生产 bot 是否长期兼任测试机器人、`6198` 客户端是否保留、测试实例是否常驻、`.gitignore` 是否提交、报告脱敏与保留策略、Docker 双容器/专用测试账号等。
-- 延期项：`deferred/2026-10-27-post-mvp-deferred.md`（cc_qq 长任务、审批、多轮、富媒体、WebUI、CI、并行、更深校验、自动登录等）。
+  - 生产启动脚本仅验证 macOS + iTerm2；生产 AstrBot Dashboard 仍监听 `0.0.0.0:6185`。
+  - 生产 NapCat 当前未登录，QQ 安全风险 168 待用户处理。
+- 未决问题：`backlog.md`（Q1–Q23），包括生产 bot 是否长期兼任测试机器人、`6198` 客户端是否保留、测试实例是否常驻、报告脱敏与保留策略、生产脚本别名/窗口/Dashboard 收口等。
+- 延期项：`deferred/2026-10-27-post-mvp-deferred.md`（cc_qq 长任务、审批、多轮、富媒体、WebUI、CI、并行、更深校验、自动登录等）；`deferred/2026-10-31-prod-env-deferred.md`（生产脚本别名、无 GUI 重启、自动扫码、Dashboard 收口、跨平台等）。
 - **本轮新增延期 / 未讨论（2026-10-31）**：
   - **专用测试 bot 账号（Deferred）**：当前 17号 只能“生产或 E2E”二选一；测试时用 `--stop-production` 停生产容器。原因：同一 QQ 不能双端在线。触发条件：需要生产与 E2E 并行时，新增专用测试 bot 账号并单独适配器。
   - **微信/其他平台 E2E 驱动（Deferred）**：当前只覆盖 OneBot/NapCat；微信适配器（`weixin_oc`/`wecom`/公众号）没有 OneBot 驱动，需要单独 Align。触发条件：确定微信渠道后。
@@ -63,11 +75,13 @@
   - **Docker 镜像升级（Deferred）**：本地镜像 2026-03 构建 / NapCat 4.17.46；升级后需重新验证 `get_rkey`、图片下载、Packet 后端。触发条件：镜像更新或 QQ 协议变更。
   - **自动扫码登录、生产 AstrBot 自动暂停/恢复（Deferred）**：当前人工扫码、人工停生产；触发条件：高频回归或无人值守。
 - 下一步：
-  1. 本次收尾：提交本轮 Docker E2E 脚本与文档（`tools/napcat_e2e/`、`.devflow/astrbot-plugin-e2e/`、相关 multi-source-hub 文档）。
-  2. 新会话优先：更新 `cc_qq_multi_turn.json` 的 `/info` 断言并复跑；隔离 probe 与 cc-qq。
-  3. 决策：专用测试 bot 账号 / 生产与 E2E 并存；Docker 镜像升级；微信/其他平台驱动。
-  4. 复跑：先 `doctor`，再用 `--attach` 跑用例；测试实例用 `start-astrbot.sh --detach`，停止用 `stop-all.sh`。
+  1. 用户在手机 QQ 处理安全风险 168，并在 NapCat WebUI/日志扫码；执行 `bash tools/prod_env/prod.sh start` 复测 `get_login_info` 返回 17号。
+  2. 更新 `cc_qq_multi_turn.json` 的 `/info` 断言并复跑；隔离 probe 与 cc-qq。
+  3. 决定生产脚本候选：`restart` 别名/未知命令提示（Q18）、`--restart --no-iterm` 旧窗口（Q19）、Dashboard `0.0.0.0:6185` 收口（Q21）、是否停发送者容器（Q22）。
+  4. 既有决策：专用测试 bot 账号（Q13）、Docker 镜像升级（Q16）、微信/其他平台驱动（Q17）。
+  5. E2E 复跑：先 `doctor`，再用 `--attach` 跑用例；测试实例用 `start-astrbot.sh --detach`，停止用 `stop-all.sh`。
 - 交接：
   - `handoffs/2026-10-27-002-第一版完成交接.md`
   - `handoffs/2026-10-31-003-Docker双容器E2E启动脚本.md`
+  - `handoffs/2026-10-31-004-生产环境一键启动脚本.md`
   - `NEXT-SESSION-PROMPT-astrbot-plugin-e2e.md`

@@ -3,13 +3,21 @@
 ## Metadata（元数据）
 
 - 创建时间（Created At）：2026-10-27 17:10:00 CST。
-- 更新时间（Updated At）：2026-10-31 02:31:26 CST。
+- 更新时间（Updated At）：2026-10-31 22:45:00 CST。
 - 作者（Author）：Claude。
 - 目的（Purpose）：记录当前 mission 的阶段检查点，只保留最近 3 条。
 - 关联项目（Related Repository / Project）：当前仓库 `.`。
 - 关联任务（Related Mission）：`.devflow/astrbot-plugin-e2e/`。
-- 当前状态（Status）：Docker 双容器 E2E 启动脚本完成并验证；测试资产待修。
+- 当前状态（Status）：生产环境一键脚本完成并验证；NapCat 生产登录待扫码（QQ 安全风险 168）。
 - 文档边界（Scope / Boundary）：恢复热路径的一部分；不替代 `state.md` 或 `handoff`。
+
+## 2026-10-31 22:45:00 CST — 生产环境一键脚本完成
+
+- 新增 `tools/prod_env/prod.sh` + `README.md`：`start/stop/status`；默认 iTerm 双标签（NapCat 日志 + AstrBot 前台），关闭 AstrBot 标签即停服务；`--restart` 复用窗口；`--no-iterm` 当前终端前台。
+- 幂等：`start` 在 NapCat 与 AstrBot 都在运行时 no-op；重启显式 `--restart`；启动前自动停 `napcat-e2e-bot`；成功后清理过期 `production-stopped` 标记。
+- 验证：`bash -n`；首次启动容器 + `6185/6199` + 双标签；重复 `start` 不新增标签；`--restart` 复用窗口并新增 AstrBot 标签；`stop` 停服务并清 PID/窗口；`--no-iterm` PID 36607 验证；E2E 冲突自动停；OneBot 超时返回非 0。
+- 环境阻塞：NapCat 要求扫码，QQ 返回安全风险 168；`wait_onebot.py` 未拿到 17号。脚本按预期超时并提示 WebUI。
+- 当前运行态：生产 AstrBot PID `37107`、窗口 `1831`、`napcat` 运行未登录；E2E 机器人已停；测试 AstrBot `6186/6198` 运行；标记已清理。
 
 ## 2026-10-31 02:31:26 CST — Docker 双容器 E2E 启动脚本完成
 
@@ -31,17 +39,3 @@
 - 当前边界：Task 0–13 完成；引擎 127/127，skill 12/12；未提交。
 - 下一步：向用户申请提交许可；未批准前不 commit。
 - 已知风险：Q11 富媒体断言；Q12 QQ/NapCat 签名与 App 管理权限；生产 bot 兼任测试机器人。
-
-## 2026-10-30 15:40:00 CST — Apply 暂停（Task 12 阻塞）
-
-- 阶段：`Apply`（需求 2）；Task 0–11 完成，Task 12 未完成。
-- 完成：
-  - 引擎：多轮 `steps`、`execute_case`、`run-suite`、插件源解析、报告脱敏、doctor 增强、`--no-redact`；全量 **127/127**。
-  - skill：探测、功能清单、用例生成、文档/模板、vendor、仓库副本、catalog 登记；脚本测试全部通过。
-  - 复核修复：`reverse_ws_token` 脱敏；`/cc <参数>` 识别；系统路径误报；`/cd`、`/resume` 高风险；目录不存在静默空清单。
-- 阻塞：本机 QQ 7.0.2 签名/quarantine 问题；`codesign --force --deep --sign -` 破坏 nested Helper 签名，Worker 被 `SIGKILL (Code Signature Invalid)`。用户决定自行还原 QQ/NapCat 环境。
-- 当前边界：未提交任何改动；容器 11G 未删除；QQ 应用备份在 `~/Applications-backup/`。
-- 下一步：环境恢复后执行 Task 12（doctor、多轮、suite、脱敏、自愈演练），再 Task 13 收尾。
-- 已知风险：不要对 NapCat 注入后的 QQ 使用 `--deep` 重签；App 管理权限会阻止 xattr/codesign。
-
-
