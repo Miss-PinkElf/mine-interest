@@ -95,6 +95,8 @@ class GithubAutomationTests(unittest.TestCase):
                 self.login_fails = login_fails
                 self.fork_created = False
                 self.graphql_fails = False
+                #: 模拟 HTTP 200 但响应体带 GraphQL errors（例如字段写错）。
+                self.mutation_errors = False
                 self.graphql_data = {
                     "repository": {"id": "R_demo"},
                     "viewer": {
@@ -116,10 +118,18 @@ class GithubAutomationTests(unittest.TestCase):
                         "",
                     )
                     if "updateUserListsForItem" in query:
+                        if self.mutation_errors:
+                            return CommandResult(
+                                0,
+                                json.dumps(
+                                    {"errors": [{"message": "undefinedField"}]}
+                                ),
+                                "",
+                            )
                         return CommandResult(
                             0,
                             json.dumps(
-                                {"data": {"updateUserListsForItem": {"list": None}}}
+                                {"data": {"updateUserListsForItem": {"lists": []}}}
                             ),
                             "",
                         )
@@ -284,6 +294,31 @@ class GithubAutomationTests(unittest.TestCase):
         mutations = self._mutations(runner)
         self.assertEqual(len(mutations), 1)
         self.assertIn('"UL_ai"', " ".join(mutations[0]))
+
+    def test_mutation_uses_lists_selection_set(self):
+        runner = self._runner()
+        self._set_lists(runner, [self._list_node("UL_ai", "AI相关")])
+        automation = GithubAutomation(self.state_path, runner, star_list="AI相关")
+
+        automation.handle(["owner/demo"], fork=False, source="qq")
+
+        # UpdateUserListsForItemPayload 只有 lists 字段；写 list 会被 GraphQL 整体拒绝。
+        mutation = " ".join(self._mutations(runner)[0])
+        self.assertIn("lists {", mutation)
+        self.assertNotIn("list {", mutation)
+
+    def test_mutation_graphql_errors_mark_failure(self):
+        runner = self._runner()
+        runner.mutation_errors = True
+        self._set_lists(runner, [self._list_node("UL_ai", "AI相关")])
+        automation = GithubAutomation(self.state_path, runner, star_list="AI相关")
+
+        results = automation.handle(["owner/demo"], fork=False, source="qq")
+
+        self.assertFalse(results[0].ok)
+        self.assertIn("已 star，但加入列表", results[0].message)
+        state = json.loads(self.state_path.read_text(encoding="utf-8"))
+        self.assertTrue(state["repos"]["owner/demo"].get("starred_at"))
 
     def test_star_list_preserves_existing_lists(self):
         runner = self._runner()

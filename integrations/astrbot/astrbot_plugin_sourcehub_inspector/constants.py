@@ -4,7 +4,7 @@
 """
 
 PLUGIN_NAME = "astrbot_plugin_sourcehub_inspector"
-PLUGIN_VERSION = "0.6.5"
+PLUGIN_VERSION = "0.6.6"
 LOG_PREFIX = "[SourceHub Inspector]"
 
 # 快照与转发展开结果的落盘目录（相对 AstrBot 运行工作目录）

@@ -47,10 +47,11 @@ query($owner: String!, $name: String!) {{
 """
 
 #: listIds 只允许由本模块校验过的 UL_ 开头的 ID 嵌入。
+#: 返回字段必须是 lists（UpdateUserListsForItemPayload 没有 list 字段）。
 STAR_LIST_MUTATION_TEMPLATE = """
 mutation($itemId: ID!) {{
   updateUserListsForItem(input: {{itemId: $itemId, listIds: [{list_ids}]}}) {{
-    list {{ id name }}
+    lists {{ id name }}
   }}
 }}
 """
@@ -517,10 +518,8 @@ class GithubAutomation:
         mutation = STAR_LIST_MUTATION_TEMPLATE.format(
             list_ids=", ".join(f'"{list_id}"' for list_id in list_ids)
         )
-        result = self.runner.run_with_fallback(
-            ["api", "graphql", "-f", f"query={mutation}", "-f", f"itemId={item_id}"]
-        )
-        if not result.ok:
+        data, result = self._graphql(mutation, {"itemId": item_id})
+        if data is None:
             detail = describe_failure(result, self.runner.proxy_url)
             return (
                 False,

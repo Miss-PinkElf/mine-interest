@@ -1,6 +1,6 @@
 # Metadata（元数据）
 
-- 更新时间（Updated At）：2026-10-23 16:36:00 +08:00。
+- 更新时间（Updated At）：2026-11-01 12:30:00 +08:00。
 - 作者（Author）：rin（Claude 协助）。
 - 目的（Purpose）：恢复插件诊断上下文。
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
@@ -10,6 +10,15 @@
 - 文档边界（Scope / Boundary）：本任务记录；诊断插件不代表完整信息中心已获准实施。
 
 # 问题清单（Bug Log）
+
+## 2026-11-01：star 成功但不进入 GitHub Lists
+
+| 问题现象 | 问题原因 | 解决方案与状态 |
+| --- | --- | --- |
+| 两个插件 `github_star_list` 配置了 `bilibili_star` / `qq_star`，列表名称与 GitHub 完全一致，但 `viewer.lists` 里两个列表 `items.totalCount` 始终为 0；动作记录报 `undefinedField ... typeName: UpdateUserListsForItemPayload, fieldName: list` | mutation 选择集写了 `list { id name }`，但 `UpdateUserListsForItemPayload` 只有 `item / lists / user / clientMutationId`。GraphQL 校验错误会在执行前整体拒绝，因此列表从未写入。测试用假 runner 不校验选择集字段，174 项全绿仍漏掉 | **已修复（2026-11-01）**。模板改为 `lists { id name }`；mutation 改为复用 `_graphql` 统一解析 `errors`；新增 2 条回归测试（选择集断言、HTTP 200 带 errors 判失败）；三副本字节一致；版本升 `0.6.6` / `0.3.8`；全量离线 **176 项通过**；现场目录已覆盖并 `diff -rq` 一致 |
+| 修复后补做历史仓库时仍失败：`INSUFFICIENT_SCOPES` | `updateUserListsForItem` 要求 token 具备 `user` scope，当前 gh token 只有 `gist / read:org / repo / workflow`。此前被 `undefinedField` 校验错误遮蔽 | **已解决（2026-11-01）**。用户执行 `gh auth refresh -h github.com -s user` 后 scopes 含 `user`；5 个历史仓库补做全部成功，`viewer.lists` 核对：`bilibili_star` 4 条、`qq_star` 1 条，其他 4 个列表条目数未变 |
+
+受影响但已 star、尚未归类的仓库：B 站 `ssamurias/dsh-fish`、`Mieksido/surfcore`、`SAOS-3624/dsh-video-storyboard`、`foxletters-hq/BaiShou-Next`；检查插件 `shareAI-lab/learn-claude-code`。
 
 ## 2026-10-23：B 站插件的正常处理流程没有日志
 
