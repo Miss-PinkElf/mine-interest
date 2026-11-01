@@ -7,7 +7,7 @@
 - 关联任务（Related Mission）：`.devflow/multi-source-hub/`。
 - 关联计划（Related Plan）：`plans/2026-10-23-需求9-GitHub-star列表归类-plan.md`。
 - 关联任务清单（Related Tasks）：`spec/2026-10-23-需求9/tasks.md`。
-- 当前状态（Status）：首版已部署，真实列表归属待验证（In Progress）。
+- 当前状态（Status）：首版已部署；2026-11-01 修复 mutation 字段并完成真实补做，消息链路端到端待验证（In Progress）。
 - 文档边界（Scope / Boundary）：延期与首版边界真相源；不是永久放弃，也不是已验收结论。
 
 # 需求 9 首版边界
@@ -56,5 +56,5 @@
 
 ## 待验证（不是延期）
 
-- 真实仓库 star 后是否成功进入目标列表，且未移除其他已有列表。
-- GitHub GraphQL mutation 在真实环境下的返回与权限要求。
+- **已完成（2026-11-01）**：真实 GraphQL mutation 在补 `user` scope 后可用；5 个已 star 未归类仓库补做成功，其他列表未受影响。
+- **仍待完成**：重载 AstrBot 后，用尚未 star 的仓库经 QQ 消息与 B 站 @ 各触发一次，确认消息处理链路同样生效。

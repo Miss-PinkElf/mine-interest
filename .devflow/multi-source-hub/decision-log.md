@@ -299,3 +299,11 @@
 - **端口 `13000/13001/16099`，`restart: unless-stopped`**。理由：避开 multica 占用的 3000；容器随 OrbStack 自启，登录态持久化在 `~/napcat/ntqq`。
 - **切换同 `self_id` 的 NapCat 后必须重启 AstrBot**。理由：aiocqhttp 反向 API 客户端按 `X-Self-ID` 键控，旧连接清理会删掉同名新连接，导致插件 `get_forward_msg` 静默失败；已实测重启后恢复。
 - **插件转发展开健壮性暂不实施**。候选方案：`fetch_forward_messages` 短重试 + 最终失败写入 `forward_unexpanded` gap；理由：属于代码改动，需先写 Plan 并获用户批准。已记录为延期项。
+
+## 2026-11-01 13:00：star 列表 mutation 修复与历史补做
+
+- **修 `lists` 字段并让 mutation 复用 `_graphql`，不只改字段**。理由：`UpdateUserListsForItemPayload` 没有 `list` 字段；同时统一解析 GraphQL `errors`，避免 HTTP 200 + errors 被误判成功。用户批准方案 A。
+- **历史 5 个仓库用一次性脚本补做，不改源码、不清状态**。理由：复用修复后的同一个 `_assign_star_list`，star 本身已幂等；清 `starred_at` 会重新触发完整流程，副作用更大。用户选择「一次性脚本补做」。
+- **QQ 侧不做额外修改**。理由：检查插件与 B 站插件共用同一份 `sourcehub/github_actions.py`，修复随版本部署同时生效。
+- **gh token 补 `user` scope**。理由：Lists 写操作要求 `user`；此前被校验错误遮蔽。用户执行 `gh auth refresh -h github.com -s user`。
+- **全量历史 star 仍不批量归类**。理由：本轮只补已知失败的 5 个仓库，批量整理会改变既有分组；保持原延期边界。

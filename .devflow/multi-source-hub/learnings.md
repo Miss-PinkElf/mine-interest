@@ -34,3 +34,7 @@
 20. **`gh repo fork <repository>` 不接受 `--remote`，写成 `--remote=false` 也算 flag 被设置。** 报错：`the --remote flag is unsupported when a repository argument is provided`。正确命令是 `gh repo fork <repo> --clone=false --default-branch-only`。
 21. **GitHub Lists 只能走 GraphQL。** REST `/user/lists` 实测 404；`viewer.lists` 可读，`updateUserListsForItem(input: {itemId, listIds})` 设置归属，语义是**替换**条目的列表集合，因此要保留其他列表必须先查当前归属再取并集。`gh api graphql` 可用，不需要额外依赖。
 22. **长轮询插件的正常流程必须有可观测日志。** B 站插件此前只在异常时写日志，用户 @ 后无法判断是否收到、采集、保存。补日志时要把「收到数量 → 开始采集 → 失败原因 → 保存成功」串起来，并统一前缀，否则仍难以筛选。
+23. **GraphQL 的「校验错误」会遮蔽「权限错误」。** 本轮 mutation 选择集写错字段（`list` 不存在）时，GitHub 在鉴权前就整体拒绝请求；修好字段后才暴露真正的 `INSUFFICIENT_SCOPES`。只看到第一条报错就收尾，很容易误判为「代码已经修好」。
+24. **GitHub Lists 的写操作需要 `user` scope。** `gh auth status` 原来只有 `gist / read:org / repo / workflow`；`updateUserListsForItem` 要求 `user`。补授权用 `gh auth refresh -h github.com -s user`，必须在真实终端完成（设备码流程），`!` 非交互执行不带 `--hostname` 会直接报错。
+25. **修好写入逻辑不等于历史数据自动修正。** 已 star 但未归类的仓库不会再触发「新 star」流程，需要复用修复后的同一个 `_assign_star_list` 一次性补做；本轮 5 个仓库因此补齐，且用 `viewer.lists` 逐列表核对条目数与原有归属。
+26. **同源缺陷只修一处即可覆盖两个插件。** 检查插件（QQ）与 B 站插件共用 `sourcehub/github_actions.py`；用户问「QQ 是不是也要修」时，应先确认是否共享实现，避免重复改动或漏改。

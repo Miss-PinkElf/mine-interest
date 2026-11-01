@@ -6,7 +6,7 @@
 - 关联仓库（Related Repository）：mine-interest-source-hub（`.`）。
 - 关联 mission（Related Mission）：`.devflow/multi-source-hub/`。
 - 关联计划（Related Plan）：`plans/2026-10-23-需求9-GitHub-star列表归类-plan.md`。
-- 当前状态（Status）：实施中（In Progress），待重载与真实仓库验证。
+- 当前状态（Status）：实施中（In Progress）；2026-11-01 修复 mutation 返回字段并完成真实补做，待重载后做消息链路验证。
 - 文档边界（Scope / Boundary）：当前切片任务真相源；勾选只代表对应证据已存在。
 
 # Tasks（实施任务）
@@ -16,7 +16,8 @@
 - [x] T3：B 站插件接入 `github_star_list` 配置并传给 `GithubAutomation`。
 - [x] T4：两个 `_conf_schema.json` 与 README 补充配置说明。
 - [x] T5：版本与部署。检查插件 `0.6.5`、B 站 `0.3.7`；两个现场目录 `diff -rq` 一致；`py_compile` 通过；全量离线 **174 项通过**。
-- [ ] T6：重载后用一个真实仓库验证：新 star 的仓库进入配置列表，且原有其他列表不被移除。需要用户指定目标列表名称并提供测试仓库链接（会产生真实副作用）。
+- [x] T6a：真实 GraphQL mutation 验证（2026-11-01）：`gh auth refresh -h github.com -s user` 后，对 5 个已 star 未归类仓库一次性补做，全部成功；`viewer.lists` 核对 `bilibili_star`=4、`qq_star`=1，其他 4 个列表条目数未变。证据：`bug-log.md` 2026-11-01 条目、`plans/2026-11-01-需求9-fix-star列表mutation返回字段-plan.md`。
+- [ ] T6b：重载 AstrBot 后，用**尚未 star** 的仓库经 QQ 消息与 B 站 @ 各触发一次，确认回复「已 star（已加入列表「…」）」且其他列表保留。需要用户提供测试仓库链接（会产生真实副作用）。
 
 ## 验证边界
 

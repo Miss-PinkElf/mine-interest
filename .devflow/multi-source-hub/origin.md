@@ -204,3 +204,11 @@
 - 环境事实（用户操作）：本机安装 NapCat 4.18.28，QQ 个人号 `1961618848`（C#）接管，AstrBot 增加 OneBot v11 适配器 `Test-01`。
 - 吸收状态：嵌套转发展开已实现并实测通过；群级白名单已实现；媒体落盘、机器人自身消息未决，记入 `deferred/` 与 `bug-log.md`；「不要按发送人过滤」在插件侧已满足，实际卡点在 NapCat 未上报自身消息。
 - 敏感边界：`sourcehub-image-urls.json` 与真实快照含 `rkey` 鉴权参数及私人聊天内容，**禁止提交与外传**。
+
+## 2026-11-01 13:00:00：星标列表未归类排查与收尾
+
+- 原始输入：“你查询一下 bilibili star 的逻辑，现在应该是可以的，但是没有进入对应的 star list 里面，你看下什么原因”；用户确认已创建 `https://github.com/stars/Miss-PinkElf/lists/bilibili-star`，AstrBot 两插件均配置 `bilibili_star`。
+- 追加输入：“qq收集消息应该也有这个问题，你看下，是不是也需要修复一下”。
+- 收尾输入：新开对话继续；未讨论/首版/延期项要落文档；按根目录 `devflow-handoff.md` 收尾；先提交相关代码再收尾；默认不提交 `config.ts`、`.gitignore`、`tsconfig.json`；不相关改动可能来自其他助手或用户此前修改。
+- 吸收状态：两个根因（mutation 字段错误、token 缺 `user` scope）已修复并补做 5 个历史仓库；QQ 侧确认共用实现；延期边界保持不变，记录在 `deferred/需求9-star列表首版边界.md`。
+- 未吸收/未讨论：一个插件多列表、按来源或链接类型分流，仍为未讨论项。
