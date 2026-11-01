@@ -7,7 +7,8 @@
 
 | 项 | 值 |
 | --- | --- |
-| 基础地址（Base URL） | `https://rightapi.ai` |
+| 基础地址（Base URL） | `https://api.site`（2026-10-30 起；原 `rightapi.ai` 国内已不可访问） |
+| 主站（登录 / 充值 / 管理） | `https://rightapi.io` |
 | 鉴权头（Authorization） | `Authorization: Bearer sk-xxxxx` |
 | 请求格式 | `application/json`；OpenAI 图片编辑也支持 `multipart/form-data` |
 | 结果形态 | 图片 URL，不返回 base64 |

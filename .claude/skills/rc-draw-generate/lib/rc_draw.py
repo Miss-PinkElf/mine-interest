@@ -32,7 +32,7 @@ DEFAULT_ENV_FILE = SKILL_DIR / ".env"
 DEFAULT_OUT_DIR = SKILL_DIR / "gen-images"
 DEFAULT_PROMPT_FILE = SKILL_DIR / "prompts" / "prompt-image.md"
 
-DEFAULT_BASE_URL = "https://rightapi.ai"
+DEFAULT_BASE_URL = "https://api.site"
 DEFAULT_MODEL = "gpt-image-2"
 
 OPENAI_QUALITIES = ("auto", "low", "medium", "high")

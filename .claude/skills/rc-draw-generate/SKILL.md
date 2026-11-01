@@ -1,7 +1,7 @@
 ---
 name: rc-draw-generate
 description: |
-  自包含画图 skill：使用 Right Code（rightapi.ai）异步任务接口生成或编辑图片，
+  自包含画图 skill：使用 Right Code（api.site）异步任务接口生成或编辑图片，
   支持 OpenAI 协议（gpt-image-2 / gpt-image-2.5-flare / gpt-image-2.5-sunburst）
   与 Gemini 协议（gemini-3-pro-image-preview / gemini-nano-banana-2.1）。
   用户说「生成图片」「画一张」「出图」「文生图」「图生图」「改图」「参考图」
@@ -46,7 +46,7 @@ rc-draw-generate/
 
 - 生成 / 画 / 出图 / 文生图
 - 改图 / 参考图 / 图生图 / 多图融合
-- 用户提到 Right Code、rightapi.ai、rc-draw、Nano Banana
+- 用户提到 Right Code、rightapi.ai（旧域名）、api.site、rc-draw、Nano Banana
 - 用户给了视觉描述或本地参考图，需要本地图片文件
 
 > 旧的 `gpt-image-generate`（wyzlab 平台）保持不动；本 skill 是 Right Code 的独立实现。
@@ -76,14 +76,14 @@ RC_DEFAULT_PROFILE=IMAGE
 
 # 默认档案：Image
 RC_PROFILE_IMAGE_NAME=Image
-RC_PROFILE_IMAGE_BASE_URL=https://rightapi.ai
+RC_PROFILE_IMAGE_BASE_URL=https://api.site
 RC_PROFILE_IMAGE_KEY=sk-...
 RC_PROFILE_IMAGE_MODEL=gpt-image-2
 RC_PROFILE_IMAGE_MODELS=gpt-image-2,gpt-image-2-vip,gpt-image-2.5
 
 # 可选：高质量分组，需要时用 -p IMAGE_HIGH 显式选择
 RC_PROFILE_IMAGE_HIGH_NAME=Image 高质量
-RC_PROFILE_IMAGE_HIGH_BASE_URL=https://rightapi.ai
+RC_PROFILE_IMAGE_HIGH_BASE_URL=https://api.site
 RC_PROFILE_IMAGE_HIGH_KEY=sk-...
 RC_PROFILE_IMAGE_HIGH_MODEL=gpt-image-2
 RC_PROFILE_IMAGE_HIGH_MODELS=gpt-image-2,gpt-image-2.5-flare,gemini-3-pro-image-preview
