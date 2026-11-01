@@ -25,7 +25,7 @@
 ### 当前状态（2026-11-01 02:30）
 
 - 账号：测试 bot `3299987672`，发送者 `1961618848`（C#），生产 `3254276668`（17号）。E2E 与生产可并行。
-- 测试环境：两个 NapCat 容器运行；测试 AstrBot `6186/6198`（本轮 PID `99530`）；生产 AstrBot `6185/6199` 保持运行。
+- 测试环境：两个 NapCat 容器运行；测试 AstrBot 本轮验证时运行（PID `99530`），收尾后已停止，需要时用 `start-astrbot.sh --detach` 重启；生产 AstrBot `6185/6199` 保持运行。
 - 旧 bot 登录态归档：`~/.qq-e2e-docker/bot/QQ.bak-20261101-014847`。
 - 验证：`doctor OK`；`cc_qq_multi_turn` PASSED（`reports/20261101-022848-087695-cc-qq`）；回复媒体自动发送 PASSED（`reports/20261101-021808-341659-cc-qq`）。
 - 修复：观察端 `reportSelfMessage=true`，解决异步代理回复只抓到「处理中」的假失败。

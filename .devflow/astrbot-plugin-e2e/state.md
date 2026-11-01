@@ -16,7 +16,7 @@
 
 - 账号：测试 bot `3299987672`，发送者 `1961618848`（C#），生产 `3254276668`（17号）。测试 bot 与生产不同号，E2E 与生产可并行。
 - 生产：`napcat` 容器 + 生产 AstrBot（`6185/6199`，PID 以 `prod.sh status` 为准）保持运行。
-- 测试环境：`napcat-e2e-bot` / `napcat-e2e-sender` 已运行；测试 AstrBot PID `99530`，`6186/6198` 监听；旧 bot 登录态归档在 `~/.qq-e2e-docker/bot/QQ.bak-20261101-014847`。
+- 测试环境：`napcat-e2e-bot` / `napcat-e2e-sender` 已运行；测试 AstrBot 验证时运行（PID `99530`），收尾后已随后台任务停止，以 `status.sh` 为准；旧 bot 登录态归档在 `~/.qq-e2e-docker/bot/QQ.bak-20261101-014847`。
 - 验证证据：
   - `doctor OK: bot=3299987672 sender=1961618848`。
   - `cc_qq_multi_turn` PASSED：`reports/20261101-022848-087695-cc-qq`（最新复跑）。
